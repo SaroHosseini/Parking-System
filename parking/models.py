@@ -47,8 +47,9 @@ class Vehicle(models.Model):
         "نوع وسیله",
         max_length=20,
         choices=VEHICLE_TYPE_CHOICES,
-        default='car',
+        default=VEHICLE_TYPE_CAR,
     )
+
     color = models.CharField("رنگ", max_length=30, blank=True)
 
     def __str__(self):
@@ -142,6 +143,152 @@ class Tariff(models.Model):
         return f"{self.name} - {self.get_vehicle_type_display()}"
 
 
+
+class Payment(models.Model):
+    PAYMENT_METHOD_POS = 'pos'
+    PAYMENT_METHOD_CASH = 'cash'
+    PAYMENT_METHOD_CARD_TO_CARD_TRANSFER = 'card_to_card_transfer'
+    PAYMENT_METHOD_ONLINE = 'online_gateway'
+
+    PAYMENT_METHOD_CHOICES = [
+        (PAYMENT_METHOD_POS, 'پرداخت با کارتخوان'),
+        (PAYMENT_METHOD_CASH, 'پرداخت نقدی'),
+        (PAYMENT_METHOD_CARD_TO_CARD_TRANSFER, 'پرداخت با کارت به کارت'),
+        (PAYMENT_METHOD_ONLINE, 'پرداخت با درگاه آنلاین'),
+    ]
+
+    PAYMENT_STATUS_OPEN = 'open'
+    PAYMENT_STATUS_CLOSED = 'closed'
+    PAYMENT_STATUS_CANCELLED = 'cancelled'
+
+    PAYMENT_STATUS_CHOICES = [
+        (PAYMENT_STATUS_OPEN, 'باز'),
+        (PAYMENT_STATUS_CLOSED, 'بسته شده'),
+        (PAYMENT_STATUS_CANCELLED, 'لغو شده'),
+    ]
+
+    amount = models.DecimalField('مقدار', max_digits=10, decimal_places=2)
+    payment_time = models.DateTimeField('زمان پرداخت', auto_now_add=True)
+    payment_method = models.CharField(
+        'نحوه پرداخت',
+        max_length=50,
+        choices=PAYMENT_METHOD_CHOICES,
+    )
+    payment_status = models.CharField(
+        'وضعیت پرداخت',
+        max_length=20,
+        choices=PAYMENT_STATUS_CHOICES,
+        default=PAYMENT_STATUS_OPEN,
+    )
+
+    session = models.ForeignKey(
+        'ParkingSession',
+        on_delete=models.CASCADE,
+        related_name='payments',
+        verbose_name='سشن پارک',
+    )
+
+    class Meta:
+        verbose_name = 'پرداخت'
+        verbose_name_plural = 'پرداخت‌ها'
+
+    def __str__(self):
+        return f"پرداخت #{self.id} - {self.amount} - {self.get_payment_method_display()}"
+
+
+class Receipt(models.Model):
+    issue_time = models.DateTimeField('زمان صدور رسید', default=timezone.now)
+    receipt_number = models.CharField('شماره رسید',
+     max_length=50, 
+     unique=True)
+    
+    calculated_fee = models.DecimalField(
+        'مبلغ روی رسید',
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+
+    session = models.OneToOneField(
+        'ParkingSession',
+        on_delete=models.CASCADE,
+        related_name='receipt',
+        verbose_name='سشن پارک',
+    )
+
+    payment = models.OneToOneField(
+        Payment,
+        on_delete=models.CASCADE,
+        related_name='receipt',  
+        verbose_name='پرداخت',
+        null=True,
+        blank=True,
+    )
+
+    content = models.TextField(
+        'متن رسید',
+        blank=True,
+        null=True,
+        help_text='متن آماده چاپ شامل زمان ورود و خروج، کد جایگا،شماره پلاک،شماره رسید،روش پرداخت و هزینه',
+    )
+
+    class Meta:
+        verbose_name = 'رسید'
+        verbose_name_plural = 'رسیدها'
+
+    def __str__(self):
+        return f"رسید #{self.receipt_number} - سشن {self.session_id}"
+
+    def generate_content(self):
+        session = self.session
+        vehicle_plate = session.vehicle.plate_number if session.vehicle else "نامشخص"
+        spot_code = session.spot.code if session.spot else "نامشخص"
+
+        entry = session.entry_time
+        exit_time = session.exit_time
+
+        entry_str = entry.strftime('%Y-%m-%d %H:%M') if entry else 'نامشخص'
+        exit_str = exit_time.strftime('%Y-%m-%d %H:%M') if exit_time else 'نامشخص'
+
+        fee = (self.calculated_fee or session.calculated_fee or Decimal("0.00"))
+
+        payment_method = (self.payment.get_payment_method_display() if self.payment else 'ثبت نشده')
+        payment_status = (self.payment.get_payment_status_display() if self.payment else "ثبت نشده")
+
+        lines = [   
+            f"شماره رسید: {self.receipt_number}",
+            f"شماره پلاک: {vehicle_plate}",
+            f"کد جایگاه: {spot_code}",
+            f"زمان ورود: {entry_str}",
+            f"زمان خروج: {exit_str}",
+            f"مبلغ قابل پرداخت: {fee} تومان",
+            f"روش پرداخت: {payment_method}",
+            f"وضعیت پرداخت: {payment_status}",
+        ]
+
+        return "\n".join(lines)
+
+
+
+    def save(self, *args, **kwargs):
+        session = self.session
+
+        if self.calculated_fee is None:
+            if session and session.calculated_fee is not None:
+                self.calculated_fee = session.calculated_fee
+
+            elif session:
+                self.calculated_fee = session.calculate_fee()
+
+            else:
+                self.calculated_fee = Decimal("0.00")
+
+        if not self.content:
+            self.content = self.generate_content()
+
+        super().save(*args, **kwargs)
+
 class ParkingSession(models.Model):
     SESSION_STATUS_OPEN = 'open'
     SESSION_STATUS_CLOSED = 'closed'
@@ -152,8 +299,8 @@ class ParkingSession(models.Model):
         (SESSION_STATUS_CANCELLED, 'لغو شده'),
                     ]
 
-    entry_time = models.DateTimeField(default=timezone.now)
-    exit_time = models.DateTimeField(null=True, blank=True)
+    entry_time = models.DateTimeField("زمان ورود",default=timezone.now)
+    exit_time = models.DateTimeField('زمان خروج',null=True, blank=True)
 
     total_duration_minutes = models.PositiveIntegerField(
         "مدت کل (دقیقه)",
