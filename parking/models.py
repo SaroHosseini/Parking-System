@@ -73,6 +73,11 @@ class Vehicle(models.Model):
                 motorcycle_plate_validator(plate)
             except ValidationError as e:
                 raise ValidationError({'plate_number' : e.message})
+            
+    class Meta:
+        verbose_name = 'ماشین'
+        verbose_name_plural = 'ماشین ها'          
+        ordering = ['owner_name', 'plate_number']
         
     
 class ParkingLot(models.Model):
@@ -83,6 +88,11 @@ class ParkingLot(models.Model):
     def __str__(self):
         return self.name
     
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'پارکینگ'
+        verbose_name_plural = 'پارکینگ ها '
+        
 
 class ParkingSpot(models.Model):
     parking_lot = models.ForeignKey(
@@ -99,9 +109,12 @@ class ParkingSpot(models.Model):
         unique_together = ("parking_lot", "code")
         verbose_name = "جایگاه پارک"
         verbose_name_plural = "جایگاه‌های پارک"
+        ordering = ['parking_lot', 'level', 'code']
 
     def __str__(self):
         return f" کد جایگاه: {self.code} طبقه جایگاه: {self.level} وضعیت فعلی جایگاه: {self.is_occupied}"
+    
+
 
 class Tariff(models.Model):
 
@@ -138,6 +151,7 @@ class Tariff(models.Model):
     class Meta:
         verbose_name = "تعرفه"
         verbose_name_plural = "تعرفه‌ها"
+        ordering = ['vehicle_type', 'name']
 
     def __str__(self):
         return f"{self.name} - {self.get_vehicle_type_display()}"
@@ -191,6 +205,7 @@ class Payment(models.Model):
     class Meta:
         verbose_name = 'پرداخت'
         verbose_name_plural = 'پرداخت‌ها'
+        ordering = ['-payment_time']
 
     def __str__(self):
         return f"پرداخت #{self.id} - {self.amount} - {self.get_payment_method_display()}"
@@ -236,6 +251,7 @@ class Receipt(models.Model):
     class Meta:
         verbose_name = 'رسید'
         verbose_name_plural = 'رسیدها'
+        ordering = ['-issue_time']
 
     def __str__(self):
         return f"رسید #{self.receipt_number} - سشن {self.session_id}"
@@ -336,6 +352,7 @@ class ParkingSession(models.Model):
     class Meta:
         verbose_name = "سشن پارک"
         verbose_name_plural = "سشن‌های پارک"
+        ordering = ['-entry_time', 'vehicle']
 
     def calculate_duration(self):
 
