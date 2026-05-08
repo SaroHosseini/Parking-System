@@ -7,6 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from django.core.validators import RegexValidator
 
+
 PERSIAN_PLATE_LETTERS = "ابپتثجچحخدذرزسشصضطظعغفقکگلمنوهی"
 
 
@@ -53,7 +54,7 @@ class Vehicle(models.Model):
     color = models.CharField("رنگ", max_length=30, blank=True)
 
     def __str__(self):
-        return f"{self.plate_number} - {self.owner_name or 'بدون نام'}"
+        return f"{self.plate_number} \n {self.owner_name or 'بدون نام'}"
     
     def clean(self):
 
@@ -75,8 +76,8 @@ class Vehicle(models.Model):
                 raise ValidationError({'plate_number' : e.message})
             
     class Meta:
-        verbose_name = 'ماشین'
-        verbose_name_plural = 'ماشین ها'          
+        verbose_name = 'وسیله نقلیه'
+        verbose_name_plural = 'وسایل نقلیه'          
         ordering = ['owner_name', 'plate_number']
         
     
@@ -110,9 +111,11 @@ class ParkingSpot(models.Model):
         verbose_name = "جایگاه پارک"
         verbose_name_plural = "جایگاه‌های پارک"
         ordering = ['parking_lot', 'level', 'code']
+    
 
     def __str__(self):
-        return f" کد جایگاه: {self.code} طبقه جایگاه: {self.level} وضعیت فعلی جایگاه: {self.is_occupied}"
+        status = "🟢 آزاد در حال حاضر" if not self.is_occupied else "🔴 اشغال در حال حاضر"
+        return f" {self.code} – طبقه {self.level} – {status}"
     
 
 
@@ -187,6 +190,8 @@ class Payment(models.Model):
         'نحوه پرداخت',
         max_length=50,
         choices=PAYMENT_METHOD_CHOICES,
+        null=True,
+        blank=True,
     )
     payment_status = models.CharField(
         'وضعیت پرداخت',
@@ -197,9 +202,10 @@ class Payment(models.Model):
 
     session = models.ForeignKey(
         'ParkingSession',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name='payments',
         verbose_name='سشن پارک',
+        null=True
     )
 
     class Meta:
@@ -209,13 +215,37 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"پرداخت #{self.id} - {self.amount} - {self.get_payment_method_display()}"
+    
+    def save(self, *args, **kwargs):
+        if self.payment_method and self.payment_status == Payment.PAYMENT_STATUS_OPEN:
+            self.payment_status = Payment.PAYMENT_STATUS_CLOSED
+        super().save(*args, **kwargs)
+
+        if self.session:
+            try_create_receipt(self.session)
+
+
 
 
 class Receipt(models.Model):
+
+    archived_vehicle_plate = models.CharField("شماره پلاک آرشیوی", max_length=20, blank=True, null=True)
+    archived_spot_code = models.CharField("کد جایگاه آرشیوی", max_length=50, blank=True, null=True)
+
+    archived_entry_time = models.DateTimeField("زمان ورود آرشیوی", null=True, blank=True)
+    archived_exit_time = models.DateTimeField("زمان خروج آرشیوی", null=True, blank=True)
+
+    archived_payment_method = models.CharField("روش پرداخت آرشیوی", max_length=50, blank=True, null=True)
+    archived_payment_status = models.CharField("وضعیت پرداخت آرشیوی", max_length=20, blank=True, null=True)
+
     issue_time = models.DateTimeField('زمان صدور رسید', default=timezone.now)
-    receipt_number = models.CharField('شماره رسید',
-     max_length=50, 
-     unique=True)
+    receipt_number = models.CharField(
+        'شماره رسید',
+        max_length=50,
+        unique=True,
+        editable=False,
+        blank=True
+    )
     
     calculated_fee = models.DecimalField(
         'مبلغ روی رسید',
@@ -227,15 +257,16 @@ class Receipt(models.Model):
 
     session = models.OneToOneField(
         'ParkingSession',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name='receipt',
         verbose_name='سشن پارک',
+        null=True
     )
 
     payment = models.OneToOneField(
         Payment,
-        on_delete=models.CASCADE,
-        related_name='receipt',  
+        on_delete=models.SET_NULL,
+        related_name='receipt',
         verbose_name='پرداخت',
         null=True,
         blank=True,
@@ -245,7 +276,7 @@ class Receipt(models.Model):
         'متن رسید',
         blank=True,
         null=True,
-        help_text='متن آماده چاپ شامل زمان ورود و خروج، کد جایگا،شماره پلاک،شماره رسید،روش پرداخت و هزینه',
+        help_text='متن آماده چاپ شامل زمان ورود و خروج، کد جایگاه، شماره پلاک، شماره رسید، روش پرداخت و هزینه',
     )
 
     class Meta:
@@ -254,127 +285,134 @@ class Receipt(models.Model):
         ordering = ['-issue_time']
 
     def __str__(self):
-        return f"رسید #{self.receipt_number} - سشن {self.session_id}"
+        return f"رسید #{self.receipt_number}"
+
+    def generate_receipt_number(self):
+        return timezone.now().strftime("%H%M%S")
 
     def generate_content(self):
-        session = self.session
-        vehicle_plate = session.vehicle.plate_number if session.vehicle else "نامشخص"
-        spot_code = session.spot.code if session.spot else "نامشخص"
+        entry = self.archived_entry_time
+        exit_time = self.archived_exit_time
 
-        entry = session.entry_time
-        exit_time = session.exit_time
+        entry_str = entry.strftime('%Y-%m-%d %H:%M') if entry else "نامشخص"
+        exit_str = exit_time.strftime('%Y-%m-%d %H:%M') if exit_time else "نامشخص"
 
-        entry_str = entry.strftime('%Y-%m-%d %H:%M') if entry else 'نامشخص'
-        exit_str = exit_time.strftime('%Y-%m-%d %H:%M') if exit_time else 'نامشخص'
-
-        fee = (self.calculated_fee or session.calculated_fee or Decimal("0.00"))
-
-        payment_method = (self.payment.get_payment_method_display() if self.payment else 'ثبت نشده')
-        payment_status = (self.payment.get_payment_status_display() if self.payment else "ثبت نشده")
-
-        lines = [   
+        lines = [
             f"شماره رسید: {self.receipt_number}",
-            f"شماره پلاک: {vehicle_plate}",
-            f"کد جایگاه: {spot_code}",
             f"زمان ورود: {entry_str}",
             f"زمان خروج: {exit_str}",
-            f"مبلغ قابل پرداخت: {fee} تومان",
-            f"روش پرداخت: {payment_method}",
-            f"وضعیت پرداخت: {payment_status}",
+            f"شماره پلاک: {self.archived_vehicle_plate or 'نامشخص'}",
+            f"کد جایگاه: {self.archived_spot_code or 'نامشخص'}",
+            f"وضعیت پرداخت: {self.archived_payment_status or 'پرداخت حذف شده'}",
+            f"روش پرداخت: {self.archived_payment_method or 'پرداخت حذف شده'}",
+            f"مبلغ قابل پرداخت: {self.calculated_fee} تومان",
         ]
+
+        if not self.session:
+            lines.append("سشن: حذف شده")
+
+        if not self.payment:
+            lines.append("پرداخت: حذف شده")
 
         return "\n".join(lines)
 
 
-
     def save(self, *args, **kwargs):
         session = self.session
+        payment = self.payment
 
         if self.calculated_fee is None:
             if session and session.calculated_fee is not None:
                 self.calculated_fee = session.calculated_fee
-
             elif session:
                 self.calculated_fee = session.calculate_fee()
-
             else:
                 self.calculated_fee = Decimal("0.00")
 
-        if not self.content:
-            self.content = self.generate_content()
+        if session:
+            self.archived_vehicle_plate = session.vehicle.plate_number if session.vehicle else "نامشخص"
+            self.archived_spot_code = session.spot.code if session.spot else "نامشخص"
+            self.archived_entry_time = session.entry_time
+            self.archived_exit_time = session.exit_time
+
+        if payment:
+            self.archived_payment_method = payment.get_payment_method_display()
+            self.archived_payment_status = payment.get_payment_status_display()
+
+        if not self.receipt_number:
+            self.receipt_number = self.generate_receipt_number()
+
+        self.content = self.generate_content()
 
         super().save(*args, **kwargs)
+
 
 class ParkingSession(models.Model):
     SESSION_STATUS_OPEN = 'open'
     SESSION_STATUS_CLOSED = 'closed'
     SESSION_STATUS_CANCELLED = 'cancelled'
+
     STATUS_CHOICES = [
         (SESSION_STATUS_OPEN, "باز (در حال پارک)"),
-        (SESSION_STATUS_CLOSED, 'بسته (خارج شده)'),
-        (SESSION_STATUS_CANCELLED, 'لغو شده'),
-                    ]
+        (SESSION_STATUS_CLOSED, "بسته (خارج شده)"),
+        (SESSION_STATUS_CANCELLED, "لغو شده"),
+    ]
 
-    entry_time = models.DateTimeField("زمان ورود",default=timezone.now)
-    exit_time = models.DateTimeField('زمان خروج',null=True, blank=True)
-
+    entry_time = models.DateTimeField("زمان ورود", default=timezone.now)
+    exit_time = models.DateTimeField("زمان خروج", null=True, blank=True)
     total_duration_minutes = models.PositiveIntegerField(
         "مدت کل (دقیقه)",
         null=True,
         blank=True,
-        help_text="بعد از خروج محاسبه و ذخیره می‌شود.",
+        help_text="بعد از خروج محاسبه و ذخیره می‌شود."
     )
     status = models.CharField(
-        'وضعیت',
+        "وضعیت",
         choices=STATUS_CHOICES,
-        max_length=255,
-        default='open',)
-    
-
+        max_length=20,
+        default=SESSION_STATUS_OPEN
+    )
     vehicle = models.ForeignKey(
-        Vehicle,
+        Vehicle, 
         on_delete=models.CASCADE,
         related_name='sessions',
-        verbose_name='وسیله نقلیه')
-    
+        verbose_name='وسیله نقلیه'
+    )
     spot = models.ForeignKey(
         ParkingSpot,
         on_delete=models.PROTECT,
         related_name='sessions',
-        verbose_name='جایگاه')
-    
+        verbose_name='جایگاه'
+    )
     calculated_fee = models.DecimalField(
+        "هزینه محاسبه‌شده",
         max_digits=10,
         decimal_places=2,
         null=True,
         blank=True,
+        help_text='پس از ثبت خروج خودکار محاسبه می‌شود'
     )
+
     class Meta:
         verbose_name = "سشن پارک"
         verbose_name_plural = "سشن‌های پارک"
-        ordering = ['-entry_time', 'vehicle']
+        ordering = ['-entry_time']
 
     def calculate_duration(self):
-
         if self.entry_time and self.exit_time:
             duration = self.exit_time - self.entry_time
-            minutes = int(duration.total_seconds() / 60)
-
-            return max(minutes, 0)
+            minutes = math.ceil(duration.total_seconds() / 60)
+            return max(minutes, 1)
         return None
-    
 
     def get_applicable_tariff(self):
-
         return Tariff.objects.filter(
-            vehicle_type= self.vehicle.type,
-            is_active=True,
+            vehicle_type=self.vehicle.type,
+            is_active=True
         ).first()
 
-
     def calculate_fee(self):
-
-        if not self.total_duration_minutes:
+        if self.total_duration_minutes is None:
             return Decimal("0.00")
 
         tariff = self.get_applicable_tariff()
@@ -390,15 +428,87 @@ class ParkingSession(models.Model):
         return tariff.first_hour_price + (
             Decimal(extra_hours) * tariff.additional_hour_price
         )
-    def save(self, *args, **kwargs):
 
-        if self.exit_time:
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        old_exit = None
+        old_spot = None
+
+        if not is_new:
+            old_obj = ParkingSession.objects.filter(pk=self.pk).first()
+            if old_obj:
+                old_exit = old_obj.exit_time
+                old_spot = old_obj.spot
+
+        if is_new and self.spot.is_occupied:
+            raise ValidationError(f"جایگاه {self.spot.code} در حال حاضر اشغال است!")
+
+
+        if self.exit_time and old_exit is None:
             self.total_duration_minutes = self.calculate_duration()
             self.calculated_fee = self.calculate_fee()
-            self.status = "closed"
+            self.status = self.SESSION_STATUS_CLOSED
 
         super().save(*args, **kwargs)
 
+
+        if old_spot and old_spot != self.spot:
+            old_spot.is_occupied = False
+            old_spot.save(update_fields=["is_occupied"])
+
+
+        if is_new:
+            self.spot.is_occupied = True
+            self.spot.save(update_fields=["is_occupied"])
+
+
+        if self.exit_time and old_exit is None:
+            self.spot.is_occupied = False
+            self.spot.save(update_fields=["is_occupied"])
+
+            if not Payment.objects.filter(session=self).exists():
+                Payment.objects.create(
+                    session=self,
+                    amount=self.calculated_fee,
+                    payment_status=Payment.PAYMENT_STATUS_OPEN,
+                )
+
+        try_create_receipt(self)
+
+
     def __str__(self):
-        return f"سشن #{self.id} - {self.vehicle.plate_number}"
-    
+        vehicle_plate = self.vehicle.plate_number if self.vehicle else "نامشخص"
+
+        return f"پلاک: {vehicle_plate} \n مالک: {self.vehicle.owner_name}"
+
+
+
+
+def try_create_receipt(session):
+    if not session:
+        return
+
+    if session.status != ParkingSession.SESSION_STATUS_CLOSED or not session.exit_time:
+        return
+
+    if Receipt.objects.filter(session=session).exists():
+        return
+
+    payment = Payment.objects.filter(
+        session=session,
+        payment_status=Payment.PAYMENT_STATUS_CLOSED
+    ).order_by("-payment_time").first()
+
+    if not payment:
+        return
+
+    receipt_number = timezone.now().strftime("%H%M%S")
+
+    Receipt.objects.create(
+        session=session,
+        payment=payment,
+        calculated_fee=payment.amount,
+        receipt_number=receipt_number,
+    )
+
