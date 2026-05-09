@@ -1,6 +1,5 @@
 import math
 from decimal import Decimal
-
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
@@ -184,7 +183,7 @@ class Payment(models.Model):
         (PAYMENT_STATUS_CANCELLED, 'لغو شده'),
     ]
 
-    amount = models.DecimalField('مقدار', max_digits=10, decimal_places=2)
+    amount = models.DecimalField('مقدار', max_digits=10, decimal_places=2, blank=True)
     payment_time = models.DateTimeField('زمان پرداخت', auto_now_add=True)
     payment_method = models.CharField(
         'نحوه پرداخت',
@@ -202,10 +201,11 @@ class Payment(models.Model):
 
     session = models.ForeignKey(
         'ParkingSession',
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         related_name='payments',
         verbose_name='سشن پارک',
-        null=True
+        null=True,
+        blank=True,
     )
 
     class Meta:
@@ -219,33 +219,21 @@ class Payment(models.Model):
     def save(self, *args, **kwargs):
         if self.payment_method and self.payment_status == Payment.PAYMENT_STATUS_OPEN:
             self.payment_status = Payment.PAYMENT_STATUS_CLOSED
+
+        if self.payment_method and self.session:
+            self.amount = self.session.calculated_fee            
         super().save(*args, **kwargs)
 
-        if self.session:
-            try_create_receipt(self.session)
-
-
+        try_create_receipt(self.session)
 
 
 class Receipt(models.Model):
-
-    archived_vehicle_plate = models.CharField("شماره پلاک آرشیوی", max_length=20, blank=True, null=True)
-    archived_spot_code = models.CharField("کد جایگاه آرشیوی", max_length=50, blank=True, null=True)
-
-    archived_entry_time = models.DateTimeField("زمان ورود آرشیوی", null=True, blank=True)
-    archived_exit_time = models.DateTimeField("زمان خروج آرشیوی", null=True, blank=True)
-
-    archived_payment_method = models.CharField("روش پرداخت آرشیوی", max_length=50, blank=True, null=True)
-    archived_payment_status = models.CharField("وضعیت پرداخت آرشیوی", max_length=20, blank=True, null=True)
-
     issue_time = models.DateTimeField('زمان صدور رسید', default=timezone.now)
-    receipt_number = models.CharField(
-        'شماره رسید',
-        max_length=50,
-        unique=True,
-        editable=False,
-        blank=True
-    )
+    receipt_number = models.CharField('شماره رسید',
+     max_length=50, 
+     unique=True,
+     editable=False,
+     blank=True)
     
     calculated_fee = models.DecimalField(
         'مبلغ روی رسید',
@@ -260,13 +248,13 @@ class Receipt(models.Model):
         on_delete=models.SET_NULL,
         related_name='receipt',
         verbose_name='سشن پارک',
-        null=True
+        null=True,
     )
 
     payment = models.OneToOneField(
         Payment,
         on_delete=models.SET_NULL,
-        related_name='receipt',
+        related_name='receipt',  
         verbose_name='پرداخت',
         null=True,
         blank=True,
@@ -276,7 +264,7 @@ class Receipt(models.Model):
         'متن رسید',
         blank=True,
         null=True,
-        help_text='متن آماده چاپ شامل زمان ورود و خروج، کد جایگاه، شماره پلاک، شماره رسید، روش پرداخت و هزینه',
+        help_text='متن آماده چاپ شامل زمان ورود و خروج، کد جایگا،شماره پلاک،شماره رسید،روش پرداخت و هزینه',
     )
 
     class Meta:
@@ -285,67 +273,88 @@ class Receipt(models.Model):
         ordering = ['-issue_time']
 
     def __str__(self):
-        return f"رسید #{self.receipt_number}"
+        return f"رسید #{self.receipt_number} - سشن {self.session_id}"
 
     def generate_receipt_number(self):
-        return timezone.now().strftime("%H%M%S")
+        
+        local_time = timezone.localtime(timezone.now())
+        return local_time.strftime("%H%M%S")
+
+
+
+
+
 
     def generate_content(self):
-        entry = self.archived_entry_time
-        exit_time = self.archived_exit_time
+        session = self.session
 
-        entry_str = entry.strftime('%Y-%m-%d %H:%M') if entry else "نامشخص"
-        exit_str = exit_time.strftime('%Y-%m-%d %H:%M') if exit_time else "نامشخص"
+        if not session:
+            lines = [
+                f"شماره رسید: {self.receipt_number}",
+                f"سشن: حذف شده",
+                f"وضعیت پرداخت: {self.payment.get_payment_status_display() if self.payment else 'حذف شده'}",
+                f"مبلغ قابل پرداخت: {self.calculated_fee or 'نامشخص'} تومان",
+                f"روش پرداخت: {self.payment.get_payment_method_display() if self.payment else 'حذف شده'}",
+            ]
+            return "\n".join(lines)
+
+        vehicle_plate = session.vehicle.plate_number if session.vehicle else "نامشخص"
+        spot_code = session.spot.code if session.spot else "نامشخص"
+
+        entry = session.entry_time
+        exit_time = session.exit_time
+
+        if entry:
+            entry_local = timezone.localtime(entry)
+            entry_str = entry_local.strftime('%Y-%m-%d %H:%M')
+        else:
+            entry_str = 'نامشخص'
+
+        if exit_time:
+            exit_local = timezone.localtime(exit_time)
+            exit_str = exit_local.strftime('%Y-%m-%d %H:%M')
+        else:
+            exit_str = 'نامشخص'
+
+        fee = (self.calculated_fee or session.calculated_fee or Decimal("0.00"))
+
+        payment_method = (self.payment.get_payment_method_display() if self.payment else 'حذف شده')
+        payment_status = (self.payment.get_payment_status_display() if self.payment else 'حذف شده')
 
         lines = [
-            f"شماره رسید: {self.receipt_number}",
             f"زمان ورود: {entry_str}",
             f"زمان خروج: {exit_str}",
-            f"شماره پلاک: {self.archived_vehicle_plate or 'نامشخص'}",
-            f"کد جایگاه: {self.archived_spot_code or 'نامشخص'}",
-            f"وضعیت پرداخت: {self.archived_payment_status or 'پرداخت حذف شده'}",
-            f"روش پرداخت: {self.archived_payment_method or 'پرداخت حذف شده'}",
-            f"مبلغ قابل پرداخت: {self.calculated_fee} تومان",
+            f"شماره رسید: {self.receipt_number}",
+            f"شماره پلاک: {vehicle_plate}",
+            f"کد جایگاه: {spot_code}",
+            f"وضعیت پرداخت: {payment_status}",
+            f"مبلغ قابل پرداخت: {fee} تومان",
+            f"روش پرداخت: {payment_method}",
         ]
-
-        if not self.session:
-            lines.append("سشن: حذف شده")
-
-        if not self.payment:
-            lines.append("پرداخت: حذف شده")
 
         return "\n".join(lines)
 
 
     def save(self, *args, **kwargs):
         session = self.session
-        payment = self.payment
 
         if self.calculated_fee is None:
             if session and session.calculated_fee is not None:
                 self.calculated_fee = session.calculated_fee
+
             elif session:
                 self.calculated_fee = session.calculate_fee()
+
             else:
                 self.calculated_fee = Decimal("0.00")
 
-        if session:
-            self.archived_vehicle_plate = session.vehicle.plate_number if session.vehicle else "نامشخص"
-            self.archived_spot_code = session.spot.code if session.spot else "نامشخص"
-            self.archived_entry_time = session.entry_time
-            self.archived_exit_time = session.exit_time
-
-        if payment:
-            self.archived_payment_method = payment.get_payment_method_display()
-            self.archived_payment_status = payment.get_payment_status_display()
+        if not self.content:
+            self.content = self.generate_content()
 
         if not self.receipt_number:
-            self.receipt_number = self.generate_receipt_number()
-
-        self.content = self.generate_content()
+            self.receipt_number = self.generate_receipt_number()     
 
         super().save(*args, **kwargs)
-
 
 class ParkingSession(models.Model):
     SESSION_STATUS_OPEN = 'open'
@@ -484,31 +493,200 @@ class ParkingSession(models.Model):
 
 
 
-
 def try_create_receipt(session):
-    if not session:
-        return
+    local_time = timezone.localtime(timezone.now())
 
     if session.status != ParkingSession.SESSION_STATUS_CLOSED or not session.exit_time:
         return
 
-    if Receipt.objects.filter(session=session).exists():
-        return
-
-    payment = Payment.objects.filter(
-        session=session,
-        payment_status=Payment.PAYMENT_STATUS_CLOSED
-    ).order_by("-payment_time").first()
+    payment = (
+        Payment.objects
+        .filter(session=session, payment_status=Payment.PAYMENT_STATUS_CLOSED)
+        .order_by("-payment_time")
+        .first()
+    )
 
     if not payment:
         return
 
-    receipt_number = timezone.now().strftime("%H%M%S")
-
-    Receipt.objects.create(
+    receipt, created = Receipt.objects.get_or_create(
         session=session,
-        payment=payment,
-        calculated_fee=payment.amount,
-        receipt_number=receipt_number,
+        defaults={
+            "payment": payment,
+            "calculated_fee": payment.amount or session.calculated_fee or Decimal("0.00"),
+            "receipt_number": local_time.strftime("%H%M%S"),
+        },
     )
 
+    if not created:
+        receipt.payment = payment
+
+        if payment.amount is not None:
+            receipt.calculated_fee = payment.amount
+        elif session.calculated_fee is not None:
+            receipt.calculated_fee = session.calculated_fee
+        else:
+            receipt.calculated_fee = Decimal("0.00")
+
+    receipt.content = receipt.generate_content()
+
+    if not receipt.receipt_number:
+        receipt.receipt_number = local_time.strftime("%H%M%S")
+
+
+    receipt.save()
+
+
+
+
+#History Models
+
+class ParkingSessionHistory(models.Model):
+    original_id = models.IntegerField('شناسه اصلی سشن')
+
+    vehicle = models.ForeignKey(
+        'Vehicle',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='وسیله نقلیه',
+    )
+    parking_lot = models.ForeignKey(
+        'ParkingLot',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='پارکینگ',
+    )
+    parking_spot = models.ForeignKey(
+        'ParkingSpot',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='جای پارک',
+    )
+    entry_time = models.DateTimeField(verbose_name='زمان ورود')
+    exit_time = models.DateTimeField(null=True, blank=True, verbose_name='زمان خروج')
+    status = models.CharField(max_length=20, verbose_name='وضعیت')
+    calculated_fee = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='هزینه محاسبه‌شده',
+    )
+
+    deleted_at = models.DateTimeField(default=timezone.now, verbose_name='زمان حذف')
+    deleted_by = models.CharField(
+        max_length=150,
+        null=True,
+        blank=True,
+        verbose_name='حذف شده توسط',
+    )
+
+    class Meta:
+        verbose_name = 'تاریخچه سشن پارک'
+        verbose_name_plural = 'تاریخچه سشن‌های پارک'
+
+    def __str__(self):
+        return f'History of session {self.original_id} at {self.deleted_at}'
+
+
+
+class PaymentHistory(models.Model):
+    original_id = models.IntegerField("شناسه اصلی پرداخت")  
+
+    amount = models.DecimalField('مقدار', max_digits=10, decimal_places=2, blank=True)
+    payment_time = models.DateTimeField('زمان پرداخت')
+    payment_method = models.CharField(
+        'نحوه پرداخت',
+        max_length=50,
+        choices=Payment.PAYMENT_METHOD_CHOICES,
+        null=True,
+        blank=True,
+    )
+    payment_status = models.CharField(
+        'وضعیت پرداخت',
+        max_length=20,
+        choices=Payment.PAYMENT_STATUS_CHOICES,
+    )
+
+    session = models.ForeignKey(
+        'ParkingSession',
+        on_delete=models.SET_NULL,
+        related_name='payment_histories',
+        verbose_name='سشن پارک',
+        null=True,
+        blank=True,
+    )
+
+    deleted_at = models.DateTimeField('زمان حذف', default=timezone.now)
+    deleted_by = models.CharField(
+        'حذف توسط',
+        max_length=150,
+        null=True,
+        blank=True,
+        help_text='نام کاربری فردی که پرداخت را حذف کرده است',
+    )
+
+    class Meta:
+        verbose_name = 'تاریخچه پرداخت'
+        verbose_name_plural = 'تاریخچه پرداخت‌ها'
+        ordering = ['-deleted_at']
+
+    def __str__(self):
+        return f"History of payment #{self.original_id}"
+
+
+class ReceiptHistory(models.Model):
+    original_id = models.IntegerField("شناسه اصلی رسید")
+
+    issue_time = models.DateTimeField('زمان صدور رسید')
+    receipt_number = models.CharField('شماره رسید', max_length=50)
+    calculated_fee = models.DecimalField(
+        'مبلغ روی رسید',
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+
+    session = models.ForeignKey(
+        'ParkingSession',
+        on_delete=models.SET_NULL,
+        related_name='receipt_histories',
+        verbose_name='سشن پارک',
+        null=True,
+        blank=True,
+    )
+
+    payment = models.ForeignKey(
+        Payment,
+        on_delete=models.SET_NULL,
+        related_name='receipt_histories',
+        verbose_name='پرداخت',
+        null=True,
+        blank=True,
+    )
+
+    content = models.TextField(
+        'متن رسید',
+        blank=True,
+        null=True,
+    )
+
+    deleted_at = models.DateTimeField('زمان حذف', default=timezone.now)
+    deleted_by = models.CharField(
+        'حذف توسط',
+        max_length=150,
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        verbose_name = 'تاریخچه رسید'
+        verbose_name_plural = 'تاریخچه رسیدها'
+        ordering = ['-deleted_at']
+
+    def __str__(self):
+        return f"History of receipt #{self.receipt_number} (orig_id={self.original_id})"
