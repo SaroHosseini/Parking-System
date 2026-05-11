@@ -148,6 +148,13 @@ class Tariff(models.Model):
         max_digits=10,
         decimal_places=2,
     )
+    daily_price = models.DecimalField(
+    "هزینه شبانه‌روزی",
+    max_digits=10,
+    decimal_places=2,
+    default=Decimal("0.00"),
+    help_text="هزینه توقف کامل ۲۴ ساعته"
+    )
     is_active = models.BooleanField("فعال", default=True)
 
     class Meta:
@@ -276,13 +283,9 @@ class Receipt(models.Model):
         return f"رسید #{self.receipt_number} - سشن {self.session_id}"
 
     def generate_receipt_number(self):
-        
         local_time = timezone.localtime(timezone.now())
-        return local_time.strftime("%H%M%S")
-
-
-
-
+        milliseconds = local_time.microsecond // 1000
+        return local_time.strftime("%y%m%d%H%M%S") + f"{milliseconds:03d}"
 
 
     def generate_content(self):
@@ -348,11 +351,12 @@ class Receipt(models.Model):
             else:
                 self.calculated_fee = Decimal("0.00")
 
+        if not self.receipt_number:
+            self.receipt_number = self.generate_receipt_number()     
+
         if not self.content:
             self.content = self.generate_content()
 
-        if not self.receipt_number:
-            self.receipt_number = self.generate_receipt_number()     
 
         super().save(*args, **kwargs)
 
@@ -430,13 +434,24 @@ class ParkingSession(models.Model):
 
         total_hours = math.ceil(self.total_duration_minutes / 60)
 
-        if total_hours <= 1:
-            return tariff.first_hour_price
+        full_days = total_hours // 24
+        remaining_hours = total_hours % 24
 
-        extra_hours = total_hours - 1
-        return tariff.first_hour_price + (
-            Decimal(extra_hours) * tariff.additional_hour_price
-        )
+        total_fee = Decimal("0.00")
+
+        if full_days > 0:
+            total_fee += Decimal(full_days) * tariff.daily_price
+
+        if remaining_hours == 0:
+            return total_fee
+
+        if remaining_hours <= 1:
+            total_fee += tariff.first_hour_price
+        else:
+            total_fee += tariff.first_hour_price
+            total_fee += Decimal(remaining_hours - 1) * tariff.additional_hour_price
+
+        return total_fee
 
 
     def save(self, *args, **kwargs):
@@ -514,8 +529,7 @@ def try_create_receipt(session):
         defaults={
             "payment": payment,
             "calculated_fee": payment.amount or session.calculated_fee or Decimal("0.00"),
-            "receipt_number": local_time.strftime("%H%M%S"),
-        },
+        }
     )
 
     if not created:
@@ -529,14 +543,7 @@ def try_create_receipt(session):
             receipt.calculated_fee = Decimal("0.00")
 
     receipt.content = receipt.generate_content()
-
-    if not receipt.receipt_number:
-        receipt.receipt_number = local_time.strftime("%H%M%S")
-
-
     receipt.save()
-
-
 
 
 #History Models
