@@ -1,6 +1,7 @@
 import math
 from decimal import Decimal
 from django.db import models
+from django.db.models import Q
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
@@ -410,7 +411,13 @@ class ParkingSession(models.Model):
         verbose_name = "سشن پارک"
         verbose_name_plural = "سشن‌های پارک"
         ordering = ['-entry_time']
-
+        constraints = [
+            models.UniqueConstraint(
+                fields=['vehicle'],
+                condition=Q(status='open'),
+                name='unique_open_session_per_vehicle'
+            )
+        ]
     def calculate_duration(self):
         if self.entry_time and self.exit_time:
             duration = self.exit_time - self.entry_time
@@ -468,7 +475,17 @@ class ParkingSession(models.Model):
         if is_new and self.spot.is_occupied:
             raise ValidationError(f"جایگاه {self.spot.code} در حال حاضر اشغال است!")
 
+        if self.status == self.SESSION_STATUS_OPEN:
+            open_session_exists = ParkingSession.objects.filter(
+                vehicle=self.vehicle,
+                status=self.SESSION_STATUS_OPEN
+            ).exclude(pk=self.pk).exists()
 
+            if open_session_exists:
+                raise ValidationError(
+                    f"برای خودروی {self.vehicle.plate_number} یک سشن باز دیگر وجود دارد!"
+                )
+            
         if self.exit_time and old_exit is None:
             self.total_duration_minutes = self.calculate_duration()
             self.calculated_fee = self.calculate_fee()
@@ -509,7 +526,6 @@ class ParkingSession(models.Model):
 
 
 def try_create_receipt(session):
-    local_time = timezone.localtime(timezone.now())
 
     if session.status != ParkingSession.SESSION_STATUS_CLOSED or not session.exit_time:
         return
