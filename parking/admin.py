@@ -3,12 +3,13 @@ from . import models
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
+
 @admin.register(models.Vehicle)
 class VehicleAdmin(admin.ModelAdmin):
     list_per_page = 20
     list_display = ['id', 'plate_number_display', 'owner_name', 'owner_phone', 'type', 'color']
     list_filter = ['type', 'color']
-    search_fields = ['plate_number', 'owner_name__istartwith', 'owner_phone']
+    search_fields = ['plate_number', 'owner_name__istartswith', 'owner_phone']
 
     def plate_number_display(self, obj):
         return format_html("<span style='direction:rtl; unicode-bidi:embed;'>{}</span>", obj.plate_number)
@@ -19,7 +20,7 @@ class VehicleAdmin(admin.ModelAdmin):
 class ParkingSpotInline(admin.TabularInline):
     model = models.ParkingSpot
     extra = 2
-    fields = ['code', 'level', 'is_active', 'is_occupied']
+    fields = ['code', 'level', 'is_occupied']
     readonly_fields = ['is_occupied']
 
 
@@ -53,10 +54,6 @@ class ParkingSessionAdmin(admin.ModelAdmin):
         'total_duration_minutes', 'status',
         'vehicle_preview', 'spot', 'calculated_fee'
     ]
-    list_filter = ['status', 'spot__parking_lot', 'vehicle__type']
-    list_select_related = ['vehicle', 'spot', 'spot__parking_lot']
-    search_fields = ['vehicle__plate_number', 'vehicle__owner_name', 'spot__code']
-    readonly_fields = ['total_duration_minutes', 'calculated_fee']
 
     def vehicle_preview(self, obj):
         text = obj.__str__().replace("\n", "<br>")
@@ -91,3 +88,16 @@ class ReceiptAdmin(admin.ModelAdmin):
     def content(self, obj):
         return obj.generate_content()
     content.short_description = "متن رسید"
+
+#History Models    
+@admin.register(models.ParkingSessionHistory)
+class ParkingSessionHistoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'original_id', 'vehicle', 'parking_lot', 'parking_spot', 'deleted_at')
+
+@admin.register(models.PaymentHistory)
+class PaymentHistoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'original_id', 'amount', 'payment_time', 'deleted_at')
+
+@admin.register(models.ReceiptHistory)
+class ReceiptHistoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'original_id', 'receipt_number', 'deleted_at')
