@@ -3,7 +3,6 @@ from . import models
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
-
 @admin.register(models.Vehicle)
 class VehicleAdmin(admin.ModelAdmin):
     list_per_page = 20
@@ -54,14 +53,17 @@ class ParkingSessionAdmin(admin.ModelAdmin):
         'total_duration_minutes', 'status',
         'vehicle_preview', 'spot', 'calculated_fee'
     ]
+    list_filter = ['status', 'spot__parking_lot', 'vehicle__type']
+    search_fields = ['vehicle__plate_number', 'vehicle__owner_name', 'spot__code']
+    readonly_fields = ['total_duration_minutes', 'calculated_fee']
+    list_select_related = ['vehicle', 'spot', 'spot__parking_lot']
 
     def vehicle_preview(self, obj):
         text = obj.__str__().replace("\n", "<br>")
         return mark_safe(text)
 
-    vehicle_preview.short_description = 'وسیله نقلیه'   
-
-
+    vehicle_preview.short_description = 'وسیله نقلیه'
+    
 @admin.register(models.Payment)
 class PaymentAdmin(admin.ModelAdmin):
     list_per_page = 15

@@ -1,4 +1,3 @@
-> Saro hoseini:
 # Parking Management System
 
 A Django-based parking management system designed for managing public parking lots. This project is currently focused on the core backend structure, Django models, business logic, and Django Admin panel.
@@ -195,6 +194,8 @@ Create a file named .env in the project root and add the following variables:
 
     http://127.0.0.1:8000/admin/
 
-## Project Status
+## Author
 
-This project is under development. The current focus is building a stable parking management backend and admin panel before moving to views, templates, reports, APIs, and deployment.
+Group Members: SaroHosseini,Ali Azarang, Mani Lotfolahnasabi
+Course: Software Engneering   
+Project: Parking System
