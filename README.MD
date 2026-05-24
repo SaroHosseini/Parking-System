@@ -37,6 +37,11 @@ The project is being developed step by step, starting with the core management p
 - Admin filters, search fields, pagination, and editable fields
 - Admin display customization for plate numbers and receipt previews
 - Admin site header and index title customization
+- Inline parking spot management inside parking lots
+- Parking session admin filters and search
+- Payment admin filters, search, and read-only fields
+- Receipt admin filters, search, read-only fields, and preview display
+- History models registered in the Django Admin panel
 
 ## Main Models
 
@@ -80,21 +85,22 @@ These models keep important deleted data for tracking and audit purposes.
 
 ## Admin Panel
 
-The Django Admin panel has been customized to make the system easier to manage.
+The Django Admin panel has been customized and completed for the current development phase.
 
 Current admin improvements include:
 
-- Custom list displays
-- Search fields
-- Filters
-- Pagination
-- Editable fields
-- Read-only calculated fields
+- Custom list displays for all main models
+- Search fields for vehicles, parking spots, sessions, payments, and receipts
+- Filters for vehicle type, spot status, session status, payment status, and receipt information
+- Pagination for large admin lists
+- Editable tariff and payment fields where appropriate
+- Read-only calculated fields such as duration, calculated fee, payment amount, receipt number, and receipt content
 - Inline parking spot management inside parking lots
 - Formatted Persian plate display
+- Vehicle preview display inside parking sessions
 - Receipt preview display
-- History model registration
-- Custom admin header and index title
+- History model registration for deleted sessions, payments, and receipts
+- Custom admin site header and index title
 
 ## Business Logic
 
@@ -120,12 +126,12 @@ The system includes several automatic business rules:
 
 ## Current Development Status
 
-> Saro hoseini:
 The project currently includes the main backend models, core business logic, delete history tracking, and a customized Django Admin panel.
+
+The Django Admin panel is completed for the current development phase and can be used to manage vehicles, parking lots, parking spots, tariffs, parking sessions, payments, receipts, and deleted-record history.
 
 The next development steps are:
 
-- Improving the Django Admin panel
 - Adding dashboard views
 - Adding basic Django views and templates
 - Adding reports
@@ -196,6 +202,6 @@ Create a file named .env in the project root and add the following variables:
 
 ## Author
 
-Group Members: SaroHosseini,Ali Azarang, Mani Lotfolahnasabi
-Course: Software Engneering   
-Project: Parking System
+- Group Members: SaroHosseini, Ali Azarang, Mani Lotfolahnasabi
+- Course: Software Engineering
+- Project: Parking System
