@@ -67,29 +67,84 @@ class ParkingSessionAdmin(admin.ModelAdmin):
 @admin.register(models.Payment)
 class PaymentAdmin(admin.ModelAdmin):
     list_per_page = 15
-    list_display = ['id', 'amount', 'payment_time', 'payment_method',
-                    'payment_status', 'session']  
-             
+
+    list_display = [
+        'id',
+        'amount',
+        'payment_time',
+        'payment_method',
+        'payment_status',
+        'session',
+    ]
+
     list_editable = ['payment_method', 'payment_status']
-    list_filter = ['payment_method', 'payment_status']
-    list_select_related = ['session', 'session__vehicle']
+
+    list_filter = [
+        'payment_method',
+        'payment_status',
+        'payment_time',
+    ]
+
+    search_fields = [
+        'session__vehicle__plate_number',
+        'session__vehicle__owner_name',
+        'session__vehicle__owner_phone',
+    ]
+
+    readonly_fields = [
+        'amount',
+        'payment_time',
+    ]
+
+    list_select_related = [
+        'session',
+        'session__vehicle',
+    ]
 
 @admin.register(models.Receipt)
 class ReceiptAdmin(admin.ModelAdmin):
-    list_display = ['receipt_number', 'issue_time', 'session', 'payment', 'receipt_preview']
-    list_select_related = ['payment', 'session__vehicle']
-    readonly_fields = ['receipt_number', 'content', 'issue_time']
-    search_fields = ['receipt_number', 'session__vehicle__plate_number']
+    list_per_page = 15
+
+    list_display = [
+        'receipt_number',
+        'issue_time',
+        'session',
+        'payment',
+        'receipt_preview',
+    ]
+
+    list_filter = [
+        'issue_time',
+        'payment__payment_method',
+        'payment__payment_status',
+    ]
+
+    search_fields = [
+        'receipt_number',
+        'session__vehicle__plate_number',
+        'session__vehicle__owner_name',
+        'payment__payment_method',
+    ]
+
+    readonly_fields = [
+        'receipt_number',
+        'issue_time',
+        'calculated_fee',
+        'content',
+        'receipt_preview',
+    ]
+
+    list_select_related = [
+        'payment',
+        'session',
+        'session__vehicle',
+    ]
 
     def receipt_preview(self, obj):
         text = obj.generate_content().replace("\n", "<br>")
         return mark_safe(text)
 
     receipt_preview.short_description = "متن رسید"
-
-    def content(self, obj):
-        return obj.generate_content()
-    content.short_description = "متن رسید"
 
 #History Models    
 @admin.register(models.ParkingSessionHistory)
