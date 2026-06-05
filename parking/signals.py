@@ -31,6 +31,15 @@ def save_parking_session_history(sender, instance, **kwargs):
         deleted_at=local_now(),
     )
 
+    if instance.spot:
+        other_open_session_exists = ParkingSession.objects.filter(
+            spot=instance.spot,
+            status=ParkingSession.SESSION_STATUS_OPEN
+        ).exclude(pk=instance.pk).exists()
+
+        if not other_open_session_exists:
+            instance.spot.is_occupied = False
+            instance.spot.save(update_fields=["is_occupied"])
 
 @receiver(pre_delete, sender=Payment)
 def save_payment_history(sender, instance, **kwargs):
