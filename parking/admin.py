@@ -21,6 +21,7 @@ class CustomerAdmin(admin.ModelAdmin):
     list_filter = ['status', 'is_active', 'created_at']
     search_fields = ['name', 'owner_name', 'phone', 'email']
     readonly_fields = ['created_at', 'approved_at']
+    list_editable = ['status']
 
 
 @admin.register(models.CustomerUser)
