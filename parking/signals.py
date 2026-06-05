@@ -1,6 +1,7 @@
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.utils import timezone
+
 from .models import (
     ParkingSession,
     Payment,
@@ -10,6 +11,7 @@ from .models import (
     ReceiptHistory,
 )
 
+
 def local_now():
     return timezone.localtime(timezone.now())
 
@@ -18,6 +20,7 @@ def local_now():
 def save_parking_session_history(sender, instance, **kwargs):
     ParkingSessionHistory.objects.create(
         original_id=instance.id,
+        customer=instance.vehicle.customer if instance.vehicle else None,
         vehicle=instance.vehicle,
         parking_lot=instance.spot.parking_lot if instance.spot else None,
         parking_spot=instance.spot if instance.spot else None,
@@ -26,30 +29,28 @@ def save_parking_session_history(sender, instance, **kwargs):
         status=instance.status,
         calculated_fee=instance.calculated_fee,
         deleted_at=local_now(),
-        # deleted_by will be added later
     )
 
 
 @receiver(pre_delete, sender=Payment)
 def save_payment_history(sender, instance, **kwargs):
-
     PaymentHistory.objects.create(
         original_id=instance.id,
+        customer=instance.session.vehicle.customer if instance.session and instance.session.vehicle else None,
         amount=instance.amount,
         payment_time=instance.payment_time,
         payment_method=instance.payment_method,
         payment_status=instance.payment_status,
         session=instance.session,
         deleted_at=local_now(),
-        # deleted_by will be added later
     )
 
 
 @receiver(pre_delete, sender=Receipt)
 def save_receipt_history(sender, instance, **kwargs):
-
     ReceiptHistory.objects.create(
         original_id=instance.id,
+        customer=instance.session.vehicle.customer if instance.session and instance.session.vehicle else None,
         issue_time=instance.issue_time,
         receipt_number=instance.receipt_number,
         calculated_fee=instance.calculated_fee,
@@ -57,5 +58,4 @@ def save_receipt_history(sender, instance, **kwargs):
         payment=instance.payment,
         content=instance.content,
         deleted_at=local_now(),
-        # deleted_by will be added later
     )
