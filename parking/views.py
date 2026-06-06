@@ -19,42 +19,67 @@ def get_user_customer(user):
     except CustomerUser.DoesNotExist:
         return None
 
-    if not profile.is_active or not profile.customer.is_active:
+    if not profile.is_active:
+        return None
+
+    if not profile.customer.is_active:
         return None
 
     return profile.customer
 
 
 def dashboard(request):
-    customer = get_user_customer(request.user)
-
     if not request.user.is_authenticated:
-        return redirect('parking:customer_request')
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
 
     if not request.user.is_superuser and customer is None:
         return redirect('parking:customer_request')
 
     today = timezone.localdate()
 
-    spots = ParkingSpot.objects.all()
+    spots = ParkingSpot.objects.select_related(
+        'parking_lot',
+        'parking_lot__customer',
+    )
+
     sessions = ParkingSession.objects.select_related(
         'vehicle',
+        'vehicle__customer',
         'spot',
         'spot__parking_lot',
+        'spot__parking_lot__customer',
     )
+
     payments = Payment.objects.select_related(
         'session',
         'session__vehicle',
+        'session__vehicle__customer',
     )
 
     if customer:
-        spots = spots.filter(parking_lot__customer=customer)
-        sessions = sessions.filter(vehicle__customer=customer)
-        payments = payments.filter(session__vehicle__customer=customer)
+        spots = spots.filter(
+            parking_lot__customer=customer
+        )
+
+        sessions = sessions.filter(
+            vehicle__customer=customer
+        )
+
+        payments = payments.filter(
+            session__vehicle__customer=customer
+        )
 
     total_spots = spots.count()
-    occupied_spots = spots.filter(is_occupied=True).count()
-    available_spots = spots.filter(is_occupied=False).count()
+
+    occupied_spots = spots.filter(
+        is_occupied=True
+    ).count()
+
+    available_spots = spots.filter(
+        is_occupied=False
+    ).count()
 
     open_sessions = sessions.filter(
         status=ParkingSession.SESSION_STATUS_OPEN
@@ -67,7 +92,9 @@ def dashboard(request):
     today_income = payments.filter(
         payment_status=Payment.PAYMENT_STATUS_CLOSED,
         payment_time__date=today
-    ).aggregate(total=Sum('amount'))['total'] or 0
+    ).aggregate(
+        total=Sum('amount')
+    )['total'] or 0
 
     active_sessions = sessions.filter(
         status=ParkingSession.SESSION_STATUS_OPEN
