@@ -4,7 +4,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
 
-from .models import Customer, CustomerUser, Vehicle
+from .models import Customer, CustomerUser, Vehicle, ParkingLot
 
 
 class CustomerRequestForm(forms.ModelForm):
@@ -118,6 +118,15 @@ class VehicleForm(forms.ModelForm):
             'color': 'رنگ',
         }
 
+class ParkingLotForm(forms.ModelForm):
+    class Meta:
+        model = ParkingLot
+        fields = ['name', 'total_capacity']
+
+        labels = {
+            'name': 'نام پارکینگ',
+            'total_capacity': 'ظرفیت کل',
+        }
 
 class CustomerLoginForm(AuthenticationForm):
     def confirm_login_allowed(self, user):
