@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>داشبورد مدیریت پارکینگ</title>
-</head>
-<body>
+{% extends 'parking/base_dashboard.html' %}
+
+{% block title %}داشبورد مدیریت پارکینگ{% endblock %}
+
+{% block content %}
     <h1>داشبورد مدیریت پارکینگ</h1>
 
     {% if customer %}
@@ -12,6 +10,8 @@
     {% else %}
         <p>نمای کلی سیستم برای مدیر اصلی</p>
     {% endif %}
+
+    <p>کاربر وارد شده: {{ request.user.username }}</p>
 
     <hr>
 
@@ -59,11 +59,4 @@
             {% endfor %}
         </tbody>
     </table>
-
-    <hr>
-
-    <a href="/admin/">ورود به پنل ادمین</a>
-    |
-    <a href="/">فرم درخواست استفاده</a>
-</body>
-</html>
+{% endblock %}
