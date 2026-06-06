@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Parkino Dashboard{% endblock %}</title>
+</head>
+<body>
+    <aside>
+        <h2>Parkino</h2>
+
+        <ul>
+            <li><a href="{% url 'parking:dashboard' %}">داشبورد</a></li>
+            <li><a href="{% url 'parking:vehicle_list' %}">مدیریت وسایل نقلیه</a></li>
+        </ul>
+
+        <form method="post" action="{% url 'parking:logout' %}">
+            {% csrf_token %}
+            <button type="submit">خروج</button>
+        </form>
+    </aside>
+
+    <hr>
+
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+</body>
+</html>
