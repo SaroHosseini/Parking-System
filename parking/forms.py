@@ -2,8 +2,9 @@ import re
 
 from django import forms
 from django.contrib.auth.models import User
+from django.contrib.auth.forms import AuthenticationForm
 
-from .models import Customer, Vehicle
+from .models import Customer, CustomerUser, Vehicle
 
 
 class CustomerRequestForm(forms.ModelForm):
@@ -40,19 +41,6 @@ class CustomerRequestForm(forms.ModelForm):
             'address': 'آدرس پارکینگ',
         }
 
-class VehicleForm(forms.ModelForm):
-    class Meta:
-        model = Vehicle
-        fields = ['plate_number', 'owner_name', 'owner_phone', 'type', 'color']
-
-        labels = {
-            'plate_number': 'شماره پلاک',
-            'owner_name': 'نام مالک',
-            'owner_phone': 'شماره تماس مالک',
-            'type': 'نوع وسیله',
-            'color': 'رنگ',
-        }        
-
     def clean_username(self):
         username = self.cleaned_data['username']
 
@@ -75,20 +63,6 @@ class VehicleForm(forms.ModelForm):
 
         return email
 
-    def clean_password(self):
-        password = self.cleaned_data.get('password')
-
-        if len(password) < 8:
-            raise forms.ValidationError('رمز عبور باید حداقل ۸ کاراکتر باشد.')
-
-        if not re.search(r'[A-Z]', password):
-            raise forms.ValidationError('رمز عبور باید حداقل یک حرف بزرگ انگلیسی داشته باشد.')
-
-        if not re.search(r'[0-9]', password):
-            raise forms.ValidationError('رمز عبور باید حداقل یک عدد داشته باشد.')
-
-        return password
-    
     def clean_phone(self):
         phone = self.cleaned_data.get('phone')
 
@@ -105,7 +79,20 @@ class VehicleForm(forms.ModelForm):
             raise forms.ValidationError('این شماره تماس قبلاً ثبت شده است.')
 
         return phone
-            
+
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+
+        if len(password) < 8:
+            raise forms.ValidationError('رمز عبور باید حداقل ۸ کاراکتر باشد.')
+
+        if not re.search(r'[A-Z]', password):
+            raise forms.ValidationError('رمز عبور باید حداقل یک حرف بزرگ انگلیسی داشته باشد.')
+
+        if not re.search(r'[0-9]', password):
+            raise forms.ValidationError('رمز عبور باید حداقل یک عدد داشته باشد.')
+
+        return password
 
     def clean(self):
         cleaned_data = super().clean()
@@ -117,3 +104,47 @@ class VehicleForm(forms.ModelForm):
             raise forms.ValidationError('رمز عبور و تکرار آن یکسان نیستند.')
 
         return cleaned_data
+
+class VehicleForm(forms.ModelForm):
+    class Meta:
+        model = Vehicle
+        fields = ['plate_number', 'owner_name', 'owner_phone', 'type', 'color']
+
+        labels = {
+            'plate_number': 'شماره پلاک',
+            'owner_name': 'نام مالک',
+            'owner_phone': 'شماره تماس مالک',
+            'type': 'نوع وسیله',
+            'color': 'رنگ',
+        }
+
+
+class CustomerLoginForm(AuthenticationForm):
+    def confirm_login_allowed(self, user):
+        super().confirm_login_allowed(user)
+
+        if user.is_superuser or user.is_staff:
+            raise forms.ValidationError(
+                'ورود مدیر سیستم از این صفحه مجاز نیست.',
+                code='admin_not_allowed'
+            )
+
+        try:
+            profile = user.customer_profile
+        except CustomerUser.DoesNotExist:
+            raise forms.ValidationError(
+                'برای این کاربر حساب مشتری تعریف نشده است.',
+                code='customer_profile_not_found'
+            )
+
+        if not profile.is_active:
+            raise forms.ValidationError(
+                'حساب کاربری شما غیرفعال است.',
+                code='customer_user_inactive'
+            )
+
+        if not profile.customer.is_active:
+            raise forms.ValidationError(
+                'درخواست شما هنوز توسط مدیر سیستم تأیید نشده است.',
+                code='customer_not_approved'
+            )

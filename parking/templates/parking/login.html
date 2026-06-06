@@ -9,6 +9,7 @@
 
     <form method="post">
         {% csrf_token %}
+
         {{ form.as_p }}
 
         <button type="submit">ورود</button>
@@ -16,6 +17,6 @@
 
     <hr>
 
-    <a href="/">بازگشت به فرم درخواست</a>
+    <a href="{% url 'parking:home' %}">بازگشت به صفحه اصلی</a>
 </body>
 </html>

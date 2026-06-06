@@ -38,9 +38,8 @@ def get_user_customer(user):
 
 
 def home(request):
-    if request.user.is_authenticated:
-        if request.user.is_superuser or get_user_customer(request.user):
-            return redirect('parking:dashboard')
+    if request.user.is_authenticated and get_user_customer(request.user):
+        return redirect('parking:dashboard')
 
     request_id = request.session.get('customer_request_id')
 
@@ -54,9 +53,12 @@ def dashboard(request):
     if not request.user.is_authenticated:
         return redirect('parking:login')
 
+    if request.user.is_superuser or request.user.is_staff:
+        return redirect('parking:home')
+
     customer = get_user_customer(request.user)
 
-    if not request.user.is_superuser and customer is None:
+    if customer is None:
         return redirect('parking:customer_request')
 
     today = timezone.localdate()

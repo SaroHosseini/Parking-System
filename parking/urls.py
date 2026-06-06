@@ -2,6 +2,7 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 
 from . import views
+from .forms import CustomerLoginForm
 
 app_name = 'parking'
 
@@ -12,7 +13,8 @@ urlpatterns = [
     path('request/status/', views.request_status_view, name='request_status'),
 
     path('login/', auth_views.LoginView.as_view(
-        template_name='parking/login.html'
+        template_name='parking/login.html',
+        authentication_form=CustomerLoginForm,
     ), name='login'),
 
     path('logout/', auth_views.LogoutView.as_view(
@@ -20,6 +22,7 @@ urlpatterns = [
     ), name='logout'),
 
     path('dashboard/', views.dashboard, name='dashboard'),
+
     path('vehicles/', views.vehicle_list, name='vehicle_list'),
     path('vehicles/add/', views.vehicle_create, name='vehicle_create'),
     path('vehicles/<int:pk>/edit/', views.vehicle_update, name='vehicle_update'),
