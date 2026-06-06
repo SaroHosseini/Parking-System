@@ -1,0 +1,45 @@
+{% extends 'parking/base_dashboard.html' %}
+
+{% block title %}مدیریت وسایل نقلیه{% endblock %}
+
+{% block content %}
+    <h1>مدیریت وسایل نقلیه</h1>
+
+    <p>مشتری: {{ customer.name }}</p>
+
+    <a href="{% url 'parking:vehicle_create' %}">ثبت وسیله نقلیه جدید</a>
+
+    <hr>
+
+    <table border="1" cellpadding="8">
+        <thead>
+            <tr>
+                <th>پلاک</th>
+                <th>مالک</th>
+                <th>شماره تماس</th>
+                <th>نوع وسیله</th>
+                <th>رنگ</th>
+                <th>عملیات</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for vehicle in vehicles %}
+                <tr>
+                    <td>{{ vehicle.plate_number }}</td>
+                    <td>{{ vehicle.owner_name }}</td>
+                    <td>{{ vehicle.owner_phone }}</td>
+                    <td>{{ vehicle.get_type_display }}</td>
+                    <td>{{ vehicle.color }}</td>
+                    <td>
+                        <a href="{% url 'parking:vehicle_update' vehicle.id %}">ویرایش</a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6">هنوز وسیله نقلیه‌ای ثبت نشده است.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
