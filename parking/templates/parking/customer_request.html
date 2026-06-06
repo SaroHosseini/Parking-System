@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>درخواست استفاده از سیستم</title>
+</head>
+<body>
+    <h1>فرم درخواست استفاده از سیستم مدیریت پارکینگ</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <button type="submit">ارسال درخواست</button>
+    </form>
+
+    <hr>
+
+    <a href="/admin/">ورود مدیر سیستم</a>
+</body>
+</html>

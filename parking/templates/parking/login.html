@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>ورود به سیستم</title>
+</head>
+<body>
+    <h1>ورود به سیستم مدیریت پارکینگ</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <button type="submit">ورود</button>
+    </form>
+
+    <hr>
+
+    <a href="/">بازگشت به فرم درخواست</a>
+</body>
+</html>

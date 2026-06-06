@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>وضعیت درخواست</title>
+</head>
+<body>
+    <h1>وضعیت درخواست شما</h1>
+
+    <p>نام مجموعه: {{ customer.name }}</p>
+    <p>وضعیت: {{ customer.get_status_display }}</p>
+
+    {% if customer.status == 'pending' %}
+        <p>درخواست شما ثبت شده و در انتظار بررسی مدیر سیستم است.</p>
+    {% elif customer.status == 'approved' %}
+        <p>درخواست شما تأیید شد. اکنون می‌توانید با نام کاربری و رمز عبور خود وارد شوید.</p>
+        <a href="{% url 'parking:login' %}">ورود به سیستم</a>
+    {% elif customer.status == 'rejected' %}
+        <p>درخواست شما رد شده است.</p>
+    {% endif %}
+</body>
+</html>

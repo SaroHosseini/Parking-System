@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>داشبورد مدیریت پارکینگ</title>
+</head>
+<body>
+    <h1>داشبورد مدیریت پارکینگ</h1>
+
+    {% if customer %}
+        <p>مشتری: {{ customer.name }}</p>
+    {% else %}
+        <p>نمای کلی سیستم برای مدیر اصلی</p>
+    {% endif %}
+
+    <hr>
+
+    <h2>آمار کلی</h2>
+
+    <ul>
+        <li>کل جایگاه‌ها: {{ total_spots }}</li>
+        <li>جایگاه‌های آزاد: {{ available_spots }}</li>
+        <li>جایگاه‌های اشغال: {{ occupied_spots }}</li>
+        <li>سشن‌های باز: {{ open_sessions }}</li>
+        <li>سشن‌های بسته: {{ closed_sessions }}</li>
+        <li>درآمد امروز: {{ today_income }}</li>
+    </ul>
+
+    <hr>
+
+    <h2>سشن‌های فعال</h2>
+
+    <table border="1" cellpadding="8">
+        <thead>
+            <tr>
+                <th>پلاک</th>
+                <th>مالک</th>
+                <th>پارکینگ</th>
+                <th>جایگاه</th>
+                <th>زمان ورود</th>
+                <th>وضعیت</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for session in active_sessions %}
+                <tr>
+                    <td>{{ session.vehicle.plate_number }}</td>
+                    <td>{{ session.vehicle.owner_name }}</td>
+                    <td>{{ session.spot.parking_lot.name }}</td>
+                    <td>{{ session.spot.code }}</td>
+                    <td>{{ session.entry_time }}</td>
+                    <td>{{ session.get_status_display }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6">در حال حاضر هیچ سشن فعالی وجود ندارد.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <hr>
+
+    <a href="/admin/">ورود به پنل ادمین</a>
+    |
+    <a href="/">فرم درخواست استفاده</a>
+</body>
+</html>
