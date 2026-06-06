@@ -29,4 +29,7 @@ urlpatterns = [
     path('parking-lots/', views.parking_lot_list, name='parking_lot_list'),
     path('parking-lots/add/', views.parking_lot_create, name='parking_lot_create'),
     path('parking-lots/<int:pk>/edit/', views.parking_lot_update, name='parking_lot_update'),
+    path('parking-spots/', views.parking_spot_list, name='parking_spot_list'),
+    path('parking-spots/add/', views.parking_spot_create, name='parking_spot_create'),
+    path('parking-spots/<int:pk>/edit/', views.parking_spot_update, name='parking_spot_update'),
 ]

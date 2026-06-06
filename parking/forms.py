@@ -4,7 +4,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
 
-from .models import Customer, CustomerUser, Vehicle, ParkingLot
+from .models import Customer, CustomerUser, Vehicle, ParkingLot, ParkingSpot
 
 
 class CustomerRequestForm(forms.ModelForm):
@@ -127,6 +127,26 @@ class ParkingLotForm(forms.ModelForm):
             'name': 'نام پارکینگ',
             'total_capacity': 'ظرفیت کل',
         }
+
+class ParkingSpotForm(forms.ModelForm):
+    class Meta:
+        model = ParkingSpot
+        fields = ['parking_lot', 'code', 'level']
+
+        labels = {
+            'parking_lot': 'پارکینگ',
+            'code': 'کد جایگاه',
+            'level': 'طبقه',
+        }
+
+    def __init__(self, *args, **kwargs):
+        customer = kwargs.pop('customer', None)
+        super().__init__(*args, **kwargs)
+
+        if customer:
+            self.fields['parking_lot'].queryset = ParkingLot.objects.filter(
+                customer=customer
+            ).order_by('name')        
 
 class CustomerLoginForm(AuthenticationForm):
     def confirm_login_allowed(self, user):

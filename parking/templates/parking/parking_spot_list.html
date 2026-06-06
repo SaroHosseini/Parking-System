@@ -1,0 +1,49 @@
+{% extends 'parking/base_dashboard.html' %}
+
+{% block title %}مدیریت جایگاه‌های پارک{% endblock %}
+
+{% block content %}
+    <h1>مدیریت جایگاه‌های پارک</h1>
+
+    <p>مشتری: {{ customer.name }}</p>
+
+    <a href="{% url 'parking:parking_spot_create' %}">ثبت جایگاه جدید</a>
+
+    <hr>
+
+    <table border="1" cellpadding="8">
+        <thead>
+            <tr>
+                <th>پارکینگ</th>
+                <th>کد جایگاه</th>
+                <th>طبقه</th>
+                <th>وضعیت</th>
+                <th>عملیات</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for spot in parking_spots %}
+                <tr>
+                    <td>{{ spot.parking_lot.name }}</td>
+                    <td>{{ spot.code }}</td>
+                    <td>{{ spot.level }}</td>
+                    <td>
+                        {% if spot.is_occupied %}
+                            اشغال
+                        {% else %}
+                            آزاد
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'parking:parking_spot_update' spot.id %}">ویرایش</a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="5">هنوز جایگاهی ثبت نشده است.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
