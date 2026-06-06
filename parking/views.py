@@ -27,6 +27,8 @@ def get_user_customer(user):
 
     return profile.customer
 
+def home(request):
+    return render(request, 'parking/home.html')
 
 def dashboard(request):
     if not request.user.is_authenticated:
