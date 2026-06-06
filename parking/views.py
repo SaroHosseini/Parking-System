@@ -4,8 +4,17 @@ from django.contrib.auth.models import User
 from django.db.models import Sum
 from django.utils import timezone
 
-from .models import ParkingSpot, ParkingSession, Payment, Customer, CustomerUser
-from .forms import CustomerRequestForm
+from .models import (
+    ParkingSpot,
+    ParkingSession,
+    Payment,
+    Customer,
+    CustomerUser,
+    Vehicle,
+)
+
+from .forms import CustomerRequestForm, VehicleForm
+
 
 def get_user_customer(user):
     if not user.is_authenticated:
@@ -27,8 +36,19 @@ def get_user_customer(user):
 
     return profile.customer
 
+
 def home(request):
+    if request.user.is_authenticated:
+        if request.user.is_superuser or get_user_customer(request.user):
+            return redirect('parking:dashboard')
+
+    request_id = request.session.get('customer_request_id')
+
+    if request_id and Customer.objects.filter(id=request_id).exists():
+        return redirect('parking:request_status')
+
     return render(request, 'parking/home.html')
+
 
 def dashboard(request):
     if not request.user.is_authenticated:
@@ -61,27 +81,13 @@ def dashboard(request):
     )
 
     if customer:
-        spots = spots.filter(
-            parking_lot__customer=customer
-        )
-
-        sessions = sessions.filter(
-            vehicle__customer=customer
-        )
-
-        payments = payments.filter(
-            session__vehicle__customer=customer
-        )
+        spots = spots.filter(parking_lot__customer=customer)
+        sessions = sessions.filter(vehicle__customer=customer)
+        payments = payments.filter(session__vehicle__customer=customer)
 
     total_spots = spots.count()
-
-    occupied_spots = spots.filter(
-        is_occupied=True
-    ).count()
-
-    available_spots = spots.filter(
-        is_occupied=False
-    ).count()
+    occupied_spots = spots.filter(is_occupied=True).count()
+    available_spots = spots.filter(is_occupied=False).count()
 
     open_sessions = sessions.filter(
         status=ParkingSession.SESSION_STATUS_OPEN
@@ -115,10 +121,15 @@ def dashboard(request):
 
     return render(request, 'parking/dashboard.html', context)
 
+
 def customer_request_view(request):
+    if request.user.is_authenticated:
+        if request.user.is_superuser or get_user_customer(request.user):
+            return redirect('parking:dashboard')
+
     request_id = request.session.get('customer_request_id')
 
-    if request_id:
+    if request_id and Customer.objects.filter(id=request_id).exists():
         return redirect('parking:request_status')
 
     if request.method == 'POST':
@@ -155,7 +166,9 @@ def customer_request_view(request):
     else:
         form = CustomerRequestForm()
 
-    return render(request, 'parking/customer_request.html', {'form': form})
+    return render(request, 'parking/customer_request.html', {
+        'form': form,
+    })
 
 
 def request_status_view(request):
@@ -167,5 +180,87 @@ def request_status_view(request):
     customer = get_object_or_404(Customer, id=request_id)
 
     return render(request, 'parking/request_status.html', {
-        'customer': customer
+        'customer': customer,
+    })
+
+
+def request_success_view(request):
+    return render(request, 'parking/request_success.html')
+
+
+def vehicle_list(request):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    vehicles = Vehicle.objects.filter(
+        customer=customer
+    ).order_by('plate_number')
+
+    return render(request, 'parking/vehicle_list.html', {
+        'vehicles': vehicles,
+        'customer': customer,
+    })
+
+
+def vehicle_create(request):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    if request.method == 'POST':
+        form = VehicleForm(request.POST)
+
+        if form.is_valid():
+            vehicle = form.save(commit=False)
+            vehicle.customer = customer
+            vehicle.save()
+
+            return redirect('parking:vehicle_list')
+
+    else:
+        form = VehicleForm()
+
+    return render(request, 'parking/vehicle_form.html', {
+        'form': form,
+        'title': 'ثبت وسیله نقلیه جدید',
+    })
+
+
+def vehicle_update(request, pk):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    vehicle = get_object_or_404(
+        Vehicle,
+        pk=pk,
+        customer=customer,
+    )
+
+    if request.method == 'POST':
+        form = VehicleForm(request.POST, instance=vehicle)
+
+        if form.is_valid():
+            form.save()
+            return redirect('parking:vehicle_list')
+
+    else:
+        form = VehicleForm(instance=vehicle)
+
+    return render(request, 'parking/vehicle_form.html', {
+        'form': form,
+        'title': 'ویرایش وسیله نقلیه',
     })

@@ -3,7 +3,7 @@ import re
 from django import forms
 from django.contrib.auth.models import User
 
-from .models import Customer
+from .models import Customer, Vehicle
 
 
 class CustomerRequestForm(forms.ModelForm):
@@ -39,6 +39,19 @@ class CustomerRequestForm(forms.ModelForm):
             'email': 'ایمیل',
             'address': 'آدرس پارکینگ',
         }
+
+class VehicleForm(forms.ModelForm):
+    class Meta:
+        model = Vehicle
+        fields = ['plate_number', 'owner_name', 'owner_phone', 'type', 'color']
+
+        labels = {
+            'plate_number': 'شماره پلاک',
+            'owner_name': 'نام مالک',
+            'owner_phone': 'شماره تماس مالک',
+            'type': 'نوع وسیله',
+            'color': 'رنگ',
+        }        
 
     def clean_username(self):
         username = self.cleaned_data['username']
