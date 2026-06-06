@@ -71,9 +71,16 @@ class Customer(models.Model):
 
         super().save(*args, **kwargs)
 
+        if self.pk:
+            should_activate_users = self.status == self.STATUS_APPROVED and self.is_active
+
+            for customer_user in self.users.select_related('user').all():
+                user = customer_user.user
+                user.is_active = should_activate_users and customer_user.is_active
+                user.save(update_fields=['is_active'])
+
     def __str__(self):
         return f"{self.name} - {self.owner_name}"
-
 
 class CustomerUser(models.Model):
     ROLE_OWNER = 'owner'
