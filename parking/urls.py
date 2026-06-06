@@ -20,4 +20,7 @@ urlpatterns = [
     ), name='logout'),
 
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('vehicles/', views.vehicle_list, name='vehicle_list'),
+    path('vehicles/add/', views.vehicle_create, name='vehicle_create'),
+    path('vehicles/<int:pk>/edit/', views.vehicle_update, name='vehicle_update'),
 ]
