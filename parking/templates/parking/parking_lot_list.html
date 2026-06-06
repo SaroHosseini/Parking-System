@@ -1,0 +1,39 @@
+{% extends 'parking/base_dashboard.html' %}
+
+{% block title %}مدیریت پارکینگ‌ها{% endblock %}
+
+{% block content %}
+    <h1>مدیریت پارکینگ‌ها</h1>
+
+    <p>مشتری: {{ customer.name }}</p>
+
+    <a href="{% url 'parking:parking_lot_create' %}">ثبت پارکینگ جدید</a>
+
+    <hr>
+
+    <table border="1" cellpadding="8">
+        <thead>
+            <tr>
+                <th>نام پارکینگ</th>
+                <th>ظرفیت کل</th>
+                <th>عملیات</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for parking_lot in parking_lots %}
+                <tr>
+                    <td>{{ parking_lot.name }}</td>
+                    <td>{{ parking_lot.total_capacity }}</td>
+                    <td>
+                        <a href="{% url 'parking:parking_lot_update' parking_lot.id %}">ویرایش</a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="3">هنوز پارکینگی ثبت نشده است.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
