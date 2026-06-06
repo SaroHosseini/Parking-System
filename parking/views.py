@@ -11,9 +11,10 @@ from .models import (
     Customer,
     CustomerUser,
     Vehicle,
+    ParkingLot,
 )
 
-from .forms import CustomerRequestForm, VehicleForm
+from .forms import CustomerRequestForm, VehicleForm, ParkingLotForm
 
 
 def get_user_customer(user):
@@ -265,4 +266,81 @@ def vehicle_update(request, pk):
     return render(request, 'parking/vehicle_form.html', {
         'form': form,
         'title': 'ویرایش وسیله نقلیه',
+    })
+
+def parking_lot_list(request):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    parking_lots = ParkingLot.objects.filter(
+        customer=customer
+    ).order_by('name')
+
+    return render(request, 'parking/parking_lot_list.html', {
+        'parking_lots': parking_lots,
+        'customer': customer,
+    })
+
+
+def parking_lot_create(request):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    if request.method == 'POST':
+        form = ParkingLotForm(request.POST)
+
+        if form.is_valid():
+            parking_lot = form.save(commit=False)
+            parking_lot.customer = customer
+            parking_lot.save()
+
+            return redirect('parking:parking_lot_list')
+
+    else:
+        form = ParkingLotForm()
+
+    return render(request, 'parking/parking_lot_form.html', {
+        'form': form,
+        'title': 'ثبت پارکینگ جدید',
+    })
+
+
+def parking_lot_update(request, pk):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    parking_lot = get_object_or_404(
+        ParkingLot,
+        pk=pk,
+        customer=customer,
+    )
+
+    if request.method == 'POST':
+        form = ParkingLotForm(request.POST, instance=parking_lot)
+
+        if form.is_valid():
+            form.save()
+            return redirect('parking:parking_lot_list')
+
+    else:
+        form = ParkingLotForm(instance=parking_lot)
+
+    return render(request, 'parking/parking_lot_form.html', {
+        'form': form,
+        'title': 'ویرایش پارکینگ',
     })
