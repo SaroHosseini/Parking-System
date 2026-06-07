@@ -24,19 +24,26 @@ from .forms import (
     ParkingSessionEntryForm,
     PaymentForm,
     ReportFilterForm,
-)    
+)
 
 
-def get_user_customer(user):
+def get_user_profile(user):
     if not user.is_authenticated:
         return None
 
-    if user.is_superuser:
+    if user.is_superuser or user.is_staff:
         return None
 
     try:
-        profile = user.customer_profile
+        return user.customer_profile
     except CustomerUser.DoesNotExist:
+        return None
+
+
+def get_user_customer(user):
+    profile = get_user_profile(user)
+
+    if profile is None:
         return None
 
     if not profile.is_active:
@@ -46,6 +53,30 @@ def get_user_customer(user):
         return None
 
     return profile.customer
+
+
+def is_owner(user):
+    profile = get_user_profile(user)
+
+    if profile is None:
+        return False
+
+    if not profile.is_active or not profile.customer.is_active:
+        return False
+
+    return profile.role == CustomerUser.ROLE_OWNER
+
+
+def is_operator(user):
+    profile = get_user_profile(user)
+
+    if profile is None:
+        return False
+
+    if not profile.is_active or not profile.customer.is_active:
+        return False
+
+    return profile.role == CustomerUser.ROLE_OPERATOR
 
 
 def home(request):
@@ -77,6 +108,8 @@ def dashboard(request):
     spots = ParkingSpot.objects.select_related(
         'parking_lot',
         'parking_lot__customer',
+    ).filter(
+        parking_lot__customer=customer
     )
 
     sessions = ParkingSession.objects.select_related(
@@ -85,18 +118,17 @@ def dashboard(request):
         'spot',
         'spot__parking_lot',
         'spot__parking_lot__customer',
+    ).filter(
+        vehicle__customer=customer
     )
 
     payments = Payment.objects.select_related(
         'session',
         'session__vehicle',
         'session__vehicle__customer',
+    ).filter(
+        session__vehicle__customer=customer
     )
-
-    if customer:
-        spots = spots.filter(parking_lot__customer=customer)
-        sessions = sessions.filter(vehicle__customer=customer)
-        payments = payments.filter(session__vehicle__customer=customer)
 
     total_spots = spots.count()
     occupied_spots = spots.filter(is_occupied=True).count()
@@ -123,6 +155,9 @@ def dashboard(request):
 
     context = {
         'customer': customer,
+        'user_profile': get_user_profile(request.user),
+        'is_owner_user': is_owner(request.user),
+
         'total_spots': total_spots,
         'occupied_spots': occupied_spots,
         'available_spots': available_spots,
@@ -137,8 +172,11 @@ def dashboard(request):
 
 def customer_request_view(request):
     if request.user.is_authenticated:
-        if request.user.is_superuser or get_user_customer(request.user):
+        if get_user_customer(request.user):
             return redirect('parking:dashboard')
+
+        if request.user.is_superuser or request.user.is_staff:
+            return redirect('parking:home')
 
     request_id = request.session.get('customer_request_id')
 
@@ -200,6 +238,9 @@ def request_status_view(request):
 def request_success_view(request):
     return render(request, 'parking/request_success.html')
 
+
+# Owner-only: Parking Lot Management
+
 def parking_lot_list(request):
     if not request.user.is_authenticated:
         return redirect('parking:login')
@@ -207,6 +248,9 @@ def parking_lot_list(request):
     customer = get_user_customer(request.user)
 
     if customer is None:
+        return redirect('parking:dashboard')
+
+    if not is_owner(request.user):
         return redirect('parking:dashboard')
 
     parking_lots = ParkingLot.objects.filter(
@@ -226,6 +270,9 @@ def parking_lot_create(request):
     customer = get_user_customer(request.user)
 
     if customer is None:
+        return redirect('parking:dashboard')
+
+    if not is_owner(request.user):
         return redirect('parking:dashboard')
 
     if request.method == 'POST':
@@ -256,6 +303,9 @@ def parking_lot_update(request, pk):
     if customer is None:
         return redirect('parking:dashboard')
 
+    if not is_owner(request.user):
+        return redirect('parking:dashboard')
+
     parking_lot = get_object_or_404(
         ParkingLot,
         pk=pk,
@@ -278,6 +328,8 @@ def parking_lot_update(request, pk):
     })
 
 
+# Owner-only: Parking Spot Management
+
 def parking_spot_list(request):
     if not request.user.is_authenticated:
         return redirect('parking:login')
@@ -285,6 +337,9 @@ def parking_spot_list(request):
     customer = get_user_customer(request.user)
 
     if customer is None:
+        return redirect('parking:dashboard')
+
+    if not is_owner(request.user):
         return redirect('parking:dashboard')
 
     parking_spots = ParkingSpot.objects.select_related(
@@ -309,6 +364,9 @@ def parking_spot_create(request):
     if customer is None:
         return redirect('parking:dashboard')
 
+    if not is_owner(request.user):
+        return redirect('parking:dashboard')
+
     if request.method == 'POST':
         form = ParkingSpotForm(request.POST, customer=customer)
 
@@ -324,6 +382,7 @@ def parking_spot_create(request):
         'title': 'ثبت جایگاه پارک جدید',
     })
 
+
 def parking_spot_update(request, pk):
     if not request.user.is_authenticated:
         return redirect('parking:login')
@@ -331,6 +390,9 @@ def parking_spot_update(request, pk):
     customer = get_user_customer(request.user)
 
     if customer is None:
+        return redirect('parking:dashboard')
+
+    if not is_owner(request.user):
         return redirect('parking:dashboard')
 
     parking_spot = get_object_or_404(
@@ -361,6 +423,9 @@ def parking_spot_update(request, pk):
         'title': 'ویرایش جایگاه پارک',
     })
 
+
+# Owner-only: Tariff Management
+
 def tariff_list(request):
     if not request.user.is_authenticated:
         return redirect('parking:login')
@@ -368,6 +433,9 @@ def tariff_list(request):
     customer = get_user_customer(request.user)
 
     if customer is None:
+        return redirect('parking:dashboard')
+
+    if not is_owner(request.user):
         return redirect('parking:dashboard')
 
     tariffs = Tariff.objects.filter(
@@ -389,50 +457,7 @@ def tariff_create(request):
     if customer is None:
         return redirect('parking:dashboard')
 
-    if request.method == 'POST':
-        form = TariffForm(request.POST, customer=customer)
-
-        if form.is_valid():
-            tariff = form.save(commit=False)
-            tariff.customer = customer
-            tariff.save()
-
-            return redirect('parking:tariff_list')
-
-    else:
-        form = TariffForm(customer=customer)
-
-    return render(request, 'parking/tariff_form.html', {
-        'form': form,
-        'title': 'ثبت تعرفه جدید',
-    })
-
-def tariff_list(request):
-    if not request.user.is_authenticated:
-        return redirect('parking:login')
-
-    customer = get_user_customer(request.user)
-
-    if customer is None:
-        return redirect('parking:dashboard')
-
-    tariffs = Tariff.objects.filter(
-        customer=customer
-    ).order_by('vehicle_type', 'name')
-
-    return render(request, 'parking/tariff_list.html', {
-        'tariffs': tariffs,
-        'customer': customer,
-    })
-
-
-def tariff_create(request):
-    if not request.user.is_authenticated:
-        return redirect('parking:login')
-
-    customer = get_user_customer(request.user)
-
-    if customer is None:
+    if not is_owner(request.user):
         return redirect('parking:dashboard')
 
     if request.method == 'POST':
@@ -463,6 +488,9 @@ def tariff_update(request, pk):
     if customer is None:
         return redirect('parking:dashboard')
 
+    if not is_owner(request.user):
+        return redirect('parking:dashboard')
+
     tariff = get_object_or_404(
         Tariff,
         pk=pk,
@@ -490,6 +518,9 @@ def tariff_update(request, pk):
         'form': form,
         'title': 'ویرایش تعرفه',
     })
+
+
+# Owner + Operator: Parking Session Management
 
 def parking_session_list(request):
     if not request.user.is_authenticated:
@@ -552,7 +583,7 @@ def parking_session_create(request):
             ParkingSession.objects.create(
                 vehicle=vehicle,
                 spot=spot,
-                status=ParkingSession.SESSION_STATUS_OPEN
+                status=ParkingSession.SESSION_STATUS_OPEN,
             )
 
             return redirect('parking:parking_session_list')
@@ -564,6 +595,8 @@ def parking_session_create(request):
         'form': form,
         'title': 'ثبت ورود خودرو',
     })
+
+
 def parking_session_close(request, pk):
     if not request.user.is_authenticated:
         return redirect('parking:login')
@@ -590,28 +623,9 @@ def parking_session_close(request, pk):
         'session': session,
     })
 
-def payment_list(request):
-    if not request.user.is_authenticated:
-        return redirect('parking:login')
 
-    customer = get_user_customer(request.user)
-
-    if customer is None:
-        return redirect('parking:dashboard')
-
-    payments = Payment.objects.select_related(
-        'session',
-        'session__vehicle',
-        'session__spot',
-        'session__spot__parking_lot',
-    ).filter(
-        session__vehicle__customer=customer
-    ).order_by('-payment_time')
-
-    return render(request, 'parking/payment_list.html', {
-        'payments': payments,
-        'customer': customer,
-    })
+# Owner + Operator: Payment List
+# Owner-only: Payment Update
 
 def payment_list(request):
     if not request.user.is_authenticated:
@@ -634,6 +648,7 @@ def payment_list(request):
     return render(request, 'parking/payment_list.html', {
         'payments': payments,
         'customer': customer,
+        'is_owner_user': is_owner(request.user),
     })
 
 
@@ -645,6 +660,9 @@ def payment_update(request, pk):
 
     if customer is None:
         return redirect('parking:dashboard')
+
+    if not is_owner(request.user):
+        return redirect('parking:payment_list')
 
     payment = get_object_or_404(
         Payment,
@@ -666,6 +684,9 @@ def payment_update(request, pk):
         'form': form,
         'payment': payment,
     })
+
+
+# Owner + Operator: Receipt View
 
 def receipt_list(request):
     if not request.user.is_authenticated:
@@ -690,6 +711,7 @@ def receipt_list(request):
         'receipts': receipts,
         'customer': customer,
     })
+
 
 def receipt_detail(request, pk):
     if not request.user.is_authenticated:
@@ -717,6 +739,9 @@ def receipt_detail(request, pk):
         'customer': customer,
     })
 
+
+# Owner-only: Reports
+
 def report_dashboard(request):
     if not request.user.is_authenticated:
         return redirect('parking:login')
@@ -724,6 +749,9 @@ def report_dashboard(request):
     customer = get_user_customer(request.user)
 
     if customer is None:
+        return redirect('parking:dashboard')
+
+    if not is_owner(request.user):
         return redirect('parking:dashboard')
 
     today = timezone.localdate()
@@ -823,7 +851,10 @@ def report_dashboard(request):
 
     for row in vehicle_type_stats:
         vehicle_type_rows.append({
-            'label': vehicle_type_labels.get(row['vehicle__type'], row['vehicle__type']),
+            'label': vehicle_type_labels.get(
+                row['vehicle__type'],
+                row['vehicle__type']
+            ),
             'count': row['count'],
         })
 
@@ -840,7 +871,10 @@ def report_dashboard(request):
 
     for row in payment_method_stats:
         payment_method_rows.append({
-            'label': payment_method_labels.get(row['payment_method'], row['payment_method'] or 'نامشخص'),
+            'label': payment_method_labels.get(
+                row['payment_method'],
+                row['payment_method'] or 'نامشخص'
+            ),
             'count': row['count'],
             'total': row['total'] or 0,
         })

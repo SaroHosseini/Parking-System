@@ -84,12 +84,10 @@ class Customer(models.Model):
 
 class CustomerUser(models.Model):
     ROLE_OWNER = 'owner'
-    ROLE_ADMIN = 'admin'
     ROLE_OPERATOR = 'operator'
 
     ROLE_CHOICES = [
         (ROLE_OWNER, 'مالک'),
-        (ROLE_ADMIN, 'ادمین'),
         (ROLE_OPERATOR, 'اپراتور'),
     ]
 
@@ -150,7 +148,7 @@ class Vehicle(models.Model):
     )
 
     owner_name = models.CharField("نام مالک", max_length=100, blank=True)
-    
+
     type = models.CharField(
         "نوع وسیله",
         max_length=20,

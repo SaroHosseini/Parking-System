@@ -9,14 +9,42 @@
         <h2>Parkino</h2>
 
         <ul>
-            <li><a href="{% url 'parking:dashboard' %}">داشبورد</a></li>
-            <li><a href="{% url 'parking:parking_lot_list' %}">مدیریت پارکینگ‌ها</a></li>
-            <li><a href="{% url 'parking:parking_spot_list' %}">مدیریت جایگاه‌ها</a></li>
-            <li><a href="{% url 'parking:tariff_list' %}">مدیریت تعرفه‌ها</a></li>
-            <li><a href="{% url 'parking:parking_session_list' %}">مدیریت سشن‌های پارک</a></li>
-            <li><a href="{% url 'parking:payment_list' %}">مدیریت پرداخت‌ها</a></li>
-            <li><a href="{% url 'parking:receipt_list' %}">مدیریت رسیدها</a></li>
-            <li><a href="{% url 'parking:report_dashboard' %}">گزارش‌ها</a></li>
+            <li>
+                <a href="{% url 'parking:dashboard' %}">داشبورد</a>
+            </li>
+
+            <li>
+                <a href="{% url 'parking:parking_session_list' %}">مدیریت سشن‌های پارک</a>
+            </li>
+
+            <li>
+                <a href="{% url 'parking:payment_list' %}">پرداخت‌ها</a>
+            </li>
+
+            <li>
+                <a href="{% url 'parking:receipt_list' %}">رسیدها</a>
+            </li>
+
+            {% if request.user.customer_profile.role == 'owner' %}
+                <li>
+                    <a href="{% url 'parking:parking_lot_list' %}">مدیریت پارکینگ‌ها</a>
+                </li>
+
+                <li>
+                    <a href="{% url 'parking:parking_spot_list' %}">مدیریت جایگاه‌ها</a>
+                </li>
+
+                <li>
+                    <a href="{% url 'parking:tariff_list' %}">مدیریت تعرفه‌ها</a>
+                </li>
+
+                <li>
+                    <a href="{% url 'parking:report_dashboard' %}">گزارش‌ها</a>
+                </li>
+
+                <!-- بعداً این لینک را اضافه می‌کنیم -->
+                <!-- <li><a href="#">کاربران و نقش‌ها</a></li> -->
+            {% endif %}
         </ul>
 
         <form method="post" action="{% url 'parking:logout' %}">
