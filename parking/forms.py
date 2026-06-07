@@ -12,6 +12,7 @@ from .models import (
     ParkingSpot,
     Tariff,
     ParkingSession,
+    Payment,
 )
 
 
@@ -314,3 +315,12 @@ class ParkingSessionEntryForm(forms.Form):
                     )
 
         return cleaned_data
+    
+class PaymentForm(forms.ModelForm):
+    class Meta:
+        model = Payment
+        fields = ['payment_method']
+
+        labels = {
+            'payment_method': 'روش پرداخت',
+        }    

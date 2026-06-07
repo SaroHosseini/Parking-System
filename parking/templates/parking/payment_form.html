@@ -1,0 +1,23 @@
+{% extends 'parking/base_dashboard.html' %}
+
+{% block title %}ثبت پرداخت{% endblock %}
+
+{% block content %}
+    <h1>ثبت پرداخت</h1>
+
+    <p>پلاک: {{ payment.session.vehicle.plate_number }}</p>
+    <p>مالک: {{ payment.session.vehicle.owner_name }}</p>
+    <p>مبلغ: {{ payment.amount }}</p>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {{ form.as_p }}
+
+        <button type="submit">ثبت پرداخت</button>
+    </form>
+
+    <hr>
+
+    <a href="{% url 'parking:payment_list' %}">بازگشت به لیست پرداخت‌ها</a>
+{% endblock %}

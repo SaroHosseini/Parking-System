@@ -17,11 +17,11 @@ from .models import (
 
 from .forms import (
     CustomerRequestForm,
-    VehicleForm,
     ParkingLotForm,
     ParkingSpotForm,
     TariffForm,
     ParkingSessionEntryForm,
+    PaymentForm,
 )    
 
 
@@ -586,4 +586,81 @@ def parking_session_close(request, pk):
 
     return render(request, 'parking/parking_session_close.html', {
         'session': session,
+    })
+
+def payment_list(request):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    payments = Payment.objects.select_related(
+        'session',
+        'session__vehicle',
+        'session__spot',
+        'session__spot__parking_lot',
+    ).filter(
+        session__vehicle__customer=customer
+    ).order_by('-payment_time')
+
+    return render(request, 'parking/payment_list.html', {
+        'payments': payments,
+        'customer': customer,
+    })
+
+def payment_list(request):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    payments = Payment.objects.select_related(
+        'session',
+        'session__vehicle',
+        'session__spot',
+        'session__spot__parking_lot',
+    ).filter(
+        session__vehicle__customer=customer
+    ).order_by('-payment_time')
+
+    return render(request, 'parking/payment_list.html', {
+        'payments': payments,
+        'customer': customer,
+    })
+
+
+def payment_update(request, pk):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    payment = get_object_or_404(
+        Payment,
+        pk=pk,
+        session__vehicle__customer=customer,
+    )
+
+    if request.method == 'POST':
+        form = PaymentForm(request.POST, instance=payment)
+
+        if form.is_valid():
+            form.save()
+            return redirect('parking:payment_list')
+
+    else:
+        form = PaymentForm(instance=payment)
+
+    return render(request, 'parking/payment_form.html', {
+        'form': form,
+        'payment': payment,
     })
