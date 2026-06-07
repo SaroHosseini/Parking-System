@@ -1,4 +1,5 @@
 {% extends 'parking/base_dashboard.html' %}
+{% load date_filters %}
 
 {% block title %}مدیریت رسیدها{% endblock %}
 
@@ -38,7 +39,7 @@
                             -
                         {% endif %}
                     </td>
-                    <td>{{ receipt.issue_time }}</td>
+                    <td>{{ receipt.issue_time|jalali_gregorian }}</td>
                     <td>
                         <a href="{% url 'parking:receipt_detail' receipt.id %}">مشاهده رسید</a>
                     </td>

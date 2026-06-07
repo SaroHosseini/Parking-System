@@ -1,4 +1,5 @@
 {% extends 'parking/base_dashboard.html' %}
+{% load date_filters %}
 
 {% block title %}جزئیات رسید{% endblock %}
 
@@ -13,7 +14,7 @@
 
     <ul>
         <li>شماره رسید: {{ receipt.receipt_number }}</li>
-        <li>زمان صدور: {{ receipt.issue_time }}</li>
+        <li>زمان صدور: {{ receipt.issue_time|jalali_gregorian }}</li>
         <li>مبلغ: {{ receipt.calculated_fee }}</li>
     </ul>
 
@@ -24,8 +25,8 @@
         <li>مالک: {{ receipt.session.vehicle.owner_name }}</li>
         <li>پارکینگ: {{ receipt.session.spot.parking_lot.name }}</li>
         <li>جایگاه: {{ receipt.session.spot.code }}</li>
-        <li>زمان ورود: {{ receipt.session.entry_time }}</li>
-        <li>زمان خروج: {{ receipt.session.exit_time }}</li>
+        <li>زمان ورود: {{ receipt.session.entry_time|jalali_gregorian }}</li>
+        <li>زمان خروج: {{ receipt.session.exit_time|jalali_gregorian }}</li>
         <li>مدت توقف: {{ receipt.session.total_duration_minutes }} دقیقه</li>
     </ul>
 

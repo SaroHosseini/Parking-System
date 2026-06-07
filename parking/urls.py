@@ -39,4 +39,5 @@ urlpatterns = [
     path('payments/<int:pk>/edit/', views.payment_update, name='payment_update'),
     path('receipts/', views.receipt_list, name='receipt_list'),
     path('receipts/<int:pk>/', views.receipt_detail, name='receipt_detail'),
+    path('reports/', views.report_dashboard, name='report_dashboard'),
 ]

@@ -1,4 +1,5 @@
 {% extends 'parking/base_dashboard.html' %}
+{% load date_filters %}
 
 {% block title %}داشبورد مدیریت پارکینگ{% endblock %}
 
@@ -49,7 +50,7 @@
                     <td>{{ session.vehicle.owner_name }}</td>
                     <td>{{ session.spot.parking_lot.name }}</td>
                     <td>{{ session.spot.code }}</td>
-                    <td>{{ session.entry_time }}</td>
+                    <td>{{ session.entry_time|jalali_gregorian }}</td>
                     <td>{{ session.get_status_display }}</td>
                 </tr>
             {% empty %}

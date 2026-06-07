@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db import transaction
 from django.contrib.auth.models import User
-from django.db.models import Sum, Exists, OuterRef
+from django.db.models import Sum, Exists, OuterRef,Count
 from django.utils import timezone
 
 from .models import (
@@ -715,3 +715,59 @@ def receipt_detail(request, pk):
         'receipt': receipt,
         'customer': customer,
     })
+
+def report_dashboard(request):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    today = timezone.localdate()
+
+    sessions = ParkingSession.objects.select_related(
+        'vehicle',
+        'spot',
+        'spot__parking_lot',
+    ).filter(
+        vehicle__customer=customer
+    )
+
+    payments = Payment.objects.select_related(
+        'session',
+        'session__vehicle',
+    ).filter(
+        session__vehicle__customer=customer
+    )
+
+    today_sessions = sessions.filter(
+        entry_time__date=today
+    )
+
+    today_closed_sessions = sessions.filter(
+        exit_time__date=today,
+        status=ParkingSession.SESSION_STATUS_CLOSED,
+    )
+
+    today_successful_payments = payments.filter(
+        payment_status=Payment.PAYMENT_STATUS_CLOSED,
+        payment_time__date=today,
+    )
+
+    today_income = today_successful_payments.aggregate(
+        total=Sum('amount')
+    )['total'] or 0
+
+    context = {
+        'customer': customer,
+        'today': today,
+        'today_sessions_count': today_sessions.count(),
+        'today_closed_sessions_count': today_closed_sessions.count(),
+        'today_successful_payments_count': today_successful_payments.count(),
+        'today_income': today_income,
+        'today_closed_sessions': today_closed_sessions.order_by('-exit_time'),
+    }
+
+    return render(request, 'parking/report_dashboard.html', context)

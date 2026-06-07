@@ -1,16 +1,28 @@
 {% extends 'parking/base_dashboard.html' %}
 {% load date_filters %}
 
-{% block title %}مدیریت سشن‌های پارک{% endblock %}
+{% block title %}گزارش‌ها{% endblock %}
 
 {% block content %}
-    <h1>مدیریت سشن‌های پارک</h1>
+    <h1>گزارش‌ها</h1>
 
     <p>مشتری: {{ customer.name }}</p>
-
-    <a href="{% url 'parking:parking_session_create' %}">ثبت ورود خودرو</a>
+    <p>تاریخ گزارش: {{ today|jalali_gregorian_date }}</p>
 
     <hr>
+
+    <h2>خلاصه امروز</h2>
+
+    <ul>
+        <li>تعداد ورودهای امروز: {{ today_sessions_count }}</li>
+        <li>تعداد خروج‌های ثبت‌شده امروز: {{ today_closed_sessions_count }}</li>
+        <li>تعداد پرداخت‌های موفق امروز: {{ today_successful_payments_count }}</li>
+        <li>درآمد امروز: {{ today_income }}</li>
+    </ul>
+
+    <hr>
+
+    <h2>سشن‌های بسته‌شده امروز</h2>
 
     <table border="1" cellpadding="8">
         <thead>
@@ -23,13 +35,11 @@
                 <th>زمان خروج</th>
                 <th>مدت توقف</th>
                 <th>هزینه</th>
-                <th>وضعیت</th>
-                <th>عملیات</th>
             </tr>
         </thead>
 
         <tbody>
-            {% for session in sessions %}
+            {% for session in today_closed_sessions %}
                 <tr>
                     <td>{{ session.vehicle.plate_number }}</td>
                     <td>{{ session.vehicle.owner_name }}</td>
@@ -37,20 +47,12 @@
                     <td>{{ session.spot.code }}</td>
                     <td>{{ session.entry_time|jalali_gregorian }}</td>
                     <td>{{ session.exit_time|jalali_gregorian }}</td>
-                    <td>{{ session.total_duration_minutes|default:"-" }}</td>
-                    <td>{{ session.calculated_fee|default:"-" }}</td>
-                    <td>{{ session.get_status_display }}</td>
-                    <td>
-                        {% if session.status == 'open' %}
-                            <a href="{% url 'parking:parking_session_close' session.id %}">ثبت خروج</a>
-                        {% else %}
-                            -
-                        {% endif %}
-                    </td>
+                    <td>{{ session.total_duration_minutes }} دقیقه</td>
+                    <td>{{ session.calculated_fee }}</td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="10">هنوز سشنی ثبت نشده است.</td>
+                    <td colspan="8">امروز هنوز سشن بسته‌شده‌ای ثبت نشده است.</td>
                 </tr>
             {% endfor %}
         </tbody>

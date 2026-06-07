@@ -1,4 +1,5 @@
 {% extends 'parking/base_dashboard.html' %}
+{% load date_filters %}
 
 {% block title %}ثبت خروج خودرو{% endblock %}
 
@@ -12,7 +13,7 @@
         <li>مالک: {{ session.vehicle.owner_name }}</li>
         <li>پارکینگ: {{ session.spot.parking_lot.name }}</li>
         <li>جایگاه: {{ session.spot.code }}</li>
-        <li>زمان ورود: {{ session.entry_time }}</li>
+        <li>زمان ورود: {{ session.entry_time|jalali_gregorian }}</li>
     </ul>
 
     <form method="post">
