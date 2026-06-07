@@ -1,0 +1,57 @@
+{% extends 'parking/base_dashboard.html' %}
+
+{% block title %}مدیریت سشن‌های پارک{% endblock %}
+
+{% block content %}
+    <h1>مدیریت سشن‌های پارک</h1>
+
+    <p>مشتری: {{ customer.name }}</p>
+
+    <a href="{% url 'parking:parking_session_create' %}">ثبت ورود خودرو</a>
+
+    <hr>
+
+    <table border="1" cellpadding="8">
+        <thead>
+            <tr>
+                <th>پلاک</th>
+                <th>مالک</th>
+                <th>پارکینگ</th>
+                <th>جایگاه</th>
+                <th>زمان ورود</th>
+                <th>زمان خروج</th>
+                <th>مدت توقف</th>
+                <th>هزینه</th>
+                <th>وضعیت</th>
+                <th>عملیات</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for session in sessions %}
+                <tr>
+                    <td>{{ session.vehicle.plate_number }}</td>
+                    <td>{{ session.vehicle.owner_name }}</td>
+                    <td>{{ session.spot.parking_lot.name }}</td>
+                    <td>{{ session.spot.code }}</td>
+                    <td>{{ session.entry_time }}</td>
+                    <td>{{ session.exit_time|default:"-" }}</td>
+                    <td>{{ session.total_duration_minutes|default:"-" }}</td>
+                    <td>{{ session.calculated_fee|default:"-" }}</td>
+                    <td>{{ session.get_status_display }}</td>
+                    <td>
+                        {% if session.status == 'open' %}
+                            <a href="{% url 'parking:parking_session_close' session.id %}">ثبت خروج</a>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="10">هنوز سشنی ثبت نشده است.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

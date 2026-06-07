@@ -11,6 +11,7 @@ from .models import (
     ParkingLot,
     ParkingSpot,
     Tariff,
+    ParkingSession,
 )
 
 
@@ -115,12 +116,11 @@ class CustomerRequestForm(forms.ModelForm):
 class VehicleForm(forms.ModelForm):
     class Meta:
         model = Vehicle
-        fields = ['plate_number', 'owner_name', 'owner_phone', 'type', 'color']
+        fields = ['plate_number', 'owner_name', 'type', 'color']
 
         labels = {
             'plate_number': 'شماره پلاک',
             'owner_name': 'نام مالک',
-            'owner_phone': 'شماره تماس مالک',
             'type': 'نوع وسیله',
             'color': 'رنگ',
         }
@@ -234,3 +234,83 @@ class CustomerLoginForm(AuthenticationForm):
                 'درخواست شما هنوز توسط مدیر سیستم تأیید نشده است.',
                 code='customer_not_approved'
             )
+        
+class ParkingSessionEntryForm(forms.Form):
+    plate_number = forms.CharField(
+        label='شماره پلاک',
+        max_length=15,
+        help_text='برای خودرو: 12ب345-67 ، برای موتور: 8 رقم'
+    )
+
+    owner_name = forms.CharField(
+        label='نام مالک',
+        max_length=100,
+        required=False
+    )
+
+    vehicle_type = forms.ChoiceField(
+        label='نوع وسیله',
+        choices=Vehicle.VEHICLE_TYPE_CHOICES
+    )
+
+    color = forms.CharField(
+        label='رنگ',
+        max_length=30,
+        required=False
+    )
+
+    spot = forms.ModelChoiceField(
+        label='جایگاه پارک',
+        queryset=ParkingSpot.objects.none()
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.customer = kwargs.pop('customer', None)
+        super().__init__(*args, **kwargs)
+
+        if self.customer:
+            self.fields['spot'].queryset = ParkingSpot.objects.filter(
+                parking_lot__customer=self.customer,
+                is_occupied=False
+            ).select_related('parking_lot').order_by(
+                'parking_lot__name',
+                'level',
+                'code'
+            )
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        plate_number = cleaned_data.get('plate_number')
+        vehicle_type = cleaned_data.get('vehicle_type')
+
+        if self.customer and plate_number and vehicle_type:
+            temp_vehicle = Vehicle(
+                customer=self.customer,
+                plate_number=plate_number,
+                type=vehicle_type
+            )
+
+            try:
+                temp_vehicle.clean()
+            except Exception as error:
+                self.add_error('plate_number', error)
+
+            existing_vehicle = Vehicle.objects.filter(
+                customer=self.customer,
+                plate_number=plate_number
+            ).first()
+
+            if existing_vehicle:
+                open_session_exists = ParkingSession.objects.filter(
+                    vehicle=existing_vehicle,
+                    status=ParkingSession.SESSION_STATUS_OPEN
+                ).exists()
+
+                if open_session_exists:
+                    self.add_error(
+                        'plate_number',
+                        'برای این وسیله نقلیه یک سشن باز وجود دارد.'
+                    )
+
+        return cleaned_data

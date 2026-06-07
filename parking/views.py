@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db import transaction
 from django.contrib.auth.models import User
-from django.db.models import Sum
+from django.db.models import Sum, Exists, OuterRef
 from django.utils import timezone
 
 from .models import (
@@ -20,7 +20,8 @@ from .forms import (
     VehicleForm,
     ParkingLotForm,
     ParkingSpotForm,
-    TariffForm
+    TariffForm,
+    ParkingSessionEntryForm,
 )    
 
 
@@ -564,4 +565,103 @@ def tariff_update(request, pk):
     return render(request, 'parking/tariff_form.html', {
         'form': form,
         'title': 'ویرایش تعرفه',
+    })
+
+def parking_session_list(request):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    sessions = ParkingSession.objects.select_related(
+        'vehicle',
+        'spot',
+        'spot__parking_lot',
+    ).filter(
+        vehicle__customer=customer
+    ).order_by('-entry_time')
+
+    return render(request, 'parking/parking_session_list.html', {
+        'sessions': sessions,
+        'customer': customer,
+    })
+
+
+def parking_session_create(request):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    if request.method == 'POST':
+        form = ParkingSessionEntryForm(request.POST, customer=customer)
+
+        if form.is_valid():
+            plate_number = form.cleaned_data['plate_number']
+            owner_name = form.cleaned_data.get('owner_name')
+            vehicle_type = form.cleaned_data['vehicle_type']
+            color = form.cleaned_data.get('color')
+            spot = form.cleaned_data['spot']
+
+            vehicle, created = Vehicle.objects.get_or_create(
+                customer=customer,
+                plate_number=plate_number,
+                defaults={
+                    'owner_name': owner_name,
+                    'type': vehicle_type,
+                    'color': color,
+                }
+            )
+
+            if not created:
+                vehicle.owner_name = owner_name
+                vehicle.type = vehicle_type
+                vehicle.color = color
+                vehicle.save()
+
+            ParkingSession.objects.create(
+                vehicle=vehicle,
+                spot=spot,
+                status=ParkingSession.SESSION_STATUS_OPEN
+            )
+
+            return redirect('parking:parking_session_list')
+
+    else:
+        form = ParkingSessionEntryForm(customer=customer)
+
+    return render(request, 'parking/parking_session_form.html', {
+        'form': form,
+        'title': 'ثبت ورود خودرو',
+    })
+def parking_session_close(request, pk):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    session = get_object_or_404(
+        ParkingSession,
+        pk=pk,
+        vehicle__customer=customer,
+        status=ParkingSession.SESSION_STATUS_OPEN,
+    )
+
+    if request.method == 'POST':
+        session.exit_time = timezone.now()
+        session.save()
+
+        return redirect('parking:parking_session_list')
+
+    return render(request, 'parking/parking_session_close.html', {
+        'session': session,
     })

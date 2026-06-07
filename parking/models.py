@@ -150,8 +150,7 @@ class Vehicle(models.Model):
     )
 
     owner_name = models.CharField("نام مالک", max_length=100, blank=True)
-    owner_phone = models.CharField("تلفن مالک", max_length=11, blank=True)
-
+    
     type = models.CharField(
         "نوع وسیله",
         max_length=20,

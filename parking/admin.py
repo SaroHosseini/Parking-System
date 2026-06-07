@@ -35,9 +35,9 @@ class CustomerUserAdmin(admin.ModelAdmin):
 @admin.register(models.Vehicle)
 class VehicleAdmin(admin.ModelAdmin):
     list_per_page = 20
-    list_display = ['id', 'customer', 'plate_number_display', 'owner_name', 'owner_phone', 'type', 'color']
+    list_display = ['id', 'customer', 'plate_number_display', 'owner_name','type', 'color']
     list_filter = ['customer', 'type', 'color']
-    search_fields = ['plate_number', 'owner_name__istartswith', 'owner_phone', 'customer__name']
+    search_fields = ['plate_number', 'owner_name__istartswith','customer__name']
     list_select_related = ['customer']
 
     def plate_number_display(self, obj):

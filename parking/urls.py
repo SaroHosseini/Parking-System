@@ -35,4 +35,7 @@ urlpatterns = [
     path('tariffs/', views.tariff_list, name='tariff_list'),
     path('tariffs/add/', views.tariff_create, name='tariff_create'),
     path('tariffs/<int:pk>/edit/', views.tariff_update, name='tariff_update'),
+    path('sessions/', views.parking_session_list, name='parking_session_list'),
+    path('sessions/add/', views.parking_session_create, name='parking_session_create'),
+    path('sessions/<int:pk>/close/', views.parking_session_close, name='parking_session_close'),
 ]

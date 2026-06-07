@@ -1,0 +1,26 @@
+{% extends 'parking/base_dashboard.html' %}
+
+{% block title %}ثبت خروج خودرو{% endblock %}
+
+{% block content %}
+    <h1>ثبت خروج خودرو</h1>
+
+    <p>آیا از ثبت خروج این خودرو مطمئن هستید؟</p>
+
+    <ul>
+        <li>پلاک: {{ session.vehicle.plate_number }}</li>
+        <li>مالک: {{ session.vehicle.owner_name }}</li>
+        <li>پارکینگ: {{ session.spot.parking_lot.name }}</li>
+        <li>جایگاه: {{ session.spot.code }}</li>
+        <li>زمان ورود: {{ session.entry_time }}</li>
+    </ul>
+
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">بله، ثبت خروج</button>
+    </form>
+
+    <hr>
+
+    <a href="{% url 'parking:parking_session_list' %}">انصراف و بازگشت</a>
+{% endblock %}

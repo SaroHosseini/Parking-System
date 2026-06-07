@@ -1,0 +1,19 @@
+{% extends 'parking/base_dashboard.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+    <h1>{{ title }}</h1>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {{ form.as_p }}
+
+        <button type="submit">ثبت ورود</button>
+    </form>
+
+    <hr>
+
+    <a href="{% url 'parking:parking_session_list' %}">بازگشت به لیست سشن‌ها</a>
+{% endblock %}
