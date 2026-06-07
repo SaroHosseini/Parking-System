@@ -208,8 +208,15 @@ def vehicle_list(request):
     if customer is None:
         return redirect('parking:dashboard')
 
+    open_sessions = ParkingSession.objects.filter(
+        vehicle=OuterRef('pk'),
+        status=ParkingSession.SESSION_STATUS_OPEN
+    )
+
     vehicles = Vehicle.objects.filter(
         customer=customer
+    ).annotate(
+        has_open_session=Exists(open_sessions)
     ).order_by('plate_number')
 
     return render(request, 'parking/vehicle_list.html', {

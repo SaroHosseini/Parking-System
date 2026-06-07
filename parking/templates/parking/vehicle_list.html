@@ -1,29 +1,51 @@
-<table border="1" cellpadding="8">
-    <thead>
-        <tr>
-            <th>پلاک</th>
-            <th>مالک</th>
-            <th>نوع وسیله</th>
-            <th>رنگ</th>
-            <th>عملیات</th>
-        </tr>
-    </thead>
+{% extends 'parking/base_dashboard.html' %}
 
-    <tbody>
-        {% for vehicle in vehicles %}
-            <tr>
-                <td>{{ vehicle.plate_number }}</td>
-                <td>{{ vehicle.owner_name }}</td>
-                <td>{{ vehicle.get_type_display }}</td>
-                <td>{{ vehicle.color }}</td>
-                <td>
-                    <a href="{% url 'parking:vehicle_update' vehicle.id %}">ویرایش</a>
-                </td>
-            </tr>
-        {% empty %}
-            <tr>
-                <td colspan="5">هنوز وسیله نقلیه‌ای ثبت نشده است.</td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
+{% block title %}اطلاعات وسایل نقلیه{% endblock %}
+
+{% block content %}
+    <div dir="rtl" style="text-align: right;">
+        <h1>اطلاعات وسایل نقلیه</h1>
+
+        <p>مشتری: {{ customer.name }}</p>
+
+        <table border="1" cellpadding="8" style="border-collapse: collapse; text-align: right; margin-right: 0; margin-left: auto;">
+            <thead>
+                <tr>
+                    <th>عملیات</th>
+                    <th>وضعیت</th>
+                    <th>رنگ</th>
+                    <th>نوع وسیله</th>
+                    <th>مالک</th>
+                    <th>پلاک</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for vehicle in vehicles %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'parking:vehicle_update' vehicle.id %}">ویرایش</a>
+                        </td>
+
+                        <td>
+                            {% if vehicle.has_open_session %}
+                                داخل پارکینگ
+                            {% else %}
+                                خارج شده
+                            {% endif %}
+                        </td>
+
+                        <td>{{ vehicle.color }}</td>
+                        <td>{{ vehicle.get_type_display }}</td>
+                        <td>{{ vehicle.owner_name }}</td>
+                        <td>{{ vehicle.plate_number }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6">هنوز وسیله نقلیه‌ای ثبت نشده است.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
