@@ -1,0 +1,23 @@
+{% extends 'parking/base_dashboard.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+    <h1>{{ title }}</h1>
+
+    {% if customer_user %}
+        <p>نام کاربری: {{ customer_user.user.username }}</p>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+
+        {{ form.as_p }}
+
+        <button type="submit">ذخیره</button>
+    </form>
+
+    <hr>
+
+    <a href="{% url 'parking:customer_user_list' %}">بازگشت به لیست کاربران</a>
+{% endblock %}

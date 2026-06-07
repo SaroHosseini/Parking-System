@@ -1,0 +1,55 @@
+{% extends 'parking/base_dashboard.html' %}
+
+{% block title %}کاربران و نقش‌ها{% endblock %}
+
+{% block content %}
+    <h1>کاربران و نقش‌ها</h1>
+
+    <p>مشتری: {{ customer.name }}</p>
+
+    <a href="{% url 'parking:customer_user_create' %}">افزودن کاربر جدید</a>
+
+    <hr>
+
+    <table border="1" cellpadding="8">
+        <thead>
+            <tr>
+                <th>نام کاربری</th>
+                <th>نام</th>
+                <th>ایمیل</th>
+                <th>نقش</th>
+                <th>فعال</th>
+                <th>عملیات</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for customer_user in users %}
+                <tr>
+                    <td>{{ customer_user.user.username }}</td>
+                    <td>{{ customer_user.user.first_name|default:"-" }}</td>
+                    <td>{{ customer_user.user.email|default:"-" }}</td>
+                    <td>{{ customer_user.get_role_display }}</td>
+                    <td>
+                        {% if customer_user.is_active and customer_user.user.is_active %}
+                            بله
+                        {% else %}
+                            خیر
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if customer_user.user != request.user %}
+                            <a href="{% url 'parking:customer_user_update' customer_user.id %}">ویرایش</a>
+                        {% else %}
+                            کاربر فعلی
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6">هنوز کاربری ثبت نشده است.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

@@ -111,7 +111,7 @@ class CustomerUser(models.Model):
         choices=ROLE_CHOICES,
         default=ROLE_OPERATOR,
     )
-
+    
     is_active = models.BooleanField("فعال است؟", default=True)
 
     class Meta:

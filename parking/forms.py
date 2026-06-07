@@ -3,6 +3,7 @@ import re
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
+from django.core.exceptions import ValidationError
 
 from .models import (
     Customer,
@@ -359,3 +360,130 @@ class ReportFilterForm(forms.Form):
             self.fields['parking_lot'].queryset = ParkingLot.objects.filter(
                 customer=customer
             ).order_by('name')        
+
+class CustomerUserCreateForm(forms.Form):
+    username = forms.RegexField(
+        label='نام کاربری',
+        regex=r'^[A-Za-z0-9_]+$',
+        max_length=150,
+        error_messages={
+            'invalid': 'نام کاربری فقط باید شامل حروف انگلیسی، عدد و _ باشد.'
+        }
+    )
+
+    full_name = forms.CharField(
+        label='نام کاربر',
+        max_length=100,
+        required=False
+    )
+
+    email = forms.EmailField(
+        label='ایمیل',
+        required=False
+    )
+
+    password = forms.CharField(
+        label='رمز عبور',
+        widget=forms.PasswordInput,
+        min_length=8,
+        help_text='رمز عبور باید حداقل ۸ کاراکتر، یک حرف بزرگ انگلیسی و یک عدد داشته باشد.'
+    )
+
+    password_confirm = forms.CharField(
+        label='تکرار رمز عبور',
+        widget=forms.PasswordInput
+    )
+
+    role = forms.ChoiceField(
+        label='نقش کاربر',
+        choices=CustomerUser.ROLE_CHOICES,
+        initial=CustomerUser.ROLE_OPERATOR
+    )
+
+    is_active = forms.BooleanField(
+        label='فعال باشد؟',
+        required=False,
+        initial=True
+    )
+
+    def clean_username(self):
+        username = self.cleaned_data['username']
+
+        if User.objects.filter(username__iexact=username).exists():
+            raise forms.ValidationError('این نام کاربری قبلاً ثبت شده است.')
+
+        return username
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+
+        if email and User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError('این ایمیل قبلاً برای یک کاربر ثبت شده است.')
+
+        return email
+
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+
+        if not re.search(r'[A-Z]', password):
+            raise forms.ValidationError('رمز عبور باید حداقل یک حرف بزرگ انگلیسی داشته باشد.')
+
+        if not re.search(r'[0-9]', password):
+            raise forms.ValidationError('رمز عبور باید حداقل یک عدد داشته باشد.')
+
+        return password
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        password = cleaned_data.get('password')
+        password_confirm = cleaned_data.get('password_confirm')
+
+        if password and password_confirm and password != password_confirm:
+            raise forms.ValidationError('رمز عبور و تکرار آن یکسان نیستند.')
+
+        return cleaned_data
+
+class CustomerUserUpdateForm(forms.ModelForm):
+    full_name = forms.CharField(
+        label='نام کاربر',
+        max_length=100,
+        required=False
+    )
+
+    email = forms.EmailField(
+        label='ایمیل',
+        required=False
+    )
+
+    class Meta:
+        model = CustomerUser
+        fields = ['role', 'is_active']
+
+        labels = {
+            'role': 'نقش کاربر',
+            'is_active': 'فعال است؟',
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.user_instance = kwargs.pop('user_instance', None)
+        super().__init__(*args, **kwargs)
+
+        if self.user_instance:
+            self.fields['full_name'].initial = self.user_instance.first_name
+            self.fields['email'].initial = self.user_instance.email
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+
+        if email and self.user_instance:
+            exists = User.objects.filter(
+                email__iexact=email
+            ).exclude(
+                pk=self.user_instance.pk
+            ).exists()
+
+            if exists:
+                raise forms.ValidationError('این ایمیل قبلاً برای یک کاربر دیگر ثبت شده است.')
+
+        return email

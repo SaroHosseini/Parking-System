@@ -24,6 +24,8 @@ from .forms import (
     ParkingSessionEntryForm,
     PaymentForm,
     ReportFilterForm,
+    CustomerUserCreateForm,
+    CustomerUserUpdateForm,
 )
 
 
@@ -903,3 +905,123 @@ def report_dashboard(request):
     }
 
     return render(request, 'parking/report_dashboard.html', context)
+
+def customer_user_list(request):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    if not is_owner(request.user):
+        return redirect('parking:dashboard')
+
+    users = CustomerUser.objects.select_related(
+        'user',
+        'customer',
+    ).filter(
+        customer=customer
+    ).order_by('role', 'user__username')
+
+    return render(request, 'parking/customer_user_list.html', {
+        'users': users,
+        'customer': customer,
+    })
+
+
+def customer_user_create(request):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    if not is_owner(request.user):
+        return redirect('parking:dashboard')
+
+    if request.method == 'POST':
+        form = CustomerUserCreateForm(request.POST)
+
+        if form.is_valid():
+            user = User.objects.create_user(
+                username=form.cleaned_data['username'],
+                password=form.cleaned_data['password'],
+                email=form.cleaned_data.get('email') or '',
+                first_name=form.cleaned_data.get('full_name') or '',
+            )
+
+            user.is_active = form.cleaned_data.get('is_active')
+            user.save(update_fields=['is_active'])
+
+            CustomerUser.objects.create(
+                user=user,
+                customer=customer,
+                role=form.cleaned_data['role'],
+                is_active=form.cleaned_data.get('is_active'),
+            )
+
+            return redirect('parking:customer_user_list')
+
+    else:
+        form = CustomerUserCreateForm()
+
+    return render(request, 'parking/customer_user_form.html', {
+        'form': form,
+        'title': 'افزودن کاربر جدید',
+    })
+
+
+def customer_user_update(request, pk):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    if not is_owner(request.user):
+        return redirect('parking:dashboard')
+
+    customer_user = get_object_or_404(
+        CustomerUser.objects.select_related('user', 'customer'),
+        pk=pk,
+        customer=customer,
+    )
+
+    if customer_user.user == request.user:
+        return redirect('parking:customer_user_list')
+
+    if request.method == 'POST':
+        form = CustomerUserUpdateForm(
+            request.POST,
+            instance=customer_user,
+            user_instance=customer_user.user,
+        )
+
+        if form.is_valid():
+            user = customer_user.user
+            user.first_name = form.cleaned_data.get('full_name') or ''
+            user.email = form.cleaned_data.get('email') or ''
+            user.is_active = form.cleaned_data.get('is_active')
+            user.save(update_fields=['first_name', 'email', 'is_active'])
+
+            form.save()
+
+            return redirect('parking:customer_user_list')
+
+    else:
+        form = CustomerUserUpdateForm(
+            instance=customer_user,
+            user_instance=customer_user.user,
+        )
+
+    return render(request, 'parking/customer_user_form.html', {
+        'form': form,
+        'title': 'ویرایش کاربر',
+        'customer_user': customer_user,
+    })
