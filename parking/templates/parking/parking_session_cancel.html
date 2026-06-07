@@ -1,0 +1,33 @@
+{% extends 'parking/base_dashboard.html' %}
+{% load date_filters %}
+
+{% block title %}لغو سشن پارک{% endblock %}
+
+{% block content %}
+    <h1>لغو سشن پارک</h1>
+
+    <p>پارکینگ: {{ customer.name }}</p>
+
+    <p>آیا مطمئن هستید که می‌خواهید این سشن را لغو کنید؟</p>
+
+    <ul>
+        <li>پلاک: {{ session.vehicle.plate_number }}</li>
+        <li>مالک: {{ session.vehicle.owner_name|default:"-" }}</li>
+        <li>پارکینگ: {{ session.spot.parking_lot.name }}</li>
+        <li>جایگاه: {{ session.spot.code }}</li>
+        <li>زمان ورود: {{ session.entry_time|jalali_gregorian }}</li>
+    </ul>
+
+    <p>
+        با لغو این سشن، جایگاه آزاد می‌شود و پرداخت یا رسیدی ساخته نمی‌شود.
+    </p>
+
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">بله، لغو شود</button>
+    </form>
+
+    <hr>
+
+    <a href="{% url 'parking:parking_session_list' %}">انصراف و بازگشت</a>
+{% endblock %}

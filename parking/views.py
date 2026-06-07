@@ -767,6 +767,40 @@ def parking_session_close(request, pk):
         'session': session,
     })
 
+def parking_session_cancel(request, pk):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    session = get_object_or_404(
+        ParkingSession.objects.select_related(
+            'vehicle',
+            'spot',
+            'spot__parking_lot',
+        ),
+        pk=pk,
+        vehicle__customer=customer,
+        status=ParkingSession.SESSION_STATUS_OPEN,
+    )
+
+    if request.method == 'POST':
+        session.status = ParkingSession.SESSION_STATUS_CANCELLED
+        session.save()
+
+        session.spot.is_occupied = False
+        session.spot.save(update_fields=['is_occupied'])
+
+        return redirect('parking:parking_session_list')
+
+    return render(request, 'parking/parking_session_cancel.html', {
+        'session': session,
+        'customer': customer,
+    })
+
 def parking_session_detail(request, pk):
     if not request.user.is_authenticated:
         return redirect('parking:login')

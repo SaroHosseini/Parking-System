@@ -43,6 +43,8 @@
 
     {% if session.status == 'open' %}
         <a href="{% url 'parking:parking_session_close' session.id %}">ثبت خروج خودرو</a>
+        |
+        <a href="{% url 'parking:parking_session_cancel' session.id %}">لغو سشن</a>
     {% endif %}
 
     <hr>
