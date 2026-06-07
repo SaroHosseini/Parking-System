@@ -877,4 +877,66 @@ class AccountPasswordChangeForm(forms.Form):
         if new_password and new_password_confirm and new_password != new_password_confirm:
             raise forms.ValidationError('رمز عبور جدید و تکرار آن یکسان نیستند.')
 
-        return cleaned_data    
+        return cleaned_data   
+
+class CustomerSettingsForm(forms.ModelForm):
+    class Meta:
+        model = Customer
+        fields = ['name', 'owner_name', 'phone', 'email', 'address']
+
+        labels = {
+            'name': 'نام پارکینگ / مجموعه',
+            'owner_name': 'نام مالک یا مدیر',
+            'phone': 'شماره تماس',
+            'email': 'ایمیل',
+            'address': 'آدرس پارکینگ',
+        }
+
+    def clean_phone(self):
+        phone = self.cleaned_data.get('phone')
+
+        if not phone:
+            raise forms.ValidationError('وارد کردن شماره تماس الزامی است.')
+
+        if not phone.isdigit():
+            raise forms.ValidationError('شماره تماس فقط باید شامل عدد باشد.')
+
+        if len(phone) != 11:
+            raise forms.ValidationError('شماره تماس باید ۱۱ رقم باشد.')
+
+        exists = Customer.objects.filter(
+            phone=phone
+        ).exclude(
+            pk=self.instance.pk
+        ).exists()
+
+        if exists:
+            raise forms.ValidationError('این شماره تماس قبلاً ثبت شده است.')
+
+        return phone
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+
+        if not email:
+            raise forms.ValidationError('وارد کردن ایمیل الزامی است.')
+
+        customer_exists = Customer.objects.filter(
+            email__iexact=email
+        ).exclude(
+            pk=self.instance.pk
+        ).exists()
+
+        if customer_exists:
+            raise forms.ValidationError('این ایمیل قبلاً برای یک پارکینگ دیگر ثبت شده است.')
+
+        user_exists = User.objects.filter(
+            email__iexact=email
+        ).exclude(
+            customer_profile__customer=self.instance
+        ).exists()
+
+        if user_exists:
+            raise forms.ValidationError('این ایمیل قبلاً برای یک کاربر دیگر ثبت شده است.')
+
+        return email         

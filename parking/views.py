@@ -37,6 +37,7 @@ from .forms import (
     CustomerUserFilterForm,
     CustomerUserPasswordForm,
     AccountPasswordChangeForm,
+    CustomerSettingsForm,
 )
 
 
@@ -1437,6 +1438,33 @@ def account_change_password(request):
         form = AccountPasswordChangeForm(request.user)
 
     return render(request, 'parking/account_change_password.html', {
+        'form': form,
+        'customer': customer,
+    })
+
+def customer_settings(request):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    if not is_owner(request.user):
+        return redirect('parking:dashboard')
+
+    if request.method == 'POST':
+        form = CustomerSettingsForm(request.POST, instance=customer)
+
+        if form.is_valid():
+            form.save()
+            return redirect('parking:customer_settings')
+
+    else:
+        form = CustomerSettingsForm(instance=customer)
+
+    return render(request, 'parking/customer_settings.html', {
         'form': form,
         'customer': customer,
     })

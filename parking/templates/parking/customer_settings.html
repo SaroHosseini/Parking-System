@@ -1,0 +1,23 @@
+{% extends 'parking/base_dashboard.html' %}
+
+{% block title %}تنظیمات پارکینگ{% endblock %}
+
+{% block content %}
+    <h1>تنظیمات پارکینگ</h1>
+
+    <p>پارکینگ: {{ customer.name }}</p>
+
+    <hr>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {{ form.as_p }}
+
+        <button type="submit">ذخیره تغییرات</button>
+    </form>
+
+    <hr>
+
+    <a href="{% url 'parking:dashboard' %}">بازگشت به داشبورد</a>
+{% endblock %}
