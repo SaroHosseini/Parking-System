@@ -324,3 +324,38 @@ class PaymentForm(forms.ModelForm):
         labels = {
             'payment_method': 'روش پرداخت',
         }    
+
+class ReportFilterForm(forms.Form):
+    start_date = forms.DateField(
+        label='از تاریخ',
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'})
+    )
+
+    end_date = forms.DateField(
+        label='تا تاریخ',
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'})
+    )
+
+    vehicle_type = forms.ChoiceField(
+        label='نوع وسیله',
+        required=False,
+        choices=[('', 'همه انواع وسیله')] + list(Vehicle.VEHICLE_TYPE_CHOICES)
+    )
+
+    parking_lot = forms.ModelChoiceField(
+        label='پارکینگ',
+        required=False,
+        queryset=ParkingLot.objects.none(),
+        empty_label='همه پارکینگ‌ها'
+    )
+
+    def __init__(self, *args, **kwargs):
+        customer = kwargs.pop('customer', None)
+        super().__init__(*args, **kwargs)
+
+        if customer:
+            self.fields['parking_lot'].queryset = ParkingLot.objects.filter(
+                customer=customer
+            ).order_by('name')        

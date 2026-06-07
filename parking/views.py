@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db import transaction
 from django.contrib.auth.models import User
-from django.db.models import Sum, Exists, OuterRef,Count
+from django.db.models import Sum, Avg, Count
 from django.utils import timezone
 
 from .models import (
@@ -23,6 +23,7 @@ from .forms import (
     TariffForm,
     ParkingSessionEntryForm,
     PaymentForm,
+    ReportFilterForm,
 )    
 
 
@@ -727,6 +728,19 @@ def report_dashboard(request):
 
     today = timezone.localdate()
 
+    form = ReportFilterForm(request.GET or None, customer=customer)
+
+    start_date = today
+    end_date = today
+    vehicle_type = ''
+    parking_lot = None
+
+    if form.is_valid():
+        start_date = form.cleaned_data.get('start_date') or today
+        end_date = form.cleaned_data.get('end_date') or today
+        vehicle_type = form.cleaned_data.get('vehicle_type') or ''
+        parking_lot = form.cleaned_data.get('parking_lot')
+
     sessions = ParkingSession.objects.select_related(
         'vehicle',
         'spot',
@@ -738,36 +752,120 @@ def report_dashboard(request):
     payments = Payment.objects.select_related(
         'session',
         'session__vehicle',
+        'session__spot',
+        'session__spot__parking_lot',
     ).filter(
         session__vehicle__customer=customer
     )
 
-    today_sessions = sessions.filter(
-        entry_time__date=today
+    spots = ParkingSpot.objects.select_related(
+        'parking_lot',
+        'parking_lot__customer',
+    ).filter(
+        parking_lot__customer=customer
     )
 
-    today_closed_sessions = sessions.filter(
-        exit_time__date=today,
+    if vehicle_type:
+        sessions = sessions.filter(vehicle__type=vehicle_type)
+        payments = payments.filter(session__vehicle__type=vehicle_type)
+
+    if parking_lot:
+        sessions = sessions.filter(spot__parking_lot=parking_lot)
+        payments = payments.filter(session__spot__parking_lot=parking_lot)
+        spots = spots.filter(parking_lot=parking_lot)
+
+    entries_in_range = sessions.filter(
+        entry_time__date__gte=start_date,
+        entry_time__date__lte=end_date,
+    )
+
+    exits_in_range = sessions.filter(
+        exit_time__date__gte=start_date,
+        exit_time__date__lte=end_date,
         status=ParkingSession.SESSION_STATUS_CLOSED,
     )
 
-    today_successful_payments = payments.filter(
+    successful_payments = payments.filter(
         payment_status=Payment.PAYMENT_STATUS_CLOSED,
-        payment_time__date=today,
+        payment_time__date__gte=start_date,
+        payment_time__date__lte=end_date,
     )
 
-    today_income = today_successful_payments.aggregate(
+    total_income = successful_payments.aggregate(
         total=Sum('amount')
     )['total'] or 0
 
+    average_duration = exits_in_range.aggregate(
+        average=Avg('total_duration_minutes')
+    )['average'] or 0
+
+    total_spots = spots.count()
+    occupied_spots = spots.filter(is_occupied=True).count()
+    free_spots = spots.filter(is_occupied=False).count()
+
+    occupancy_rate = 0
+    if total_spots > 0:
+        occupancy_rate = round((occupied_spots / total_spots) * 100, 2)
+
+    active_sessions_count = sessions.filter(
+        status=ParkingSession.SESSION_STATUS_OPEN
+    ).count()
+
+    vehicle_type_rows = []
+
+    vehicle_type_stats = entries_in_range.values(
+        'vehicle__type'
+    ).annotate(
+        count=Count('id')
+    ).order_by('vehicle__type')
+
+    vehicle_type_labels = dict(Vehicle.VEHICLE_TYPE_CHOICES)
+
+    for row in vehicle_type_stats:
+        vehicle_type_rows.append({
+            'label': vehicle_type_labels.get(row['vehicle__type'], row['vehicle__type']),
+            'count': row['count'],
+        })
+
+    payment_method_rows = []
+
+    payment_method_stats = successful_payments.values(
+        'payment_method'
+    ).annotate(
+        count=Count('id'),
+        total=Sum('amount'),
+    ).order_by('payment_method')
+
+    payment_method_labels = dict(Payment.PAYMENT_METHOD_CHOICES)
+
+    for row in payment_method_stats:
+        payment_method_rows.append({
+            'label': payment_method_labels.get(row['payment_method'], row['payment_method'] or 'نامشخص'),
+            'count': row['count'],
+            'total': row['total'] or 0,
+        })
+
     context = {
         'customer': customer,
-        'today': today,
-        'today_sessions_count': today_sessions.count(),
-        'today_closed_sessions_count': today_closed_sessions.count(),
-        'today_successful_payments_count': today_successful_payments.count(),
-        'today_income': today_income,
-        'today_closed_sessions': today_closed_sessions.order_by('-exit_time'),
+        'form': form,
+        'start_date': start_date,
+        'end_date': end_date,
+
+        'entries_count': entries_in_range.count(),
+        'exits_count': exits_in_range.count(),
+        'successful_payments_count': successful_payments.count(),
+        'total_income': total_income,
+        'average_duration': round(average_duration, 2),
+        'active_sessions_count': active_sessions_count,
+
+        'total_spots': total_spots,
+        'occupied_spots': occupied_spots,
+        'free_spots': free_spots,
+        'occupancy_rate': occupancy_rate,
+
+        'vehicle_type_rows': vehicle_type_rows,
+        'payment_method_rows': payment_method_rows,
+        'closed_sessions': exits_in_range.order_by('-exit_time'),
     }
 
     return render(request, 'parking/report_dashboard.html', context)

@@ -7,28 +7,112 @@
     <h1>گزارش‌ها</h1>
 
     <p>مشتری: {{ customer.name }}</p>
-    <p>تاریخ گزارش: {{ today|jalali_gregorian_date }}</p>
 
     <hr>
 
-    <h2>خلاصه امروز</h2>
+    <h2>فیلتر گزارش</h2>
+
+    <form method="get">
+        {{ form.as_p }}
+
+        <button type="submit">نمایش گزارش</button>
+    </form>
+
+    <hr>
+
+    <h2>خلاصه گزارش</h2>
+
+    <p>
+        بازه گزارش:
+        {{ start_date|jalali_gregorian_date }}
+        تا
+        {{ end_date|jalali_gregorian_date }}
+    </p>
 
     <ul>
-        <li>تعداد ورودهای امروز: {{ today_sessions_count }}</li>
-        <li>تعداد خروج‌های ثبت‌شده امروز: {{ today_closed_sessions_count }}</li>
-        <li>تعداد پرداخت‌های موفق امروز: {{ today_successful_payments_count }}</li>
-        <li>درآمد امروز: {{ today_income }}</li>
+        <li>تعداد ورودها: {{ entries_count }}</li>
+        <li>تعداد خروج‌ها: {{ exits_count }}</li>
+        <li>تعداد پرداخت‌های موفق: {{ successful_payments_count }}</li>
+        <li>درآمد کل: {{ total_income }}</li>
+        <li>میانگین مدت توقف: {{ average_duration }} دقیقه</li>
+        <li>سشن‌های فعال فعلی: {{ active_sessions_count }}</li>
     </ul>
 
     <hr>
 
-    <h2>سشن‌های بسته‌شده امروز</h2>
+    <h2>وضعیت اشغال فضا</h2>
+
+    <ul>
+        <li>کل جایگاه‌ها: {{ total_spots }}</li>
+        <li>جایگاه‌های اشغال: {{ occupied_spots }}</li>
+        <li>جایگاه‌های آزاد: {{ free_spots }}</li>
+        <li>درصد اشغال: {{ occupancy_rate }}٪</li>
+    </ul>
+
+    <hr>
+
+    <h2>گزارش بر اساس نوع وسیله</h2>
+
+    <table border="1" cellpadding="8">
+        <thead>
+            <tr>
+                <th>نوع وسیله</th>
+                <th>تعداد ورود</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for row in vehicle_type_rows %}
+                <tr>
+                    <td>{{ row.label }}</td>
+                    <td>{{ row.count }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="2">داده‌ای برای نوع وسیله وجود ندارد.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <hr>
+
+    <h2>گزارش بر اساس روش پرداخت</h2>
+
+    <table border="1" cellpadding="8">
+        <thead>
+            <tr>
+                <th>روش پرداخت</th>
+                <th>تعداد پرداخت</th>
+                <th>مجموع درآمد</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for row in payment_method_rows %}
+                <tr>
+                    <td>{{ row.label }}</td>
+                    <td>{{ row.count }}</td>
+                    <td>{{ row.total }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="3">پرداخت موفقی در این بازه ثبت نشده است.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <hr>
+
+    <h2>سشن‌های بسته‌شده در بازه انتخابی</h2>
 
     <table border="1" cellpadding="8">
         <thead>
             <tr>
                 <th>پلاک</th>
                 <th>مالک</th>
+                <th>نوع وسیله</th>
                 <th>پارکینگ</th>
                 <th>جایگاه</th>
                 <th>زمان ورود</th>
@@ -39,10 +123,11 @@
         </thead>
 
         <tbody>
-            {% for session in today_closed_sessions %}
+            {% for session in closed_sessions %}
                 <tr>
                     <td>{{ session.vehicle.plate_number }}</td>
                     <td>{{ session.vehicle.owner_name }}</td>
+                    <td>{{ session.vehicle.get_type_display }}</td>
                     <td>{{ session.spot.parking_lot.name }}</td>
                     <td>{{ session.spot.code }}</td>
                     <td>{{ session.entry_time|jalali_gregorian }}</td>
@@ -52,7 +137,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="8">امروز هنوز سشن بسته‌شده‌ای ثبت نشده است.</td>
+                    <td colspan="9">در این بازه هیچ سشن بسته‌شده‌ای وجود ندارد.</td>
                 </tr>
             {% endfor %}
         </tbody>
