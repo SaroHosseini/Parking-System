@@ -44,4 +44,5 @@ urlpatterns = [
     path('users/add/', views.customer_user_create, name='customer_user_create'),
     path('users/<int:pk>/edit/', views.customer_user_update, name='customer_user_update'),
     path('sessions/<int:pk>/', views.parking_session_detail, name='parking_session_detail'),
+    path('receipts/<int:pk>/print/', views.receipt_print, name='receipt_print'),
 ]

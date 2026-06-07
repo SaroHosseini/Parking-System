@@ -54,7 +54,9 @@
                     </td>
                     <td>{{ receipt.issue_time|jalali_gregorian }}</td>
                     <td>
-                        <a href="{% url 'parking:receipt_detail' receipt.id %}">مشاهده رسید</a>
+                       <a href="{% url 'parking:receipt_detail' receipt.id %}">مشاهده رسید</a>
+                        |
+                        <a href="{% url 'parking:receipt_print' receipt.id %}">چاپ</a>
                     </td>
                 </tr>
             {% empty %}

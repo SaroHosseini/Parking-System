@@ -1,0 +1,125 @@
+{% load date_filters %}
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>چاپ رسید</title>
+
+    <style>
+        body {
+            font-family: Tahoma, Arial, sans-serif;
+            direction: rtl;
+            text-align: right;
+            padding: 20px;
+        }
+
+        .receipt-box {
+            width: 320px;
+            border: 1px solid #000;
+            padding: 15px;
+            margin: 0 auto;
+        }
+
+        h1, h2 {
+            text-align: center;
+            margin: 8px 0;
+        }
+
+        .row {
+            margin: 8px 0;
+            border-bottom: 1px dashed #999;
+            padding-bottom: 6px;
+        }
+
+        .print-button {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        @media print {
+            .print-button {
+                display: none;
+            }
+
+            body {
+                padding: 0;
+            }
+
+            .receipt-box {
+                border: none;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt-box">
+        <h1>Parkino</h1>
+        <h2>رسید پارکینگ</h2>
+
+        <div class="row">
+            شماره رسید: {{ receipt.receipt_number }}
+        </div>
+
+        <div class="row">
+            پارکینگ: {{ customer.name }}
+        </div>
+
+        <div class="row">
+            پلاک: {{ receipt.session.vehicle.plate_number }}
+        </div>
+
+        <div class="row">
+            مالک: {{ receipt.session.vehicle.owner_name|default:"-" }}
+        </div>
+
+        <div class="row">
+            نوع وسیله: {{ receipt.session.vehicle.get_type_display }}
+        </div>
+
+        <div class="row">
+            جایگاه: {{ receipt.session.spot.code }}
+        </div>
+
+        <div class="row">
+            زمان ورود: {{ receipt.session.entry_time|jalali_gregorian }}
+        </div>
+
+        <div class="row">
+            زمان خروج: {{ receipt.session.exit_time|jalali_gregorian }}
+        </div>
+
+        <div class="row">
+            مدت توقف: {{ receipt.session.total_duration_minutes }} دقیقه
+        </div>
+
+        <div class="row">
+            مبلغ: {{ receipt.calculated_fee }}
+        </div>
+
+        <div class="row">
+            روش پرداخت:
+            {% if receipt.payment %}
+                {{ receipt.payment.get_payment_method_display }}
+            {% else %}
+                -
+            {% endif %}
+        </div>
+
+        <div class="row">
+            زمان صدور: {{ receipt.issue_time|jalali_gregorian }}
+        </div>
+
+        <h2>با تشکر</h2>
+    </div>
+
+    <div class="print-button">
+        <button onclick="window.print()">چاپ رسید</button>
+        <br><br>
+        <a href="{% url 'parking:receipt_detail' receipt.id %}">بازگشت به جزئیات رسید</a>
+        <br>
+        <a href="{% url 'parking:receipt_list' %}">بازگشت به لیست رسیدها</a>
+    </div>
+</body>
+</html>

@@ -993,6 +993,31 @@ def receipt_detail(request, pk):
         'customer': customer,
     })
 
+def receipt_print(request, pk):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    receipt = get_object_or_404(
+        Receipt.objects.select_related(
+            'session',
+            'session__vehicle',
+            'session__spot',
+            'session__spot__parking_lot',
+            'payment',
+        ),
+        pk=pk,
+        session__vehicle__customer=customer,
+    )
+
+    return render(request, 'parking/receipt_print.html', {
+        'receipt': receipt,
+        'customer': customer,
+    })
 
 def report_dashboard(request):
     if not request.user.is_authenticated:

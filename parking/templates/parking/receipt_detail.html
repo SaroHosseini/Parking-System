@@ -49,5 +49,8 @@
 
     <hr>
 
+    <a href="{% url 'parking:receipt_print' receipt.id %}">چاپ رسید</a>
+    <br>
     <a href="{% url 'parking:receipt_list' %}">بازگشت به لیست رسیدها</a>
+    
 {% endblock %}
