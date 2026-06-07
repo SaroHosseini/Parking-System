@@ -46,7 +46,13 @@
                     <td>{{ payment.amount }}</td>
                     <td>{{ payment.get_payment_method_display|default:"-" }}</td>
                     <td>{{ payment.get_payment_status_display }}</td>
-                    <td>{{ payment.payment_time|jalali_gregorian }}</td>
+                    <td>
+                        {% if payment.payment_time %}
+                            {{ payment.payment_time|jalali_gregorian }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
                     <td>
                         {% if payment.payment_status == 'open' %}
                             <a href="{% url 'parking:payment_update' payment.id %}">ثبت روش پرداخت</a>

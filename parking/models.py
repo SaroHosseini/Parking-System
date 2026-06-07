@@ -514,7 +514,12 @@ class Payment(models.Model):
     ]
 
     amount = models.DecimalField('مقدار', max_digits=10, decimal_places=2, blank=True)
-    payment_time = models.DateTimeField('زمان پرداخت', auto_now_add=True)
+
+    payment_time = models.DateTimeField(
+        "زمان پرداخت",
+        null=True,
+        blank=True
+    )
 
     payment_method = models.CharField(
         'نحوه پرداخت',
@@ -549,17 +554,22 @@ class Payment(models.Model):
         return f"پرداخت #{self.id} - {self.amount} - {self.get_payment_method_display()}"
 
     def save(self, *args, **kwargs):
-        if self.payment_method and self.payment_status == Payment.PAYMENT_STATUS_OPEN:
-            self.payment_status = Payment.PAYMENT_STATUS_CLOSED
+        payment_is_being_closed = (
+            self.payment_method and
+            self.payment_status == Payment.PAYMENT_STATUS_OPEN
+        )
 
-        if self.payment_method and self.session:
+        if payment_is_being_closed:
+            self.payment_status = Payment.PAYMENT_STATUS_CLOSED
+            self.payment_time = timezone.now()
+
+        if self.session:
             self.amount = self.session.calculated_fee
 
         super().save(*args, **kwargs)
 
         if self.session:
             try_create_receipt(self.session)
-
 
 class Receipt(models.Model):
     issue_time = models.DateTimeField('زمان صدور رسید', default=timezone.now)

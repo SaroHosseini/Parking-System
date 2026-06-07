@@ -241,7 +241,6 @@ class CustomerLoginForm(AuthenticationForm):
                 code='customer_not_approved'
             )
 
-
 class ParkingSessionEntryForm(forms.Form):
     plate_number = forms.CharField(
         label='شماره پلاک',
@@ -268,7 +267,8 @@ class ParkingSessionEntryForm(forms.Form):
 
     spot = forms.ModelChoiceField(
         label='جایگاه پارک',
-        queryset=ParkingSpot.objects.none()
+        queryset=ParkingSpot.objects.none(),
+        empty_label='انتخاب جایگاه آزاد'
     )
 
     def __init__(self, *args, **kwargs):
@@ -290,6 +290,33 @@ class ParkingSessionEntryForm(forms.Form):
 
         plate_number = cleaned_data.get('plate_number')
         vehicle_type = cleaned_data.get('vehicle_type')
+        spot = cleaned_data.get('spot')
+
+        if self.customer and vehicle_type:
+            active_tariff_exists = Tariff.objects.filter(
+                customer=self.customer,
+                vehicle_type=vehicle_type,
+                is_active=True
+            ).exists()
+
+            if not active_tariff_exists:
+                self.add_error(
+                    'vehicle_type',
+                    'برای این نوع وسیله نقلیه تعرفه فعال ثبت نشده است.'
+                )
+
+        if self.customer and spot:
+            if spot.parking_lot.customer != self.customer:
+                self.add_error(
+                    'spot',
+                    'این جایگاه مربوط به حساب شما نیست.'
+                )
+
+            if spot.is_occupied:
+                self.add_error(
+                    'spot',
+                    'این جایگاه در حال حاضر اشغال است.'
+                )
 
         if self.customer and plate_number and vehicle_type:
             temp_vehicle = Vehicle(
@@ -321,8 +348,7 @@ class ParkingSessionEntryForm(forms.Form):
                     )
 
         return cleaned_data
-
-
+    
 class PaymentForm(forms.ModelForm):
     class Meta:
         model = Payment
@@ -332,6 +358,13 @@ class PaymentForm(forms.ModelForm):
             'payment_method': 'روش پرداخت',
         }
 
+    def clean_payment_method(self):
+        payment_method = self.cleaned_data.get('payment_method')
+
+        if not payment_method:
+            raise forms.ValidationError('انتخاب روش پرداخت الزامی است.')
+
+        return payment_method
 
 class ReportFilterForm(forms.Form):
     start_date = forms.DateField(
