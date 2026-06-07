@@ -5,6 +5,7 @@ from django.db.models import Sum, Avg, Count, Q
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.contrib.auth import update_session_auth_hash
+from datetime import timedelta
 
 from .models import (
     ParkingSpot,
@@ -117,7 +118,6 @@ def home(request):
 
     return render(request, 'parking/home.html')
 
-
 def dashboard(request):
     if not request.user.is_authenticated:
         return redirect('parking:login')
@@ -141,10 +141,8 @@ def dashboard(request):
 
     sessions = ParkingSession.objects.select_related(
         'vehicle',
-        'vehicle__customer',
         'spot',
         'spot__parking_lot',
-        'spot__parking_lot__customer',
     ).filter(
         vehicle__customer=customer
     )
@@ -152,21 +150,48 @@ def dashboard(request):
     payments = Payment.objects.select_related(
         'session',
         'session__vehicle',
-        'session__vehicle__customer',
+        'session__spot',
+        'session__spot__parking_lot',
     ).filter(
         session__vehicle__customer=customer
     )
 
+    receipts = Receipt.objects.select_related(
+        'session',
+        'session__vehicle',
+    ).filter(
+        session__vehicle__customer=customer
+    )
+
+    latest_payment = payments.order_by('-payment_time').first()
+    latest_receipt = receipts.order_by('-issue_time').first()
     total_spots = spots.count()
     occupied_spots = spots.filter(is_occupied=True).count()
     available_spots = spots.filter(is_occupied=False).count()
 
-    open_sessions = sessions.filter(
+    open_sessions_count = sessions.filter(
         status=ParkingSession.SESSION_STATUS_OPEN
     ).count()
 
-    closed_sessions = sessions.filter(
+    closed_sessions_count = sessions.filter(
         status=ParkingSession.SESSION_STATUS_CLOSED
+    ).count()
+
+    cancelled_sessions_count = sessions.filter(
+        status=ParkingSession.SESSION_STATUS_CANCELLED
+    ).count()
+
+    today_entries_count = sessions.filter(
+        entry_time__date=today
+    ).count()
+
+    today_exits_count = sessions.filter(
+        exit_time__date=today,
+        status=ParkingSession.SESSION_STATUS_CLOSED
+    ).count()
+
+    open_payments_count = payments.filter(
+        payment_status=Payment.PAYMENT_STATUS_OPEN
     ).count()
 
     today_income = payments.filter(
@@ -176,25 +201,53 @@ def dashboard(request):
         total=Sum('amount')
     )['total'] or 0
 
+    today_receipts_count = receipts.filter(
+        issue_time__date=today
+    ).count()
+
     active_sessions = sessions.filter(
         status=ParkingSession.SESSION_STATUS_OPEN
     ).order_by('-entry_time')[:10]
+
+    open_payments = payments.filter(
+        payment_status=Payment.PAYMENT_STATUS_OPEN
+    ).order_by('-payment_time')[:10]
+
+    monthly_report_start = today - timedelta(days=30)
+    monthly_report_end = today
 
     context = {
         'customer': customer,
         'user_profile': get_user_profile(request.user),
         'is_owner_user': is_owner(request.user),
+
         'total_spots': total_spots,
         'occupied_spots': occupied_spots,
         'available_spots': available_spots,
-        'open_sessions': open_sessions,
-        'closed_sessions': closed_sessions,
+
+        'open_sessions_count': open_sessions_count,
+        'closed_sessions_count': closed_sessions_count,
+        'cancelled_sessions_count': cancelled_sessions_count,
+
+        'today_entries_count': today_entries_count,
+        'today_exits_count': today_exits_count,
+        'open_payments_count': open_payments_count,
         'today_income': today_income,
+        'today_receipts_count': today_receipts_count,
+
+        'parking_lots_count': ParkingLot.objects.filter(customer=customer).count(),
+        'users_count': CustomerUser.objects.filter(customer=customer).count(),
+
         'active_sessions': active_sessions,
+        'open_payments': open_payments,
+        'latest_payment': latest_payment,
+        'latest_receipt': latest_receipt,
+        'monthly_report_start': monthly_report_start,
+        'monthly_report_end': monthly_report_end,
+
     }
 
     return render(request, 'parking/dashboard.html', context)
-
 
 def customer_request_view(request):
     if request.user.is_authenticated:

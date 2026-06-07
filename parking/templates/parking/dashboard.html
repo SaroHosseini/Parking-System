@@ -6,26 +6,75 @@
 {% block content %}
     <h1>داشبورد مدیریت پارکینگ</h1>
 
-    {% if customer %}
-        <p>پارکینگ: {{ customer.name }}</p>
-    {% else %}
-        <p>نمای کلی سیستم برای مدیر اصلی</p>
-    {% endif %}
-
+    <p>پارکینگ: {{ customer.name }}</p>
     <p>کاربر وارد شده: {{ request.user.username }}</p>
+    <p>نقش: {{ user_profile.get_role_display }}</p>
 
     <hr>
 
-    <h2>آمار کلی</h2>
+    <h2>عملیات سریع</h2>
 
     <ul>
-        <li>کل جایگاه‌ها: {{ total_spots }}</li>
-        <li>جایگاه‌های آزاد: {{ available_spots }}</li>
-        <li>جایگاه‌های اشغال: {{ occupied_spots }}</li>
-        <li>سشن‌های باز: {{ open_sessions }}</li>
-        <li>سشن‌های بسته: {{ closed_sessions }}</li>
-        <li>درآمد امروز: {{ today_income }}</li>
+        <li>
+            <a href="{% url 'parking:parking_session_create' %}">ثبت ورود خودرو</a>
+        </li>
+
+        <li>
+            {% if latest_receipt %}
+                <a href="{% url 'parking:receipt_detail' latest_receipt.id %}">مشاهده آخرین رسید</a>
+            {% else %}
+                <a href="{% url 'parking:receipt_list' %}">مشاهده رسیدها</a>
+            {% endif %}
+        </li>
+
+        <li>
+            <a href="{% url 'parking:payment_list' %}">مشاهده آخرین پرداخت</a>
+            {% if latest_payment %}
+                - {{ latest_payment.amount }}
+            {% endif %}
+        </li>
+
+        {% if is_owner_user %}
+            <li>
+                <a href="{% url 'parking:customer_user_create' %}">اضافه کردن کاربر جدید</a>
+            </li>
+
+            <li>
+                <a href="{% url 'parking:report_dashboard' %}?start_date={{ monthly_report_start|date:'Y-m-d' }}&end_date={{ monthly_report_end|date:'Y-m-d' }}">
+                    گزارش یک ماه اخیر
+                </a>
+            </li>
+        {% endif %}
     </ul>
+
+    <hr>
+
+    <h2>آمار عملیاتی امروز</h2>
+
+    <ul>
+        <li>ورودهای امروز: {{ today_entries_count }}</li>
+        <li>خروج‌های امروز: {{ today_exits_count }}</li>
+        <li>سشن‌های فعال فعلی: {{ open_sessions_count }}</li>
+        <li>پرداخت‌های در انتظار: {{ open_payments_count }}</li>
+        <li>رسیدهای صادرشده امروز: {{ today_receipts_count }}</li>
+    </ul>
+
+    {% if is_owner_user %}
+        <hr>
+
+        <h2>آمار مدیریتی</h2>
+
+        <ul>
+            <li>کل جایگاه‌ها: {{ total_spots }}</li>
+            <li>جایگاه‌های آزاد: {{ available_spots }}</li>
+            <li>جایگاه‌های اشغال: {{ occupied_spots }}</li>
+            <li>سشن‌های بسته‌شده: {{ closed_sessions_count }}</li>
+            <li>سشن‌های لغوشده: {{ cancelled_sessions_count }}</li>
+            <li>درآمد امروز: {{ today_income }}</li>
+            <li>تعداد پارکینگ‌ها: {{ parking_lots_count }}</li>
+            <li>تعداد کاربران: {{ users_count }}</li>
+        </ul>
+    {% endif %}
 
     <hr>
 
@@ -39,7 +88,7 @@
                 <th>پارکینگ</th>
                 <th>جایگاه</th>
                 <th>زمان ورود</th>
-                <th>وضعیت</th>
+                <th>عملیات</th>
             </tr>
         </thead>
 
@@ -47,15 +96,53 @@
             {% for session in active_sessions %}
                 <tr>
                     <td>{{ session.vehicle.plate_number }}</td>
-                    <td>{{ session.vehicle.owner_name }}</td>
+                    <td>{{ session.vehicle.owner_name|default:"-" }}</td>
                     <td>{{ session.spot.parking_lot.name }}</td>
                     <td>{{ session.spot.code }}</td>
                     <td>{{ session.entry_time|jalali_gregorian }}</td>
-                    <td>{{ session.get_status_display }}</td>
+                    <td>
+                        <a href="{% url 'parking:parking_session_detail' session.id %}">جزئیات</a>
+                        |
+                        <a href="{% url 'parking:parking_session_close' session.id %}">ثبت خروج</a>
+                    </td>
                 </tr>
             {% empty %}
                 <tr>
                     <td colspan="6">در حال حاضر هیچ سشن فعالی وجود ندارد.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <hr>
+
+    <h2>پرداخت‌های در انتظار</h2>
+
+    <table border="1" cellpadding="8">
+        <thead>
+            <tr>
+                <th>پلاک</th>
+                <th>مالک</th>
+                <th>مبلغ</th>
+                <th>زمان پرداخت</th>
+                <th>عملیات</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for payment in open_payments %}
+                <tr>
+                    <td>{{ payment.session.vehicle.plate_number }}</td>
+                    <td>{{ payment.session.vehicle.owner_name|default:"-" }}</td>
+                    <td>{{ payment.amount }}</td>
+                    <td>{{ payment.payment_time|jalali_gregorian }}</td>
+                    <td>
+                        <a href="{% url 'parking:payment_update' payment.id %}">ثبت روش پرداخت</a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="5">پرداخت در انتظاری وجود ندارد.</td>
                 </tr>
             {% endfor %}
         </tbody>
