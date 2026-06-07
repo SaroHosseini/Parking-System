@@ -13,6 +13,7 @@ from .models import (
     Vehicle,
     ParkingLot,
     Tariff,
+    Receipt,
 )
 
 from .forms import (
@@ -663,4 +664,54 @@ def payment_update(request, pk):
     return render(request, 'parking/payment_form.html', {
         'form': form,
         'payment': payment,
+    })
+
+def receipt_list(request):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    receipts = Receipt.objects.select_related(
+        'session',
+        'session__vehicle',
+        'session__spot',
+        'session__spot__parking_lot',
+        'payment',
+    ).filter(
+        session__vehicle__customer=customer
+    ).order_by('-issue_time')
+
+    return render(request, 'parking/receipt_list.html', {
+        'receipts': receipts,
+        'customer': customer,
+    })
+
+def receipt_detail(request, pk):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    receipt = get_object_or_404(
+        Receipt.objects.select_related(
+            'session',
+            'session__vehicle',
+            'session__spot',
+            'session__spot__parking_lot',
+            'payment',
+        ),
+        pk=pk,
+        session__vehicle__customer=customer,
+    )
+
+    return render(request, 'parking/receipt_detail.html', {
+        'receipt': receipt,
+        'customer': customer,
     })

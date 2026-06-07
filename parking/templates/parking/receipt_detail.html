@@ -1,0 +1,52 @@
+{% extends 'parking/base_dashboard.html' %}
+
+{% block title %}جزئیات رسید{% endblock %}
+
+{% block content %}
+    <h1>جزئیات رسید</h1>
+
+    <p>مشتری: {{ customer.name }}</p>
+
+    <hr>
+
+    <h2>اطلاعات رسید</h2>
+
+    <ul>
+        <li>شماره رسید: {{ receipt.receipt_number }}</li>
+        <li>زمان صدور: {{ receipt.issue_time }}</li>
+        <li>مبلغ: {{ receipt.calculated_fee }}</li>
+    </ul>
+
+    <h2>اطلاعات خودرو و پارک</h2>
+
+    <ul>
+        <li>پلاک: {{ receipt.session.vehicle.plate_number }}</li>
+        <li>مالک: {{ receipt.session.vehicle.owner_name }}</li>
+        <li>پارکینگ: {{ receipt.session.spot.parking_lot.name }}</li>
+        <li>جایگاه: {{ receipt.session.spot.code }}</li>
+        <li>زمان ورود: {{ receipt.session.entry_time }}</li>
+        <li>زمان خروج: {{ receipt.session.exit_time }}</li>
+        <li>مدت توقف: {{ receipt.session.total_duration_minutes }} دقیقه</li>
+    </ul>
+
+    <h2>پرداخت</h2>
+
+    <ul>
+        {% if receipt.payment %}
+            <li>روش پرداخت: {{ receipt.payment.get_payment_method_display }}</li>
+            <li>وضعیت پرداخت: {{ receipt.payment.get_payment_status_display }}</li>
+        {% else %}
+            <li>پرداخت: نامشخص</li>
+        {% endif %}
+    </ul>
+
+    <hr>
+
+    <h2>متن رسید</h2>
+
+    <pre>{{ receipt.content }}</pre>
+
+    <hr>
+
+    <a href="{% url 'parking:receipt_list' %}">بازگشت به لیست رسیدها</a>
+{% endblock %}

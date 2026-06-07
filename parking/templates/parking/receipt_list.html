@@ -1,0 +1,53 @@
+{% extends 'parking/base_dashboard.html' %}
+
+{% block title %}مدیریت رسیدها{% endblock %}
+
+{% block content %}
+    <h1>مدیریت رسیدها</h1>
+
+    <p>مشتری: {{ customer.name }}</p>
+
+    <table border="1" cellpadding="8">
+        <thead>
+            <tr>
+                <th>شماره رسید</th>
+                <th>پلاک</th>
+                <th>مالک</th>
+                <th>پارکینگ</th>
+                <th>جایگاه</th>
+                <th>مبلغ</th>
+                <th>روش پرداخت</th>
+                <th>زمان صدور</th>
+                <th>عملیات</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for receipt in receipts %}
+                <tr>
+                    <td>{{ receipt.receipt_number }}</td>
+                    <td>{{ receipt.session.vehicle.plate_number }}</td>
+                    <td>{{ receipt.session.vehicle.owner_name }}</td>
+                    <td>{{ receipt.session.spot.parking_lot.name }}</td>
+                    <td>{{ receipt.session.spot.code }}</td>
+                    <td>{{ receipt.calculated_fee }}</td>
+                    <td>
+                        {% if receipt.payment %}
+                            {{ receipt.payment.get_payment_method_display }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ receipt.issue_time }}</td>
+                    <td>
+                        <a href="{% url 'parking:receipt_detail' receipt.id %}">مشاهده رسید</a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="9">هنوز رسیدی ثبت نشده است.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

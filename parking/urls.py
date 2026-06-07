@@ -37,4 +37,6 @@ urlpatterns = [
     path('sessions/<int:pk>/close/', views.parking_session_close, name='parking_session_close'),
     path('payments/', views.payment_list, name='payment_list'),
     path('payments/<int:pk>/edit/', views.payment_update, name='payment_update'),
+    path('receipts/', views.receipt_list, name='receipt_list'),
+    path('receipts/<int:pk>/', views.receipt_detail, name='receipt_detail'),
 ]
