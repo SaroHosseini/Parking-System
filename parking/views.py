@@ -767,6 +767,39 @@ def parking_session_close(request, pk):
         'session': session,
     })
 
+def parking_session_detail(request, pk):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    session = get_object_or_404(
+        ParkingSession.objects.select_related(
+            'vehicle',
+            'spot',
+            'spot__parking_lot',
+        ).prefetch_related(
+            'payments'
+        ),
+        pk=pk,
+        vehicle__customer=customer,
+    )
+
+    payment = session.payments.order_by('-payment_time').first()
+
+    receipt = None
+    if hasattr(session, 'receipt'):
+        receipt = session.receipt
+
+    return render(request, 'parking/parking_session_detail.html', {
+        'session': session,
+        'payment': payment,
+        'receipt': receipt,
+        'customer': customer,
+    })
 
 def payment_list(request):
     if not request.user.is_authenticated:

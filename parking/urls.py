@@ -43,4 +43,5 @@ urlpatterns = [
     path('users/', views.customer_user_list, name='customer_user_list'),
     path('users/add/', views.customer_user_create, name='customer_user_create'),
     path('users/<int:pk>/edit/', views.customer_user_update, name='customer_user_update'),
+    path('sessions/<int:pk>/', views.parking_session_detail, name='parking_session_detail'),
 ]

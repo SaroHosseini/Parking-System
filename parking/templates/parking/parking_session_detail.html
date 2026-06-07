@@ -1,0 +1,86 @@
+{% extends 'parking/base_dashboard.html' %}
+{% load date_filters %}
+
+{% block title %}جزئیات سشن پارک{% endblock %}
+
+{% block content %}
+    <h1>جزئیات سشن پارک</h1>
+
+    <p>پارکینگ: {{ customer.name }}</p>
+
+    <hr>
+
+    <h2>اطلاعات خودرو</h2>
+
+    <ul>
+        <li>پلاک: {{ session.vehicle.plate_number }}</li>
+        <li>مالک: {{ session.vehicle.owner_name|default:"-" }}</li>
+        <li>نوع وسیله: {{ session.vehicle.get_type_display }}</li>
+        <li>رنگ: {{ session.vehicle.color|default:"-" }}</li>
+    </ul>
+
+    <hr>
+
+    <h2>اطلاعات پارک</h2>
+
+    <ul>
+        <li>پارکینگ: {{ session.spot.parking_lot.name }}</li>
+        <li>جایگاه: {{ session.spot.code }}</li>
+        <li>طبقه: {{ session.spot.level }}</li>
+    </ul>
+
+    <hr>
+
+    <h2>اطلاعات سشن</h2>
+
+    <ul>
+        <li>زمان ورود: {{ session.entry_time|jalali_gregorian }}</li>
+        <li>زمان خروج: {{ session.exit_time|jalali_gregorian }}</li>
+        <li>مدت توقف: {{ session.total_duration_minutes|default:"-" }} دقیقه</li>
+        <li>هزینه محاسبه‌شده: {{ session.calculated_fee|default:"-" }}</li>
+        <li>وضعیت: {{ session.get_status_display }}</li>
+    </ul>
+
+    {% if session.status == 'open' %}
+        <a href="{% url 'parking:parking_session_close' session.id %}">ثبت خروج خودرو</a>
+    {% endif %}
+
+    <hr>
+
+    <h2>پرداخت</h2>
+
+    {% if payment %}
+        <ul>
+            <li>مبلغ: {{ payment.amount }}</li>
+            <li>روش پرداخت: {{ payment.get_payment_method_display|default:"-" }}</li>
+            <li>وضعیت پرداخت: {{ payment.get_payment_status_display }}</li>
+            <li>زمان پرداخت: {{ payment.payment_time|jalali_gregorian }}</li>
+        </ul>
+
+        {% if payment.payment_status == 'open' %}
+            <a href="{% url 'parking:payment_update' payment.id %}">ثبت روش پرداخت</a>
+        {% endif %}
+    {% else %}
+        <p>هنوز پرداختی برای این سشن ثبت نشده است.</p>
+    {% endif %}
+
+    <hr>
+
+    <h2>رسید</h2>
+
+    {% if receipt %}
+        <ul>
+            <li>شماره رسید: {{ receipt.receipt_number }}</li>
+            <li>مبلغ رسید: {{ receipt.calculated_fee }}</li>
+            <li>زمان صدور: {{ receipt.issue_time|jalali_gregorian }}</li>
+        </ul>
+
+        <a href="{% url 'parking:receipt_detail' receipt.id %}">مشاهده رسید</a>
+    {% else %}
+        <p>هنوز رسیدی برای این سشن ساخته نشده است.</p>
+    {% endif %}
+
+    <hr>
+
+    <a href="{% url 'parking:parking_session_list' %}">بازگشت به لیست سشن‌ها</a>
+{% endblock %}

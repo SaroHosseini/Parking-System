@@ -54,10 +54,11 @@
                     <td>{{ session.calculated_fee|default:"-" }}</td>
                     <td>{{ session.get_status_display }}</td>
                     <td>
+                        <a href="{% url 'parking:parking_session_detail' session.id %}">جزئیات</a>
+
                         {% if session.status == 'open' %}
+                            |
                             <a href="{% url 'parking:parking_session_close' session.id %}">ثبت خروج</a>
-                        {% else %}
-                            -
                         {% endif %}
                     </td>
                 </tr>
