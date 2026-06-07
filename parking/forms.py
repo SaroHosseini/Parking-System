@@ -4,7 +4,14 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
 
-from .models import Customer, CustomerUser, Vehicle, ParkingLot, ParkingSpot
+from .models import (
+    Customer,
+    CustomerUser,
+    Vehicle,
+    ParkingLot,
+    ParkingSpot,
+    Tariff,
+)
 
 
 class CustomerRequestForm(forms.ModelForm):
@@ -146,7 +153,57 @@ class ParkingSpotForm(forms.ModelForm):
         if customer:
             self.fields['parking_lot'].queryset = ParkingLot.objects.filter(
                 customer=customer
-            ).order_by('name')        
+            ).order_by('name')
+
+class TariffForm(forms.ModelForm):
+    class Meta:
+        model = Tariff
+        fields = [
+            'name',
+            'vehicle_type',
+            'first_hour_price',
+            'additional_hour_price',
+            'daily_price',
+            'is_active',
+        ]
+
+        labels = {
+            'name': 'نام تعرفه',
+            'vehicle_type': 'نوع وسیله نقلیه',
+            'first_hour_price': 'هزینه ساعت اول',
+            'additional_hour_price': 'هزینه هر ساعت بعدی',
+            'daily_price': 'هزینه شبانه‌روزی',
+            'is_active': 'فعال',
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.customer = kwargs.pop('customer', None)
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        vehicle_type = cleaned_data.get('vehicle_type')
+        is_active = cleaned_data.get('is_active')
+
+        if self.customer and vehicle_type and is_active:
+            duplicate_active_tariff = Tariff.objects.filter(
+                customer=self.customer,
+                vehicle_type=vehicle_type,
+                is_active=True,
+            )
+
+            if self.instance.pk:
+                duplicate_active_tariff = duplicate_active_tariff.exclude(
+                    pk=self.instance.pk
+                )
+
+            if duplicate_active_tariff.exists():
+                raise forms.ValidationError(
+                    'برای این نوع وسیله نقلیه، یک تعرفه فعال دیگر وجود دارد.'
+                )
+
+        return cleaned_data                    
 
 class CustomerLoginForm(AuthenticationForm):
     def confirm_login_allowed(self, user):

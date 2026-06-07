@@ -12,9 +12,16 @@ from .models import (
     CustomerUser,
     Vehicle,
     ParkingLot,
+    Tariff,
 )
 
-from .forms import CustomerRequestForm, VehicleForm, ParkingLotForm, ParkingSpotForm
+from .forms import (
+    CustomerRequestForm,
+    VehicleForm,
+    ParkingLotForm,
+    ParkingSpotForm,
+    TariffForm
+)    
 
 
 def get_user_customer(user):
@@ -427,4 +434,134 @@ def parking_spot_update(request, pk):
     return render(request, 'parking/parking_spot_form.html', {
         'form': form,
         'title': 'ویرایش جایگاه پارک',
+    })
+
+def tariff_list(request):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    tariffs = Tariff.objects.filter(
+        customer=customer
+    ).order_by('vehicle_type', 'name')
+
+    return render(request, 'parking/tariff_list.html', {
+        'tariffs': tariffs,
+        'customer': customer,
+    })
+
+
+def tariff_create(request):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    if request.method == 'POST':
+        form = TariffForm(request.POST, customer=customer)
+
+        if form.is_valid():
+            tariff = form.save(commit=False)
+            tariff.customer = customer
+            tariff.save()
+
+            return redirect('parking:tariff_list')
+
+    else:
+        form = TariffForm(customer=customer)
+
+    return render(request, 'parking/tariff_form.html', {
+        'form': form,
+        'title': 'ثبت تعرفه جدید',
+    })
+
+def tariff_list(request):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    tariffs = Tariff.objects.filter(
+        customer=customer
+    ).order_by('vehicle_type', 'name')
+
+    return render(request, 'parking/tariff_list.html', {
+        'tariffs': tariffs,
+        'customer': customer,
+    })
+
+
+def tariff_create(request):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    if request.method == 'POST':
+        form = TariffForm(request.POST, customer=customer)
+
+        if form.is_valid():
+            tariff = form.save(commit=False)
+            tariff.customer = customer
+            tariff.save()
+
+            return redirect('parking:tariff_list')
+
+    else:
+        form = TariffForm(customer=customer)
+
+    return render(request, 'parking/tariff_form.html', {
+        'form': form,
+        'title': 'ثبت تعرفه جدید',
+    })
+
+
+def tariff_update(request, pk):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    tariff = get_object_or_404(
+        Tariff,
+        pk=pk,
+        customer=customer,
+    )
+
+    if request.method == 'POST':
+        form = TariffForm(
+            request.POST,
+            instance=tariff,
+            customer=customer,
+        )
+
+        if form.is_valid():
+            form.save()
+            return redirect('parking:tariff_list')
+
+    else:
+        form = TariffForm(
+            instance=tariff,
+            customer=customer,
+        )
+
+    return render(request, 'parking/tariff_form.html', {
+        'form': form,
+        'title': 'ویرایش تعرفه',
     })

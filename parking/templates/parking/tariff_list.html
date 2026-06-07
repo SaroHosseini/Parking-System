@@ -1,0 +1,53 @@
+{% extends 'parking/base_dashboard.html' %}
+
+{% block title %}مدیریت تعرفه‌ها{% endblock %}
+
+{% block content %}
+    <h1>مدیریت تعرفه‌ها</h1>
+
+    <p>مشتری: {{ customer.name }}</p>
+
+    <a href="{% url 'parking:tariff_create' %}">ثبت تعرفه جدید</a>
+
+    <hr>
+
+    <table border="1" cellpadding="8">
+        <thead>
+            <tr>
+                <th>نام تعرفه</th>
+                <th>نوع وسیله</th>
+                <th>ساعت اول</th>
+                <th>هر ساعت بعدی</th>
+                <th>شبانه‌روزی</th>
+                <th>فعال</th>
+                <th>عملیات</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for tariff in tariffs %}
+                <tr>
+                    <td>{{ tariff.name }}</td>
+                    <td>{{ tariff.get_vehicle_type_display }}</td>
+                    <td>{{ tariff.first_hour_price }}</td>
+                    <td>{{ tariff.additional_hour_price }}</td>
+                    <td>{{ tariff.daily_price }}</td>
+                    <td>
+                        {% if tariff.is_active %}
+                            بله
+                        {% else %}
+                            خیر
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'parking:tariff_update' tariff.id %}">ویرایش</a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7">هنوز تعرفه‌ای ثبت نشده است.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
