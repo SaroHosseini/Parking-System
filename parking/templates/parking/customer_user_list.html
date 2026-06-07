@@ -51,6 +51,8 @@
                     <td>
                         {% if customer_user.user != request.user %}
                             <a href="{% url 'parking:customer_user_update' customer_user.id %}">ویرایش</a>
+                            |
+                            <a href="{% url 'parking:customer_user_change_password' customer_user.id %}">تغییر رمز</a>
                         {% else %}
                             کاربر فعلی
                         {% endif %}

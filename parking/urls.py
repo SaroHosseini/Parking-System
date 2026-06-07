@@ -46,4 +46,5 @@ urlpatterns = [
     path('sessions/<int:pk>/', views.parking_session_detail, name='parking_session_detail'),
     path('receipts/<int:pk>/print/', views.receipt_print, name='receipt_print'),
     path('sessions/<int:pk>/cancel/', views.parking_session_cancel, name='parking_session_cancel'),
+    path('users/<int:pk>/change-password/',views.customer_user_change_password,name='customer_user_change_password'),
 ]

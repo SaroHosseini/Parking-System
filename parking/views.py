@@ -34,6 +34,7 @@ from .forms import (
     PaymentFilterForm,
     ReceiptFilterForm,
     CustomerUserFilterForm,
+    CustomerUserPasswordForm,
 )
 
 
@@ -1368,5 +1369,44 @@ def customer_user_update(request, pk):
     return render(request, 'parking/customer_user_form.html', {
         'form': form,
         'title': 'ویرایش کاربر',
+        'customer_user': customer_user,
+    })
+
+def customer_user_change_password(request, pk):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    if not is_owner(request.user):
+        return redirect('parking:dashboard')
+
+    customer_user = get_object_or_404(
+        CustomerUser.objects.select_related('user', 'customer'),
+        pk=pk,
+        customer=customer,
+    )
+
+    if customer_user.user == request.user:
+        return redirect('parking:customer_user_list')
+
+    if request.method == 'POST':
+        form = CustomerUserPasswordForm(request.POST)
+
+        if form.is_valid():
+            user = customer_user.user
+            user.set_password(form.cleaned_data['password'])
+            user.save(update_fields=['password'])
+
+            return redirect('parking:customer_user_list')
+
+    else:
+        form = CustomerUserPasswordForm()
+
+    return render(request, 'parking/customer_user_password_form.html', {
+        'form': form,
         'customer_user': customer_user,
     })

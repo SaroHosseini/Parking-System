@@ -791,3 +791,38 @@ class CustomerUserFilterForm(forms.Form):
         required=False,
         choices=ACTIVE_CHOICES
     )
+
+class CustomerUserPasswordForm(forms.Form):
+    password = forms.CharField(
+        label='رمز عبور جدید',
+        widget=forms.PasswordInput,
+        min_length=8,
+        help_text='رمز عبور باید حداقل ۸ کاراکتر، یک حرف بزرگ انگلیسی و یک عدد داشته باشد.'
+    )
+
+    password_confirm = forms.CharField(
+        label='تکرار رمز عبور جدید',
+        widget=forms.PasswordInput
+    )
+
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+
+        if not re.search(r'[A-Z]', password):
+            raise forms.ValidationError('رمز عبور باید حداقل یک حرف بزرگ انگلیسی داشته باشد.')
+
+        if not re.search(r'[0-9]', password):
+            raise forms.ValidationError('رمز عبور باید حداقل یک عدد داشته باشد.')
+
+        return password
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        password = cleaned_data.get('password')
+        password_confirm = cleaned_data.get('password_confirm')
+
+        if password and password_confirm and password != password_confirm:
+            raise forms.ValidationError('رمز عبور و تکرار آن یکسان نیستند.')
+
+        return cleaned_data    
