@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.core.paginator import Paginator
 from django.contrib.auth import update_session_auth_hash
 from datetime import timedelta
+from django.urls import reverse
 
 from .models import (
     ParkingSpot,
@@ -999,7 +1000,8 @@ def payment_update(request, pk):
             ).order_by('-issue_time').first()
 
             if receipt:
-                return redirect('parking:receipt_print', pk=receipt.id)
+                receipt_print_url = reverse('parking:receipt_print', kwargs={'pk': receipt.id})
+                return redirect(f'{receipt_print_url}?auto=1')
 
             return redirect('parking:receipt_list')
 
@@ -1122,9 +1124,12 @@ def receipt_print(request, pk):
         session__vehicle__customer=customer,
     )
 
+    auto_print = request.GET.get('auto') == '1'
+
     return render(request, 'parking/receipt_print.html', {
         'receipt': receipt,
         'customer': customer,
+        'auto_print': auto_print,
     })
 
 def report_dashboard(request):

@@ -121,5 +121,14 @@
         <br>
         <a href="{% url 'parking:receipt_list' %}">بازگشت به لیست رسیدها</a>
     </div>
+{% if auto_print %}
+    <script>
+        window.addEventListener('load', function () {
+            setTimeout(function () {
+                window.print();
+            }, 500);
+        });
+    </script>
+{% endif %}
 </body>
 </html>
