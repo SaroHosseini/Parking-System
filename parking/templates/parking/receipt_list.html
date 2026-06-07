@@ -8,6 +8,19 @@
 
     <p>پارکینگ: {{ customer.name }}</p>
 
+    <hr>
+
+    <h2>فیلترها</h2>
+
+    <form method="get">
+        {{ filter_form.as_p }}
+
+        <button type="submit">اعمال فیلتر</button>
+        <a href="{% url 'parking:receipt_list' %}">پاک کردن فیلترها</a>
+    </form>
+
+    <hr>
+
     <table border="1" cellpadding="8">
         <thead>
             <tr>
@@ -28,7 +41,7 @@
                 <tr>
                     <td>{{ receipt.receipt_number }}</td>
                     <td>{{ receipt.session.vehicle.plate_number }}</td>
-                    <td>{{ receipt.session.vehicle.owner_name }}</td>
+                    <td>{{ receipt.session.vehicle.owner_name|default:"-" }}</td>
                     <td>{{ receipt.session.spot.parking_lot.name }}</td>
                     <td>{{ receipt.session.spot.code }}</td>
                     <td>{{ receipt.calculated_fee }}</td>
@@ -46,7 +59,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="9">هنوز رسیدی ثبت نشده است.</td>
+                    <td colspan="9">هیچ رسیدی با این فیلترها پیدا نشد.</td>
                 </tr>
             {% endfor %}
         </tbody>

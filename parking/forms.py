@@ -3,7 +3,6 @@ import re
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
-from django.core.exceptions import ValidationError
 
 from .models import (
     Customer,
@@ -115,6 +114,7 @@ class CustomerRequestForm(forms.ModelForm):
 
         return cleaned_data
 
+
 class VehicleForm(forms.ModelForm):
     class Meta:
         model = Vehicle
@@ -127,6 +127,7 @@ class VehicleForm(forms.ModelForm):
             'color': 'رنگ',
         }
 
+
 class ParkingLotForm(forms.ModelForm):
     class Meta:
         model = ParkingLot
@@ -136,6 +137,7 @@ class ParkingLotForm(forms.ModelForm):
             'name': 'نام پارکینگ',
             'total_capacity': 'ظرفیت کل',
         }
+
 
 class ParkingSpotForm(forms.ModelForm):
     class Meta:
@@ -156,6 +158,7 @@ class ParkingSpotForm(forms.ModelForm):
             self.fields['parking_lot'].queryset = ParkingLot.objects.filter(
                 customer=customer
             ).order_by('name')
+
 
 class TariffForm(forms.ModelForm):
     class Meta:
@@ -205,7 +208,8 @@ class TariffForm(forms.ModelForm):
                     'برای این نوع وسیله نقلیه، یک تعرفه فعال دیگر وجود دارد.'
                 )
 
-        return cleaned_data                    
+        return cleaned_data
+
 
 class CustomerLoginForm(AuthenticationForm):
     def confirm_login_allowed(self, user):
@@ -236,7 +240,8 @@ class CustomerLoginForm(AuthenticationForm):
                 'درخواست شما هنوز توسط مدیر سیستم تأیید نشده است.',
                 code='customer_not_approved'
             )
-        
+
+
 class ParkingSessionEntryForm(forms.Form):
     plate_number = forms.CharField(
         label='شماره پلاک',
@@ -316,7 +321,8 @@ class ParkingSessionEntryForm(forms.Form):
                     )
 
         return cleaned_data
-    
+
+
 class PaymentForm(forms.ModelForm):
     class Meta:
         model = Payment
@@ -324,7 +330,8 @@ class PaymentForm(forms.ModelForm):
 
         labels = {
             'payment_method': 'روش پرداخت',
-        }    
+        }
+
 
 class ReportFilterForm(forms.Form):
     start_date = forms.DateField(
@@ -359,7 +366,8 @@ class ReportFilterForm(forms.Form):
         if customer:
             self.fields['parking_lot'].queryset = ParkingLot.objects.filter(
                 customer=customer
-            ).order_by('name')        
+            ).order_by('name')
+
 
 class CustomerUserCreateForm(forms.Form):
     username = forms.RegexField(
@@ -444,6 +452,7 @@ class CustomerUserCreateForm(forms.Form):
 
         return cleaned_data
 
+
 class CustomerUserUpdateForm(forms.ModelForm):
     full_name = forms.CharField(
         label='نام کاربر',
@@ -487,3 +496,298 @@ class CustomerUserUpdateForm(forms.ModelForm):
                 raise forms.ValidationError('این ایمیل قبلاً برای یک کاربر دیگر ثبت شده است.')
 
         return email
+
+# Advanced filter forms
+
+class ParkingLotFilterForm(forms.Form):
+    name = forms.CharField(
+        label='نام پارکینگ',
+        required=False
+    )
+
+    min_capacity = forms.IntegerField(
+        label='حداقل ظرفیت',
+        required=False
+    )
+
+    max_capacity = forms.IntegerField(
+        label='حداکثر ظرفیت',
+        required=False
+    )
+
+
+class ParkingSpotFilterForm(forms.Form):
+    STATUS_CHOICES = [
+        ('', 'همه وضعیت‌ها'),
+        ('free', 'آزاد'),
+        ('occupied', 'اشغال'),
+    ]
+
+    parking_lot = forms.ModelChoiceField(
+        label='پارکینگ',
+        required=False,
+        queryset=ParkingLot.objects.none(),
+        empty_label='همه پارکینگ‌ها'
+    )
+
+    code = forms.CharField(
+        label='کد جایگاه',
+        required=False
+    )
+
+    level = forms.CharField(
+        label='طبقه',
+        required=False
+    )
+
+    status = forms.ChoiceField(
+        label='وضعیت',
+        required=False,
+        choices=STATUS_CHOICES
+    )
+
+    def __init__(self, *args, **kwargs):
+        customer = kwargs.pop('customer', None)
+        super().__init__(*args, **kwargs)
+
+        if customer:
+            self.fields['parking_lot'].queryset = ParkingLot.objects.filter(
+                customer=customer
+            ).order_by('name')
+
+
+class TariffFilterForm(forms.Form):
+    ACTIVE_CHOICES = [
+        ('', 'همه'),
+        ('active', 'فعال'),
+        ('inactive', 'غیرفعال'),
+    ]
+
+    name = forms.CharField(
+        label='نام تعرفه',
+        required=False
+    )
+
+    vehicle_type = forms.ChoiceField(
+        label='نوع وسیله',
+        required=False,
+        choices=[('', 'همه انواع وسیله')] + list(Vehicle.VEHICLE_TYPE_CHOICES)
+    )
+
+    is_active = forms.ChoiceField(
+        label='وضعیت فعال بودن',
+        required=False,
+        choices=ACTIVE_CHOICES
+    )
+
+
+class ParkingSessionFilterForm(forms.Form):
+    plate_number = forms.CharField(
+        label='شماره پلاک',
+        required=False
+    )
+
+    owner_name = forms.CharField(
+        label='نام مالک',
+        required=False
+    )
+
+    vehicle_type = forms.ChoiceField(
+        label='نوع وسیله',
+        required=False,
+        choices=[('', 'همه انواع وسیله')] + list(Vehicle.VEHICLE_TYPE_CHOICES)
+    )
+
+    parking_lot = forms.ModelChoiceField(
+        label='پارکینگ',
+        required=False,
+        queryset=ParkingLot.objects.none(),
+        empty_label='همه پارکینگ‌ها'
+    )
+
+    status = forms.ChoiceField(
+        label='وضعیت سشن',
+        required=False,
+        choices=[('', 'همه وضعیت‌ها')] + list(ParkingSession.STATUS_CHOICES)
+    )
+
+    entry_from = forms.DateField(
+        label='ورود از تاریخ',
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'})
+    )
+
+    entry_to = forms.DateField(
+        label='ورود تا تاریخ',
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'})
+    )
+
+    exit_from = forms.DateField(
+        label='خروج از تاریخ',
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'})
+    )
+
+    exit_to = forms.DateField(
+        label='خروج تا تاریخ',
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        customer = kwargs.pop('customer', None)
+        super().__init__(*args, **kwargs)
+
+        if customer:
+            self.fields['parking_lot'].queryset = ParkingLot.objects.filter(
+                customer=customer
+            ).order_by('name')
+
+
+class PaymentFilterForm(forms.Form):
+    plate_number = forms.CharField(
+        label='شماره پلاک',
+        required=False
+    )
+
+    owner_name = forms.CharField(
+        label='نام مالک',
+        required=False
+    )
+
+    parking_lot = forms.ModelChoiceField(
+        label='پارکینگ',
+        required=False,
+        queryset=ParkingLot.objects.none(),
+        empty_label='همه پارکینگ‌ها'
+    )
+
+    payment_method = forms.ChoiceField(
+        label='روش پرداخت',
+        required=False,
+        choices=[('', 'همه روش‌ها')] + list(Payment.PAYMENT_METHOD_CHOICES)
+    )
+
+    payment_status = forms.ChoiceField(
+        label='وضعیت پرداخت',
+        required=False,
+        choices=[('', 'همه وضعیت‌ها')] + list(Payment.PAYMENT_STATUS_CHOICES)
+    )
+
+    payment_from = forms.DateField(
+        label='پرداخت از تاریخ',
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'})
+    )
+
+    payment_to = forms.DateField(
+        label='پرداخت تا تاریخ',
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'})
+    )
+
+    min_amount = forms.DecimalField(
+        label='حداقل مبلغ',
+        required=False
+    )
+
+    max_amount = forms.DecimalField(
+        label='حداکثر مبلغ',
+        required=False
+    )
+
+    def __init__(self, *args, **kwargs):
+        customer = kwargs.pop('customer', None)
+        super().__init__(*args, **kwargs)
+
+        if customer:
+            self.fields['parking_lot'].queryset = ParkingLot.objects.filter(
+                customer=customer
+            ).order_by('name')
+
+
+class ReceiptFilterForm(forms.Form):
+    receipt_number = forms.CharField(
+        label='شماره رسید',
+        required=False
+    )
+
+    plate_number = forms.CharField(
+        label='شماره پلاک',
+        required=False
+    )
+
+    owner_name = forms.CharField(
+        label='نام مالک',
+        required=False
+    )
+
+    parking_lot = forms.ModelChoiceField(
+        label='پارکینگ',
+        required=False,
+        queryset=ParkingLot.objects.none(),
+        empty_label='همه پارکینگ‌ها'
+    )
+
+    payment_method = forms.ChoiceField(
+        label='روش پرداخت',
+        required=False,
+        choices=[('', 'همه روش‌ها')] + list(Payment.PAYMENT_METHOD_CHOICES)
+    )
+
+    issue_from = forms.DateField(
+        label='صدور از تاریخ',
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'})
+    )
+
+    issue_to = forms.DateField(
+        label='صدور تا تاریخ',
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        customer = kwargs.pop('customer', None)
+        super().__init__(*args, **kwargs)
+
+        if customer:
+            self.fields['parking_lot'].queryset = ParkingLot.objects.filter(
+                customer=customer
+            ).order_by('name')
+
+
+class CustomerUserFilterForm(forms.Form):
+    ACTIVE_CHOICES = [
+        ('', 'همه'),
+        ('active', 'فعال'),
+        ('inactive', 'غیرفعال'),
+    ]
+
+    username = forms.CharField(
+        label='نام کاربری',
+        required=False
+    )
+
+    full_name = forms.CharField(
+        label='نام کاربر',
+        required=False
+    )
+
+    email = forms.CharField(
+        label='ایمیل',
+        required=False
+    )
+
+    role = forms.ChoiceField(
+        label='نقش',
+        required=False,
+        choices=[('', 'همه نقش‌ها')] + list(CustomerUser.ROLE_CHOICES)
+    )
+
+    is_active = forms.ChoiceField(
+        label='وضعیت',
+        required=False,
+        choices=ACTIVE_CHOICES
+    )

@@ -8,6 +8,19 @@
 
     <p>پارکینگ: {{ customer.name }}</p>
 
+    <hr>
+
+    <h2>فیلترها</h2>
+
+    <form method="get">
+        {{ filter_form.as_p }}
+
+        <button type="submit">اعمال فیلتر</button>
+        <a href="{% url 'parking:payment_list' %}">پاک کردن فیلترها</a>
+    </form>
+
+    <hr>
+
     <table border="1" cellpadding="8">
         <thead>
             <tr>
@@ -27,7 +40,7 @@
             {% for payment in payments %}
                 <tr>
                     <td>{{ payment.session.vehicle.plate_number }}</td>
-                    <td>{{ payment.session.vehicle.owner_name }}</td>
+                    <td>{{ payment.session.vehicle.owner_name|default:"-" }}</td>
                     <td>{{ payment.session.spot.parking_lot.name }}</td>
                     <td>{{ payment.session.spot.code }}</td>
                     <td>{{ payment.amount }}</td>
@@ -35,8 +48,10 @@
                     <td>{{ payment.get_payment_status_display }}</td>
                     <td>{{ payment.payment_time|jalali_gregorian }}</td>
                     <td>
-                        {% if payment.payment_status == 'open' %}
+                        {% if payment.payment_status == 'open' and is_owner_user %}
                             <a href="{% url 'parking:payment_update' payment.id %}">ثبت روش پرداخت</a>
+                        {% elif payment.payment_status == 'open' %}
+                            در انتظار پرداخت
                         {% else %}
                             پرداخت شده
                         {% endif %}
@@ -44,7 +59,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="9">هنوز پرداختی ثبت نشده است.</td>
+                    <td colspan="9">هیچ پرداختی با این فیلترها پیدا نشد.</td>
                 </tr>
             {% endfor %}
         </tbody>

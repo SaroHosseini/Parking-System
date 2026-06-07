@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db import transaction
 from django.contrib.auth.models import User
-from django.db.models import Sum, Avg, Count
+from django.db.models import Sum, Avg, Count, Q
 from django.utils import timezone
 
 from .models import (
@@ -26,6 +26,13 @@ from .forms import (
     ReportFilterForm,
     CustomerUserCreateForm,
     CustomerUserUpdateForm,
+    ParkingLotFilterForm,
+    ParkingSpotFilterForm,
+    TariffFilterForm,
+    ParkingSessionFilterForm,
+    PaymentFilterForm,
+    ReceiptFilterForm,
+    CustomerUserFilterForm,
 )
 
 
@@ -159,7 +166,6 @@ def dashboard(request):
         'customer': customer,
         'user_profile': get_user_profile(request.user),
         'is_owner_user': is_owner(request.user),
-
         'total_spots': total_spots,
         'occupied_spots': occupied_spots,
         'available_spots': available_spots,
@@ -241,8 +247,6 @@ def request_success_view(request):
     return render(request, 'parking/request_success.html')
 
 
-# Owner-only: Parking Lot Management
-
 def parking_lot_list(request):
     if not request.user.is_authenticated:
         return redirect('parking:login')
@@ -255,13 +259,32 @@ def parking_lot_list(request):
     if not is_owner(request.user):
         return redirect('parking:dashboard')
 
+    filter_form = ParkingLotFilterForm(request.GET or None)
+
     parking_lots = ParkingLot.objects.filter(
         customer=customer
-    ).order_by('name')
+    )
+
+    if filter_form.is_valid():
+        name = filter_form.cleaned_data.get('name')
+        min_capacity = filter_form.cleaned_data.get('min_capacity')
+        max_capacity = filter_form.cleaned_data.get('max_capacity')
+
+        if name:
+            parking_lots = parking_lots.filter(name__icontains=name)
+
+        if min_capacity is not None:
+            parking_lots = parking_lots.filter(total_capacity__gte=min_capacity)
+
+        if max_capacity is not None:
+            parking_lots = parking_lots.filter(total_capacity__lte=max_capacity)
+
+    parking_lots = parking_lots.order_by('name')
 
     return render(request, 'parking/parking_lot_list.html', {
         'parking_lots': parking_lots,
         'customer': customer,
+        'filter_form': filter_form,
     })
 
 
@@ -330,8 +353,6 @@ def parking_lot_update(request, pk):
     })
 
 
-# Owner-only: Parking Spot Management
-
 def parking_spot_list(request):
     if not request.user.is_authenticated:
         return redirect('parking:login')
@@ -344,16 +365,46 @@ def parking_spot_list(request):
     if not is_owner(request.user):
         return redirect('parking:dashboard')
 
+    filter_form = ParkingSpotFilterForm(request.GET or None, customer=customer)
+
     parking_spots = ParkingSpot.objects.select_related(
         'parking_lot',
         'parking_lot__customer',
     ).filter(
         parking_lot__customer=customer
-    ).order_by('parking_lot__name', 'level', 'code')
+    )
+
+    if filter_form.is_valid():
+        parking_lot = filter_form.cleaned_data.get('parking_lot')
+        code = filter_form.cleaned_data.get('code')
+        level = filter_form.cleaned_data.get('level')
+        status = filter_form.cleaned_data.get('status')
+
+        if parking_lot:
+            parking_spots = parking_spots.filter(parking_lot=parking_lot)
+
+        if code:
+            parking_spots = parking_spots.filter(code__icontains=code)
+
+        if level:
+            parking_spots = parking_spots.filter(level__icontains=level)
+
+        if status == 'free':
+            parking_spots = parking_spots.filter(is_occupied=False)
+
+        if status == 'occupied':
+            parking_spots = parking_spots.filter(is_occupied=True)
+
+    parking_spots = parking_spots.order_by(
+        'parking_lot__name',
+        'level',
+        'code'
+    )
 
     return render(request, 'parking/parking_spot_list.html', {
         'parking_spots': parking_spots,
         'customer': customer,
+        'filter_form': filter_form,
     })
 
 
@@ -426,8 +477,6 @@ def parking_spot_update(request, pk):
     })
 
 
-# Owner-only: Tariff Management
-
 def tariff_list(request):
     if not request.user.is_authenticated:
         return redirect('parking:login')
@@ -440,13 +489,35 @@ def tariff_list(request):
     if not is_owner(request.user):
         return redirect('parking:dashboard')
 
+    filter_form = TariffFilterForm(request.GET or None)
+
     tariffs = Tariff.objects.filter(
         customer=customer
-    ).order_by('vehicle_type', 'name')
+    )
+
+    if filter_form.is_valid():
+        name = filter_form.cleaned_data.get('name')
+        vehicle_type = filter_form.cleaned_data.get('vehicle_type')
+        is_active = filter_form.cleaned_data.get('is_active')
+
+        if name:
+            tariffs = tariffs.filter(name__icontains=name)
+
+        if vehicle_type:
+            tariffs = tariffs.filter(vehicle_type=vehicle_type)
+
+        if is_active == 'active':
+            tariffs = tariffs.filter(is_active=True)
+
+        if is_active == 'inactive':
+            tariffs = tariffs.filter(is_active=False)
+
+    tariffs = tariffs.order_by('vehicle_type', 'name')
 
     return render(request, 'parking/tariff_list.html', {
         'tariffs': tariffs,
         'customer': customer,
+        'filter_form': filter_form,
     })
 
 
@@ -522,8 +593,6 @@ def tariff_update(request, pk):
     })
 
 
-# Owner + Operator: Parking Session Management
-
 def parking_session_list(request):
     if not request.user.is_authenticated:
         return redirect('parking:login')
@@ -533,17 +602,60 @@ def parking_session_list(request):
     if customer is None:
         return redirect('parking:dashboard')
 
+    filter_form = ParkingSessionFilterForm(request.GET or None, customer=customer)
+
     sessions = ParkingSession.objects.select_related(
         'vehicle',
         'spot',
         'spot__parking_lot',
     ).filter(
         vehicle__customer=customer
-    ).order_by('-entry_time')
+    )
+
+    if filter_form.is_valid():
+        plate_number = filter_form.cleaned_data.get('plate_number')
+        owner_name = filter_form.cleaned_data.get('owner_name')
+        vehicle_type = filter_form.cleaned_data.get('vehicle_type')
+        parking_lot = filter_form.cleaned_data.get('parking_lot')
+        status = filter_form.cleaned_data.get('status')
+        entry_from = filter_form.cleaned_data.get('entry_from')
+        entry_to = filter_form.cleaned_data.get('entry_to')
+        exit_from = filter_form.cleaned_data.get('exit_from')
+        exit_to = filter_form.cleaned_data.get('exit_to')
+
+        if plate_number:
+            sessions = sessions.filter(vehicle__plate_number__icontains=plate_number)
+
+        if owner_name:
+            sessions = sessions.filter(vehicle__owner_name__icontains=owner_name)
+
+        if vehicle_type:
+            sessions = sessions.filter(vehicle__type=vehicle_type)
+
+        if parking_lot:
+            sessions = sessions.filter(spot__parking_lot=parking_lot)
+
+        if status:
+            sessions = sessions.filter(status=status)
+
+        if entry_from:
+            sessions = sessions.filter(entry_time__date__gte=entry_from)
+
+        if entry_to:
+            sessions = sessions.filter(entry_time__date__lte=entry_to)
+
+        if exit_from:
+            sessions = sessions.filter(exit_time__date__gte=exit_from)
+
+        if exit_to:
+            sessions = sessions.filter(exit_time__date__lte=exit_to)
+
+    sessions = sessions.order_by('-entry_time')
 
     return render(request, 'parking/parking_session_list.html', {
         'sessions': sessions,
         'customer': customer,
+        'filter_form': filter_form,
     })
 
 
@@ -626,9 +738,6 @@ def parking_session_close(request, pk):
     })
 
 
-# Owner + Operator: Payment List
-# Owner-only: Payment Update
-
 def payment_list(request):
     if not request.user.is_authenticated:
         return redirect('parking:login')
@@ -638,6 +747,8 @@ def payment_list(request):
     if customer is None:
         return redirect('parking:dashboard')
 
+    filter_form = PaymentFilterForm(request.GET or None, customer=customer)
+
     payments = Payment.objects.select_related(
         'session',
         'session__vehicle',
@@ -645,12 +756,53 @@ def payment_list(request):
         'session__spot__parking_lot',
     ).filter(
         session__vehicle__customer=customer
-    ).order_by('-payment_time')
+    )
+
+    if filter_form.is_valid():
+        plate_number = filter_form.cleaned_data.get('plate_number')
+        owner_name = filter_form.cleaned_data.get('owner_name')
+        parking_lot = filter_form.cleaned_data.get('parking_lot')
+        payment_method = filter_form.cleaned_data.get('payment_method')
+        payment_status = filter_form.cleaned_data.get('payment_status')
+        payment_from = filter_form.cleaned_data.get('payment_from')
+        payment_to = filter_form.cleaned_data.get('payment_to')
+        min_amount = filter_form.cleaned_data.get('min_amount')
+        max_amount = filter_form.cleaned_data.get('max_amount')
+
+        if plate_number:
+            payments = payments.filter(session__vehicle__plate_number__icontains=plate_number)
+
+        if owner_name:
+            payments = payments.filter(session__vehicle__owner_name__icontains=owner_name)
+
+        if parking_lot:
+            payments = payments.filter(session__spot__parking_lot=parking_lot)
+
+        if payment_method:
+            payments = payments.filter(payment_method=payment_method)
+
+        if payment_status:
+            payments = payments.filter(payment_status=payment_status)
+
+        if payment_from:
+            payments = payments.filter(payment_time__date__gte=payment_from)
+
+        if payment_to:
+            payments = payments.filter(payment_time__date__lte=payment_to)
+
+        if min_amount is not None:
+            payments = payments.filter(amount__gte=min_amount)
+
+        if max_amount is not None:
+            payments = payments.filter(amount__lte=max_amount)
+
+    payments = payments.order_by('-payment_time')
 
     return render(request, 'parking/payment_list.html', {
         'payments': payments,
         'customer': customer,
         'is_owner_user': is_owner(request.user),
+        'filter_form': filter_form,
     })
 
 
@@ -688,8 +840,6 @@ def payment_update(request, pk):
     })
 
 
-# Owner + Operator: Receipt View
-
 def receipt_list(request):
     if not request.user.is_authenticated:
         return redirect('parking:login')
@@ -699,6 +849,8 @@ def receipt_list(request):
     if customer is None:
         return redirect('parking:dashboard')
 
+    filter_form = ReceiptFilterForm(request.GET or None, customer=customer)
+
     receipts = Receipt.objects.select_related(
         'session',
         'session__vehicle',
@@ -707,11 +859,44 @@ def receipt_list(request):
         'payment',
     ).filter(
         session__vehicle__customer=customer
-    ).order_by('-issue_time')
+    )
+
+    if filter_form.is_valid():
+        receipt_number = filter_form.cleaned_data.get('receipt_number')
+        plate_number = filter_form.cleaned_data.get('plate_number')
+        owner_name = filter_form.cleaned_data.get('owner_name')
+        parking_lot = filter_form.cleaned_data.get('parking_lot')
+        payment_method = filter_form.cleaned_data.get('payment_method')
+        issue_from = filter_form.cleaned_data.get('issue_from')
+        issue_to = filter_form.cleaned_data.get('issue_to')
+
+        if receipt_number:
+            receipts = receipts.filter(receipt_number__icontains=receipt_number)
+
+        if plate_number:
+            receipts = receipts.filter(session__vehicle__plate_number__icontains=plate_number)
+
+        if owner_name:
+            receipts = receipts.filter(session__vehicle__owner_name__icontains=owner_name)
+
+        if parking_lot:
+            receipts = receipts.filter(session__spot__parking_lot=parking_lot)
+
+        if payment_method:
+            receipts = receipts.filter(payment__payment_method=payment_method)
+
+        if issue_from:
+            receipts = receipts.filter(issue_time__date__gte=issue_from)
+
+        if issue_to:
+            receipts = receipts.filter(issue_time__date__lte=issue_to)
+
+    receipts = receipts.order_by('-issue_time')
 
     return render(request, 'parking/receipt_list.html', {
         'receipts': receipts,
         'customer': customer,
+        'filter_form': filter_form,
     })
 
 
@@ -741,8 +926,6 @@ def receipt_detail(request, pk):
         'customer': customer,
     })
 
-
-# Owner-only: Reports
 
 def report_dashboard(request):
     if not request.user.is_authenticated:
@@ -834,6 +1017,7 @@ def report_dashboard(request):
     free_spots = spots.filter(is_occupied=False).count()
 
     occupancy_rate = 0
+
     if total_spots > 0:
         occupancy_rate = round((occupied_spots / total_spots) * 100, 2)
 
@@ -906,6 +1090,7 @@ def report_dashboard(request):
 
     return render(request, 'parking/report_dashboard.html', context)
 
+
 def customer_user_list(request):
     if not request.user.is_authenticated:
         return redirect('parking:login')
@@ -918,16 +1103,49 @@ def customer_user_list(request):
     if not is_owner(request.user):
         return redirect('parking:dashboard')
 
+    filter_form = CustomerUserFilterForm(request.GET or None)
+
     users = CustomerUser.objects.select_related(
         'user',
         'customer',
     ).filter(
         customer=customer
-    ).order_by('role', 'user__username')
+    )
+
+    if filter_form.is_valid():
+        username = filter_form.cleaned_data.get('username')
+        full_name = filter_form.cleaned_data.get('full_name')
+        email = filter_form.cleaned_data.get('email')
+        role = filter_form.cleaned_data.get('role')
+        is_active = filter_form.cleaned_data.get('is_active')
+
+        if username:
+            users = users.filter(user__username__icontains=username)
+
+        if full_name:
+            users = users.filter(user__first_name__icontains=full_name)
+
+        if email:
+            users = users.filter(user__email__icontains=email)
+
+        if role:
+            users = users.filter(role=role)
+
+        if is_active == 'active':
+            users = users.filter(is_active=True, user__is_active=True)
+
+        if is_active == 'inactive':
+            users = users.filter(
+                Q(is_active=False) |
+                Q(user__is_active=False)
+            )
+
+    users = users.order_by('role', 'user__username')
 
     return render(request, 'parking/customer_user_list.html', {
         'users': users,
         'customer': customer,
+        'filter_form': filter_form,
     })
 
 
