@@ -839,7 +839,6 @@ def payment_list(request):
         'query_string': query_string,
     })
 
-
 def payment_update(request, pk):
     if not request.user.is_authenticated:
         return redirect('parking:login')
@@ -849,13 +848,11 @@ def payment_update(request, pk):
     if customer is None:
         return redirect('parking:dashboard')
 
-    if not is_owner(request.user):
-        return redirect('parking:payment_list')
-
     payment = get_object_or_404(
         Payment,
         pk=pk,
         session__vehicle__customer=customer,
+        payment_status=Payment.PAYMENT_STATUS_OPEN,
     )
 
     if request.method == 'POST':
@@ -872,7 +869,6 @@ def payment_update(request, pk):
         'form': form,
         'payment': payment,
     })
-
 
 def receipt_list(request):
     if not request.user.is_authenticated:

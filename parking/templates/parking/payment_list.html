@@ -48,10 +48,8 @@
                     <td>{{ payment.get_payment_status_display }}</td>
                     <td>{{ payment.payment_time|jalali_gregorian }}</td>
                     <td>
-                        {% if payment.payment_status == 'open' and is_owner_user %}
+                        {% if payment.payment_status == 'open' %}
                             <a href="{% url 'parking:payment_update' payment.id %}">ثبت روش پرداخت</a>
-                        {% elif payment.payment_status == 'open' %}
-                            در انتظار پرداخت
                         {% else %}
                             پرداخت شده
                         {% endif %}
