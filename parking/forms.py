@@ -826,3 +826,55 @@ class CustomerUserPasswordForm(forms.Form):
             raise forms.ValidationError('رمز عبور و تکرار آن یکسان نیستند.')
 
         return cleaned_data    
+    
+class AccountPasswordChangeForm(forms.Form):
+    old_password = forms.CharField(
+        label='رمز عبور فعلی',
+        widget=forms.PasswordInput
+    )
+
+    new_password = forms.CharField(
+        label='رمز عبور جدید',
+        widget=forms.PasswordInput,
+        min_length=8,
+        help_text='رمز عبور باید حداقل ۸ کاراکتر، یک حرف بزرگ انگلیسی و یک عدد داشته باشد.'
+    )
+
+    new_password_confirm = forms.CharField(
+        label='تکرار رمز عبور جدید',
+        widget=forms.PasswordInput
+    )
+
+    def __init__(self, user, *args, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+
+    def clean_old_password(self):
+        old_password = self.cleaned_data.get('old_password')
+
+        if not self.user.check_password(old_password):
+            raise forms.ValidationError('رمز عبور فعلی اشتباه است.')
+
+        return old_password
+
+    def clean_new_password(self):
+        new_password = self.cleaned_data.get('new_password')
+
+        if not re.search(r'[A-Z]', new_password):
+            raise forms.ValidationError('رمز عبور باید حداقل یک حرف بزرگ انگلیسی داشته باشد.')
+
+        if not re.search(r'[0-9]', new_password):
+            raise forms.ValidationError('رمز عبور باید حداقل یک عدد داشته باشد.')
+
+        return new_password
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        new_password = cleaned_data.get('new_password')
+        new_password_confirm = cleaned_data.get('new_password_confirm')
+
+        if new_password and new_password_confirm and new_password != new_password_confirm:
+            raise forms.ValidationError('رمز عبور جدید و تکرار آن یکسان نیستند.')
+
+        return cleaned_data    

@@ -8,44 +8,49 @@
     <aside>
         <h2>Parkino</h2>
 
-        <ul>
+    <ul>
+        <li>
+            <a href="{% url 'parking:dashboard' %}">داشبورد</a>
+        </li>
+
+        <li>
+            <a href="{% url 'parking:parking_session_list' %}">مدیریت سشن‌های پارک</a>
+        </li>
+
+        <li>
+            <a href="{% url 'parking:payment_list' %}">پرداخت‌ها</a>
+        </li>
+
+        <li>
+            <a href="{% url 'parking:receipt_list' %}">رسیدها</a>
+        </li>
+
+        {% if request.user.customer_profile.role == 'owner' %}
             <li>
-                <a href="{% url 'parking:dashboard' %}">داشبورد</a>
+                <a href="{% url 'parking:parking_lot_list' %}">مدیریت پارکینگ‌ها</a>
             </li>
 
             <li>
-                <a href="{% url 'parking:parking_session_list' %}">مدیریت سشن‌های پارک</a>
+                <a href="{% url 'parking:parking_spot_list' %}">مدیریت جایگاه‌ها</a>
             </li>
 
             <li>
-                <a href="{% url 'parking:payment_list' %}">پرداخت‌ها</a>
+                <a href="{% url 'parking:tariff_list' %}">مدیریت تعرفه‌ها</a>
             </li>
 
             <li>
-                <a href="{% url 'parking:receipt_list' %}">رسیدها</a>
+                <a href="{% url 'parking:report_dashboard' %}">گزارش‌ها</a>
             </li>
 
-            {% if request.user.customer_profile.role == 'owner' %}
-                <li>
-                    <a href="{% url 'parking:parking_lot_list' %}">مدیریت پارکینگ‌ها</a>
-                </li>
+            <li>
+                <a href="{% url 'parking:customer_user_list' %}">کاربران و نقش‌ها</a>
+            </li>
+        {% endif %}
 
-                <li>
-                    <a href="{% url 'parking:parking_spot_list' %}">مدیریت جایگاه‌ها</a>
-                </li>
-
-                <li>
-                    <a href="{% url 'parking:tariff_list' %}">مدیریت تعرفه‌ها</a>
-                </li>
-
-                <li>
-                    <a href="{% url 'parking:report_dashboard' %}">گزارش‌ها</a>
-                </li>
-                <li>
-                    <a href="{% url 'parking:customer_user_list' %}">کاربران و نقش‌ها</a>
-                </li>
-            {% endif %}
-        </ul>
+        <li>
+            <a href="{% url 'parking:account_change_password' %}">تغییر رمز من</a>
+        </li>
+    </ul>
 
         <form method="post" action="{% url 'parking:logout' %}">
             {% csrf_token %}

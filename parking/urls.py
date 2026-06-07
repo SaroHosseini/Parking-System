@@ -47,4 +47,5 @@ urlpatterns = [
     path('receipts/<int:pk>/print/', views.receipt_print, name='receipt_print'),
     path('sessions/<int:pk>/cancel/', views.parking_session_cancel, name='parking_session_cancel'),
     path('users/<int:pk>/change-password/',views.customer_user_change_password,name='customer_user_change_password'),
+    path('account/change-password/',views.account_change_password,name='account_change_password'),
 ]

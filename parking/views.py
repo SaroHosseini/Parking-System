@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from django.db.models import Sum, Avg, Count, Q
 from django.utils import timezone
 from django.core.paginator import Paginator
+from django.contrib.auth import update_session_auth_hash
 
 from .models import (
     ParkingSpot,
@@ -35,6 +36,7 @@ from .forms import (
     ReceiptFilterForm,
     CustomerUserFilterForm,
     CustomerUserPasswordForm,
+    AccountPasswordChangeForm,
 )
 
 
@@ -1409,4 +1411,32 @@ def customer_user_change_password(request, pk):
     return render(request, 'parking/customer_user_password_form.html', {
         'form': form,
         'customer_user': customer_user,
+    })
+
+def account_change_password(request):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    if request.method == 'POST':
+        form = AccountPasswordChangeForm(request.user, request.POST)
+
+        if form.is_valid():
+            request.user.set_password(form.cleaned_data['new_password'])
+            request.user.save(update_fields=['password'])
+
+            update_session_auth_hash(request, request.user)
+
+            return redirect('parking:dashboard')
+
+    else:
+        form = AccountPasswordChangeForm(request.user)
+
+    return render(request, 'parking/account_change_password.html', {
+        'form': form,
+        'customer': customer,
     })
