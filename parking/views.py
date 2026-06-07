@@ -3,6 +3,7 @@ from django.db import transaction
 from django.contrib.auth.models import User
 from django.db.models import Sum, Avg, Count, Q
 from django.utils import timezone
+from django.core.paginator import Paginator
 
 from .models import (
     ParkingSpot,
@@ -86,6 +87,19 @@ def is_operator(user):
         return False
 
     return profile.role == CustomerUser.ROLE_OPERATOR
+
+
+def paginate_queryset(request, queryset, per_page=10):
+    paginator = Paginator(queryset, per_page)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    query_params = request.GET.copy()
+
+    if 'page' in query_params:
+        query_params.pop('page')
+
+    return page_obj, query_params.urlencode()
 
 
 def home(request):
@@ -281,10 +295,14 @@ def parking_lot_list(request):
 
     parking_lots = parking_lots.order_by('name')
 
+    page_obj, query_string = paginate_queryset(request, parking_lots, per_page=10)
+
     return render(request, 'parking/parking_lot_list.html', {
-        'parking_lots': parking_lots,
+        'parking_lots': page_obj,
         'customer': customer,
         'filter_form': filter_form,
+        'page_obj': page_obj,
+        'query_string': query_string,
     })
 
 
@@ -401,10 +419,14 @@ def parking_spot_list(request):
         'code'
     )
 
+    page_obj, query_string = paginate_queryset(request, parking_spots, per_page=10)
+
     return render(request, 'parking/parking_spot_list.html', {
-        'parking_spots': parking_spots,
+        'parking_spots': page_obj,
         'customer': customer,
         'filter_form': filter_form,
+        'page_obj': page_obj,
+        'query_string': query_string,
     })
 
 
@@ -514,10 +536,14 @@ def tariff_list(request):
 
     tariffs = tariffs.order_by('vehicle_type', 'name')
 
+    page_obj, query_string = paginate_queryset(request, tariffs, per_page=10)
+
     return render(request, 'parking/tariff_list.html', {
-        'tariffs': tariffs,
+        'tariffs': page_obj,
         'customer': customer,
         'filter_form': filter_form,
+        'page_obj': page_obj,
+        'query_string': query_string,
     })
 
 
@@ -652,10 +678,14 @@ def parking_session_list(request):
 
     sessions = sessions.order_by('-entry_time')
 
+    page_obj, query_string = paginate_queryset(request, sessions, per_page=10)
+
     return render(request, 'parking/parking_session_list.html', {
-        'sessions': sessions,
+        'sessions': page_obj,
         'customer': customer,
         'filter_form': filter_form,
+        'page_obj': page_obj,
+        'query_string': query_string,
     })
 
 
@@ -798,11 +828,15 @@ def payment_list(request):
 
     payments = payments.order_by('-payment_time')
 
+    page_obj, query_string = paginate_queryset(request, payments, per_page=10)
+
     return render(request, 'parking/payment_list.html', {
-        'payments': payments,
+        'payments': page_obj,
         'customer': customer,
         'is_owner_user': is_owner(request.user),
         'filter_form': filter_form,
+        'page_obj': page_obj,
+        'query_string': query_string,
     })
 
 
@@ -893,10 +927,14 @@ def receipt_list(request):
 
     receipts = receipts.order_by('-issue_time')
 
+    page_obj, query_string = paginate_queryset(request, receipts, per_page=10)
+
     return render(request, 'parking/receipt_list.html', {
-        'receipts': receipts,
+        'receipts': page_obj,
         'customer': customer,
         'filter_form': filter_form,
+        'page_obj': page_obj,
+        'query_string': query_string,
     })
 
 
@@ -1070,19 +1108,16 @@ def report_dashboard(request):
         'form': form,
         'start_date': start_date,
         'end_date': end_date,
-
         'entries_count': entries_in_range.count(),
         'exits_count': exits_in_range.count(),
         'successful_payments_count': successful_payments.count(),
         'total_income': total_income,
         'average_duration': round(average_duration, 2),
         'active_sessions_count': active_sessions_count,
-
         'total_spots': total_spots,
         'occupied_spots': occupied_spots,
         'free_spots': free_spots,
         'occupancy_rate': occupancy_rate,
-
         'vehicle_type_rows': vehicle_type_rows,
         'payment_method_rows': payment_method_rows,
         'closed_sessions': exits_in_range.order_by('-exit_time'),
@@ -1142,10 +1177,14 @@ def customer_user_list(request):
 
     users = users.order_by('role', 'user__username')
 
+    page_obj, query_string = paginate_queryset(request, users, per_page=10)
+
     return render(request, 'parking/customer_user_list.html', {
-        'users': users,
+        'users': page_obj,
         'customer': customer,
         'filter_form': filter_form,
+        'page_obj': page_obj,
+        'query_string': query_string,
     })
 
 
