@@ -818,7 +818,15 @@ def parking_session_close(request, pk):
         session.exit_time = timezone.now()
         session.save()
 
-        return redirect('parking:parking_session_list')
+        payment = Payment.objects.filter(
+            session=session,
+            payment_status=Payment.PAYMENT_STATUS_OPEN,
+        ).order_by('-id').first()
+
+        if payment:
+            return redirect('parking:payment_update', pk=payment.id)
+
+        return redirect('parking:parking_session_detail', pk=session.id)
 
     return render(request, 'parking/parking_session_close.html', {
         'session': session,
@@ -983,8 +991,17 @@ def payment_update(request, pk):
         form = PaymentForm(request.POST, instance=payment)
 
         if form.is_valid():
-            form.save()
-            return redirect('parking:payment_list')
+            payment = form.save()
+
+            receipt = Receipt.objects.filter(
+                payment=payment,
+                session=payment.session,
+            ).order_by('-issue_time').first()
+
+            if receipt:
+                return redirect('parking:receipt_print', pk=receipt.id)
+
+            return redirect('parking:receipt_list')
 
     else:
         form = PaymentForm(instance=payment)
