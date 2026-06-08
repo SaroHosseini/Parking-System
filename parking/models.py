@@ -246,6 +246,10 @@ class ParkingSpot(models.Model):
     code = models.CharField('کد محل', max_length=255)
     level = models.CharField('طبقه', max_length=255)
     is_occupied = models.BooleanField("اشغال است؟", default=False)
+    is_active = models.BooleanField(
+    "فعال است؟",
+    default=True
+    )
 
     class Meta:
         constraints = [

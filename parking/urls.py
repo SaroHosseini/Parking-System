@@ -50,4 +50,5 @@ urlpatterns = [
     path('account/change-password/',views.account_change_password,name='account_change_password'),
     path('settings/', views.customer_settings, name='customer_settings'),
     path('ajax/available-spots/', views.available_spots_api, name='available_spots_api'),
+    path('parking-lots/<int:pk>/auto-generate-spots/',views.parking_spot_auto_generate,name='parking_spot_auto_generate'),
 ]

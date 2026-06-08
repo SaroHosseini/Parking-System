@@ -25,6 +25,8 @@
                 <th>ظرفیت موتور</th>
                 <th>جایگاه موتور ساخته‌شده</th>
                 <th>جایگاه موتور باقی‌مانده</th>
+
+                <th>عملیات</th>
             </tr>
         </thead>
 
@@ -52,10 +54,16 @@
                             {{ row.remaining_motorcycle_spots }}
                         {% endif %}
                     </td>
+
+                    <td>
+                        <a href="{% url 'parking:parking_spot_auto_generate' row.parking_lot.id %}">
+                            ساخت خودکار جایگاه‌ها
+                        </a>
+                    </td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="7">هنوز پارکینگی ثبت نشده است.</td>
+                    <td colspan="8">هنوز پارکینگی ثبت نشده است.</td>
                 </tr>
             {% endfor %}
         </tbody>

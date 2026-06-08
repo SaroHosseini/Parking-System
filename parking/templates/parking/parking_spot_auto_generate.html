@@ -1,0 +1,64 @@
+{% extends 'parking/base_dashboard.html' %}
+
+{% block title %}ساخت خودکار جایگاه‌ها{% endblock %}
+
+{% block content %}
+    <h1>ساخت خودکار جایگاه‌ها</h1>
+
+    <p>پارکینگ: {{ parking_lot.name }}</p>
+
+    <hr>
+
+    <h2>اطلاعات ظرفیت</h2>
+
+    <ul>
+        <li>ظرفیت خودرو: {{ parking_lot.car_capacity }}</li>
+        <li>ظرفیت موتور: {{ parking_lot.motorcycle_capacity }}</li>
+        <li>ظرفیت کل: {{ parking_lot.total_capacity }}</li>
+        <li>تعداد جایگاه‌های فعلی: {{ existing_spots_count }}</li>
+        <li>سشن‌های باز این پارکینگ: {{ open_sessions_count }}</li>
+        <li>سشن‌های بسته‌شده این پارکینگ: {{ closed_sessions_count }}</li>
+    </ul>
+
+    <hr>
+
+    {% if error_message %}
+        <p style="color: red;">
+            {{ error_message }}
+        </p>
+
+        <a href="{% url 'parking:parking_spot_list' %}">بازگشت به مدیریت جایگاه‌ها</a>
+    {% else %}
+        <h2>هشدار مهم</h2>
+
+        <p>
+            با انجام این عملیات، همه جایگاه‌های فعلی این پارکینگ حذف می‌شوند و جایگاه‌های جدید بر اساس ظرفیت خودرو و موتور ساخته می‌شوند.
+        </p>
+
+        <p>
+            کد جایگاه‌ها به این شکل ساخته می‌شود:
+        </p>
+
+        <ul>
+            <li>خودرو: C + کد پارکینگ + شماره، مثل CAZ_1</li>
+            <li>موتور: M + کد پارکینگ + شماره، مثل MAZ_1</li>
+        </ul>
+
+        {% if open_sessions_count > 0 %}
+            <p style="color: red;">
+                برای این پارکینگ سشن باز وجود دارد؛ ابتدا خروج خودروهای فعال را ثبت کنید.
+            </p>
+
+            <a href="{% url 'parking:parking_spot_list' %}">بازگشت به مدیریت جایگاه‌ها</a>
+        {% else %}
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit">بله، جایگاه‌های فعلی غیرفعال و جایگاه‌های جدید ساخته شوند</button>
+            </form>
+        {% endif %}
+
+        <hr>
+
+        <a href="{% url 'parking:parking_spot_list' %}">انصراف و بازگشت</a>
+    {% endif %}
+{% endblock %}

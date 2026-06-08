@@ -348,7 +348,6 @@ class ParkingSessionEntryForm(forms.Form):
             'invalid_choice': 'جایگاه انتخاب‌شده معتبر نیست یا با نوع وسیله انتخاب‌شده هماهنگ نیست.'
         }
     )
-    
     def __init__(self, *args, **kwargs):
         self.customer = kwargs.pop('customer', None)
         super().__init__(*args, **kwargs)
@@ -361,6 +360,7 @@ class ParkingSessionEntryForm(forms.Form):
         if self.customer:
             spots = ParkingSpot.objects.filter(
                 parking_lot__customer=self.customer,
+                is_active=True,
                 is_occupied=False
             ).select_related('parking_lot')
 

@@ -108,6 +108,32 @@ def paginate_queryset(request, queryset, per_page=10):
 
     return page_obj, query_params.urlencode()
 
+PERSIAN_TO_LATIN = {
+    'آ': 'A', 'ا': 'A', 'ب': 'B', 'پ': 'P', 'ت': 'T', 'ث': 'S',
+    'ج': 'J', 'چ': 'CH', 'ح': 'H', 'خ': 'KH', 'د': 'D', 'ذ': 'Z',
+    'ر': 'R', 'ز': 'Z', 'ژ': 'ZH', 'س': 'S', 'ش': 'SH', 'ص': 'S',
+    'ض': 'Z', 'ط': 'T', 'ظ': 'Z', 'ع': 'A', 'غ': 'GH', 'ف': 'F',
+    'ق': 'GH', 'ک': 'K', 'گ': 'G', 'ل': 'L', 'م': 'M', 'ن': 'N',
+    'و': 'V', 'ه': 'H', 'ی': 'Y',
+}
+
+
+def make_parking_lot_code_prefix(name):
+    letters = []
+
+    for char in name.strip():
+        if char in PERSIAN_TO_LATIN:
+            letters.append(PERSIAN_TO_LATIN[char])
+        elif char.isascii() and char.isalpha():
+            letters.append(char.upper())
+
+        if len(letters) >= 2:
+            break
+
+    while len(letters) < 2:
+        letters.append('X')
+
+    return ''.join(letters[:2])
 
 def home(request):
     if request.user.is_authenticated and get_user_customer(request.user):
@@ -138,7 +164,8 @@ def dashboard(request):
         'parking_lot',
         'parking_lot__customer',
     ).filter(
-        parking_lot__customer=customer
+        parking_lot__customer=customer,
+        is_active=True,
     )
 
     sessions = ParkingSession.objects.select_related(
@@ -482,7 +509,8 @@ def parking_spot_list(request):
         'parking_lot',
         'parking_lot__customer',
     ).filter(
-        parking_lot__customer=customer
+        parking_lot__customer=customer,
+        is_active=True,
     )
 
     selected_parking_lot = None
@@ -518,11 +546,17 @@ def parking_spot_list(request):
     ).annotate(
         car_spots_count=Count(
             'spots',
-            filter=Q(spots__spot_type=Vehicle.VEHICLE_TYPE_CAR)
+            filter=Q(
+                spots__spot_type=Vehicle.VEHICLE_TYPE_CAR,
+                spots__is_active=True,
+            )
         ),
         motorcycle_spots_count=Count(
             'spots',
-            filter=Q(spots__spot_type=Vehicle.VEHICLE_TYPE_MOTORCYCLE)
+            filter=Q(
+                spots__spot_type=Vehicle.VEHICLE_TYPE_MOTORCYCLE,
+                spots__is_active=True,
+            )
         ),
     ).order_by('name')
 
@@ -1258,7 +1292,8 @@ def report_dashboard(request):
         'parking_lot',
         'parking_lot__customer',
     ).filter(
-        parking_lot__customer=customer
+        parking_lot__customer=customer,
+        is_active=True,
     )
 
     if vehicle_type:
@@ -1694,7 +1729,8 @@ def available_spots_api(request):
 
     spots = ParkingSpot.objects.filter(
         parking_lot__customer=customer,
-        is_occupied=False
+        is_occupied=False,
+        is_active=True,
     ).select_related('parking_lot')
 
     if vehicle_type:
@@ -1715,3 +1751,94 @@ def available_spots_api(request):
         })
 
     return JsonResponse({'spots': data})
+
+def parking_spot_auto_generate(request, pk):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:dashboard')
+
+    if not is_owner(request.user):
+        return redirect('parking:dashboard')
+
+    parking_lot = get_object_or_404(
+        ParkingLot,
+        pk=pk,
+        customer=customer,
+    )
+
+    existing_spots_count = ParkingSpot.objects.filter(
+        parking_lot=parking_lot,
+        is_active=True,
+    ).count()
+
+    open_sessions_count = ParkingSession.objects.filter(
+        spot__parking_lot=parking_lot,
+        status=ParkingSession.SESSION_STATUS_OPEN,
+    ).count()
+
+    closed_sessions_count = ParkingSession.objects.filter(
+        spot__parking_lot=parking_lot,
+        status=ParkingSession.SESSION_STATUS_CLOSED,
+    ).count()
+
+    if request.method == 'POST':
+        if open_sessions_count > 0:
+            return render(request, 'parking/parking_spot_auto_generate.html', {
+                'parking_lot': parking_lot,
+                'existing_spots_count': existing_spots_count,
+                'open_sessions_count': open_sessions_count,
+                'closed_sessions_count': closed_sessions_count,
+                'error_message': 'برای این پارکینگ سشن باز وجود دارد؛ تا قبل از ثبت خروج همه خودروها نمی‌توان جایگاه‌ها را دوباره ساخت.',
+            })
+
+        prefix = make_parking_lot_code_prefix(parking_lot.name)
+
+        with transaction.atomic():
+            ParkingSpot.objects.filter(
+                parking_lot=parking_lot,
+                is_active=True,
+            ).update(
+                is_active=False,
+                is_occupied=False,
+            )
+
+            new_spots = []
+
+            for index in range(1, parking_lot.car_capacity + 1):
+                new_spots.append(
+                    ParkingSpot(
+                        parking_lot=parking_lot,
+                        code=f'C{prefix}_{index}',
+                        level='خودکار',
+                        spot_type=Vehicle.VEHICLE_TYPE_CAR,
+                        is_occupied=False,
+                        is_active=True,
+                    )
+                )
+
+            for index in range(1, parking_lot.motorcycle_capacity + 1):
+                new_spots.append(
+                    ParkingSpot(
+                        parking_lot=parking_lot,
+                        code=f'M{prefix}_{index}',
+                        level='خودکار',
+                        spot_type=Vehicle.VEHICLE_TYPE_MOTORCYCLE,
+                        is_occupied=False,
+                        is_active=True,
+                    )
+                )
+
+            ParkingSpot.objects.bulk_create(new_spots)
+
+        return redirect('parking:parking_spot_list')
+
+    return render(request, 'parking/parking_spot_auto_generate.html', {
+        'parking_lot': parking_lot,
+        'existing_spots_count': existing_spots_count,
+        'open_sessions_count': open_sessions_count,
+        'closed_sessions_count': closed_sessions_count,
+    })
