@@ -1,22 +1,27 @@
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>ورود به سیستم</title>
-</head>
-<body>
-    <h1>ورود به سیستم مدیریت پارکینگ</h1>
+{% extends 'parking/base_public.html' %}
 
-    <form method="post">
-        {% csrf_token %}
+{% block title %}ورود به Parkino{% endblock %}
 
-        {{ form.as_p }}
+{% block content %}
+    <section class="auth-layout">
+        <div class="auth-visual" role="img" aria-label="پارکینگ شهری"></div>
 
-        <button type="submit">ورود</button>
-    </form>
+        <div class="auth-card">
+            <p class="eyebrow">پنل عملیاتی</p>
+            <h1>ورود به سیستم</h1>
+            <p>برای مدیریت ورود، خروج، پرداخت و رسید وارد حساب پارکینگ شوید.</p>
 
-    <hr>
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit">ورود</button>
+            </form>
 
-    <a href="{% url 'parking:home' %}">بازگشت به صفحه اصلی</a>
-</body>
-</html>
+            <hr>
+            <div class="action-row">
+                <a class="button secondary" href="{% url 'parking:home' %}">بازگشت به صفحه اصلی</a>
+                <a class="button secondary" href="{% url 'parking:customer_request' %}">درخواست استفاده رایگان (نسخه آزمایشی)</a>
+            </div>
+        </div>
+    </section>
+{% endblock %}

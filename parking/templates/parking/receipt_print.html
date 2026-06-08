@@ -1,4 +1,4 @@
-{% load date_filters %}
+{% load date_filters static %}
 
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -7,8 +7,16 @@
     <title>چاپ رسید</title>
 
     <style>
+        @font-face {
+            font-family: "Vazirmatn";
+            src: url("{% static 'parking/fonts/Vazirmatn.woff2' %}") format("woff2");
+            font-weight: 100 900;
+            font-style: normal;
+            font-display: swap;
+        }
+
         body {
-            font-family: Tahoma, Arial, sans-serif;
+            font-family: "Vazirmatn", Tahoma, Arial, sans-serif;
             direction: rtl;
             text-align: right;
             padding: 20px;

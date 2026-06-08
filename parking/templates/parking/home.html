@@ -1,38 +1,176 @@
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>Parkino - سیستم مدیریت پارکینگ</title>
-</head>
-<body>
-    <h1>Parkino</h1>
+{% extends 'parking/base_public.html' %}
+{% load static %}
 
-    <h2>سیستم مدیریت پارکینگ</h2>
+{% block title %}Parkino | مدیریت هوشمند پارکینگ{% endblock %}
 
-    <p>
-        پارکینو یک سامانه مدیریت پارکینگ است که امکاناتی مانند ثبت خودرو،
-        مدیریت جایگاه‌ها، ثبت ورود و خروج، محاسبه هزینه، مدیریت پرداخت و صدور رسید را فراهم می‌کند.
-    </p>
+{% block content %}
+    <section class="hero">
+        <div class="hero-content hero-animate">
+            <p class="eyebrow">طراحی شده برای پارکینگ‌های شهری ایران</p>
+            <h1>مدیریت پارکینگ، از ورود پلاک تا چاپ رسید</h1>
+            <p>
+                پارکینو پنل منظم برای کنترل جایگاه‌ها، ثبت ورود و خروج،
+                محاسبه هزینه توقف، مدیریت پرداخت و گزارش‌گیری روزانه است.
+            </p>
 
-    <hr>
+            <div class="hero-actions">
+                <a class="button" href="{% url 'parking:customer_request' %}">درخواست استفاده رایگان (نسخه آزمایشی)</a>
+                <a class="button secondary" href="{% url 'parking:login' %}">ورود کاربران</a>
+            </div>
 
-    <h3>امکانات اصلی</h3>
+            <div class="hero-metrics">
+                <div class="hero-metric">
+                    <strong>جستجو</strong>
+                    <span>نمایش جایگاه آزاد با جستجو و صفحه‌بندی</span>
+                </div>
+                <div class="hero-metric">
+                    <strong>رسید</strong>
+                    <span>ثبت پرداخت، صدور رسید و چاپ سریع</span>
+                </div>
+                <div class="hero-metric">
+                    <strong>گزارش</strong>
+                    <span>درآمد، اشغال فضا و تفکیک خودرو و موتور</span>
+                </div>
+            </div>
+        </div>
 
-    <ul>
-        <li>مدیریت مشتریان و پارکینگ‌ها</li>
-        <li>مدیریت وسایل نقلیه</li>
-        <li>مدیریت جایگاه‌های پارک</li>
-        <li>ثبت ورود و خروج خودرو</li>
-        <li>محاسبه خودکار هزینه پارک</li>
-        <li>مدیریت پرداخت‌ها</li>
-        <li>صدور رسید</li>
-        <li>داشبورد مدیریتی</li>
-    </ul>
+        <div class="hero-dashboard" aria-label="پیش‌نمایش عملیات پارکینگ">
+            <div class="hero-dashboard__bar">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <div class="hero-dashboard__grid">
+                <div>
+                    <span>ورود امروز</span>
+                    <strong>{{ hero_stats.today_entries }}</strong>
+                </div>
+                <div>
+                    <span>جایگاه آزاد</span>
+                    <strong>{{ hero_stats.free_spots }}</strong>
+                </div>
+                <div>
+                    <span>پرداخت موفق</span>
+                    <strong>{{ hero_stats.successful_payments }}</strong>
+                </div>
+                <div>
+                    <span>میانگین توقف</span>
+                    <strong>{{ hero_stats.average_duration }} دقیقه</strong>
+                </div>
+            </div>
+        </div>
+    </section>
 
-    <hr>
+    <section class="section" id="features">
+        <div class="section-header">
+            <div>
+                <h2>چیزی که اپراتور هر روز لازم دارد</h2>
+                <p>مسیرهای اصلی پنل بر اساس همین پروژه چیده شده‌اند؛ بدون صفحه‌های اضافه و گیج‌کننده.</p>
+            </div>
+        </div>
 
-    <a href="{% url 'parking:customer_request' %}">ثبت درخواست استفاده</a>
-    |
-    <a href="{% url 'parking:login' %}">ورود به سیستم</a>
-</body>
-</html>
+        <div class="feature-grid">
+            <article class="feature-card">
+                <h3>ثبت ورود</h3>
+                <p>ثبت پلاک، نوع وسیله و انتخاب جایگاه آزاد هماهنگ با خودرو یا موتورسیکلت.</p>
+            </article>
+            <article class="feature-card">
+                <h3>کنترل ظرفیت</h3>
+                <p>تعریف پارکینگ، ساخت خودکار جایگاه و رصد ظرفیت باقی‌مانده هر نوع وسیله.</p>
+            </article>
+            <article class="feature-card">
+                <h3>پرداخت و رسید</h3>
+                <p>محاسبه هزینه بعد از خروج، ثبت روش پرداخت و صدور رسید قابل مشاهده و چاپ.</p>
+            </article>
+            <article class="feature-card">
+                <h3>گزارش مدیریتی</h3>
+                <p>خلاصه ورود، خروج، درآمد، اشغال فضا، پرداخت‌ها و تفکیک خودرو و موتور.</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="section visual-section">
+        <div class="image-mosaic">
+            <figure class="image-tile image-tile--large">
+                <img src="{% static 'parking/img/parking-levels-real.jpg' %}" alt="پارکینگ طبقاتی با خودروهای پارک شده">
+                <figcaption>کنترل طبقات و جایگاه‌های خودرو</figcaption>
+            </figure>
+            <figure class="image-tile">
+                <img src="{% static 'parking/img/parking-secondary-real.jpg' %}" alt="سالن پارکینگ با مسیرهای مشخص">
+                <figcaption>مسیرهای مشخص برای ورود و خروج</figcaption>
+            </figure>
+            <figure class="image-tile">
+               <img class="image-focus-motorcycle" src="{% static 'parking/img/parking-motorcycle-real.jpg' %}" alt="پارکینگ موتورسیکلت در سالن پارک">
+                <figcaption>امکان کنترل وسیله نقلیه پارکینگ به تفکیک موتور سیکلت و سواری</figcaption>
+            </figure>
+            <figure class="image-tile">
+                <img src="{% static 'parking/img/parking-options-real.jpg' %}" alt="ورودی پارکینگ با مسیر کنترل شده">
+                <figcaption>امکانات عملیاتی؛ تعرفه، پرداخت، رسید و گزارش</figcaption>
+            </figure>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="product-strip">
+            <div>
+                <div class="section-header">
+                    <div>
+                        <h2>جریان کاری کوتاه و قابل اجرا</h2>
+                        <p>همان عملیات واقعی پنل، با اولویت‌هایی که اپراتور در طول روز نیاز دارد.</p>
+                    </div>
+                </div>
+
+                <div class="workflow">
+                    <div class="workflow-item">
+                        <div>
+                            <h3>تعریف پارکینگ، جایگاه و تعرفه</h3>
+                            <p>مالک ظرفیت‌ها، جایگاه‌ها و تعرفه فعال هر نوع وسیله را ثبت می‌کند.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-item">
+                        <div>
+                            <h3>ثبت ورود وسیله نقلیه</h3>
+                            <p>اپراتور پلاک را ثبت می‌کند و فقط جایگاه‌های آزاد و مرتبط نمایش داده می‌شوند.</p>
+                        </div>
+                    </div>
+                    <div class="workflow-item">
+                        <div>
+                            <h3>ثبت خروج و پرداخت</h3>
+                            <p>هزینه بر اساس توقف محاسبه می‌شود، پرداخت ثبت می‌شود و رسید چاپ می‌شود.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="product-shot product-shot--workflow" role="img" aria-label="نمای واقعی از مسیر کاری پارکینگ"></div>
+        </div>
+    </section>
+
+    <section class="section contact-section" id="contact">
+        <div class="contact-panel">
+            <div>
+                <p class="eyebrow">تماس با ما</p>
+                <h2>برای راه‌اندازی پارکینو آماده اید؟</h2>
+                <p>
+                    درخواست استفاده را ثبت کنید یا از مسیرهای تماس، اطلاعات پارکینگ و نیازهای عملیاتی خود را ارسال کنید.
+                </p>
+            </div>
+            <div class="contact-cards">
+                <a class="contact-card" href="tel:+989113284955">
+                    <span>شماره تماس</span>
+                    <strong>09113284955</strong>
+                </a>
+                <a class="contact-card" href="https://t.me/ParkinoShop" target="_blank" rel="noopener">
+                    <span>تلگرام</span>
+                    <strong>@ParkinoShop</strong>
+                </a>
+                <a class="contact-card" href="mailto:parkino.shop@gmail.com">
+                    <span>ایمیل</span>
+                    <strong>parkino.shop@gmail.com</strong>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <script src="{% static 'parking/js/home.js' %}" defer></script>
+{% endblock %}

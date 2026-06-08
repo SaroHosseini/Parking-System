@@ -1,72 +1,108 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}Parkino Dashboard{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}داشبورد Parkino{% endblock %}</title>
+    <link rel="icon" href="{% static 'parking/img/parkino-logo/favicon.ico' %}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'parking/img/parkino-logo/favicon-32x32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'parking/img/parkino-logo/favicon-16x16.png' %}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'parking/img/parkino-logo/apple-touch-icon.png' %}">
+    <link rel="manifest" href="{% static 'parking/img/parkino-logo/site.webmanifest' %}">
+    <link rel="stylesheet" href="{% static 'parking/css/app.css' %}">
+    <script src="{% static 'parking/js/theme.js' %}" defer></script>
 </head>
 <body>
-    <aside>
-        <h2>Parkino</h2>
+    {% with current=request.resolver_match.url_name %}
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a class="brand" href="{% url 'parking:dashboard' %}">
+                    <img class="brand-logo-mark" src="{% static 'parking/img/parkino-logo/parkino-favicon-master-1024.png' %}" alt="Parkino">
+                    <span>
+                        Parkino
+                        <small>کنترل روزانه پارکینگ</small>
+                    </span>
+                </a>
+            </div>
 
-    <ul>
-        <li>
-            <a href="{% url 'parking:dashboard' %}">داشبورد</a>
-        </li>
+            <nav aria-label="منوی داشبورد">
+                <section class="nav-group">
+                    <p class="nav-group-title">عملیات</p>
+                    <ul class="nav-list">
+                        <li><a class="nav-link {% if current == 'dashboard' %}is-active{% endif %}" href="{% url 'parking:dashboard' %}">داشبورد</a></li>
+                        <li><a class="nav-link {% if current == 'parking_session_list' or current == 'parking_session_create' or current == 'parking_session_detail' %}is-active{% endif %}" href="{% url 'parking:parking_session_list' %}">سشن‌های پارک</a></li>
+                        <li><a class="nav-link {% if current == 'payment_list' or current == 'payment_update' %}is-active{% endif %}" href="{% url 'parking:payment_list' %}">پرداخت‌ها</a></li>
+                        <li><a class="nav-link {% if current == 'receipt_list' or current == 'receipt_detail' or current == 'receipt_print' %}is-active{% endif %}" href="{% url 'parking:receipt_list' %}">رسیدها</a></li>
+                    </ul>
+                </section>
 
-        <li>
-            <a href="{% url 'parking:parking_session_list' %}">مدیریت سشن‌های پارک</a>
-        </li>
+                {% if request.user.customer_profile.role == 'owner' %}
+                    <section class="nav-group">
+                        <p class="nav-group-title">زیرساخت</p>
+                        <ul class="nav-list">
+                            <li><a class="nav-link {% if current == 'parking_lot_list' or current == 'parking_lot_create' or current == 'parking_lot_update' %}is-active{% endif %}" href="{% url 'parking:parking_lot_list' %}">پارکینگ‌ها</a></li>
+                            <li><a class="nav-link {% if current == 'parking_spot_list' or current == 'parking_spot_create' or current == 'parking_spot_update' or current == 'parking_spot_auto_generate' %}is-active{% endif %}" href="{% url 'parking:parking_spot_list' %}">جایگاه‌ها</a></li>
+                            <li><a class="nav-link {% if current == 'tariff_list' or current == 'tariff_create' or current == 'tariff_update' %}is-active{% endif %}" href="{% url 'parking:tariff_list' %}">تعرفه‌ها</a></li>
+                        </ul>
+                    </section>
 
-        <li>
-            <a href="{% url 'parking:payment_list' %}">پرداخت‌ها</a>
-        </li>
+                    <section class="nav-group">
+                        <p class="nav-group-title">مدیریت</p>
+                        <ul class="nav-list">
+                            <li><a class="nav-link {% if current == 'report_dashboard' %}is-active{% endif %}" href="{% url 'parking:report_dashboard' %}">گزارش‌ها</a></li>
+                            <li><a class="nav-link {% if current == 'customer_user_list' or current == 'customer_user_create' or current == 'customer_user_update' %}is-active{% endif %}" href="{% url 'parking:customer_user_list' %}">کاربران و نقش‌ها</a></li>
+                            <li><a class="nav-link {% if current == 'customer_settings' %}is-active{% endif %}" href="{% url 'parking:customer_settings' %}">تنظیمات پارکینگ</a></li>
+                        </ul>
+                    </section>
+                {% endif %}
 
-        <li>
-            <a href="{% url 'parking:receipt_list' %}">رسیدها</a>
-        </li>
+                <section class="nav-group">
+                    <p class="nav-group-title">حساب</p>
+                    <ul class="nav-list">
+                        <li><a class="nav-link {% if current == 'account_change_password' %}is-active{% endif %}" href="{% url 'parking:account_change_password' %}">تغییر رمز من</a></li>
+                    </ul>
+                </section>
+            </nav>
+        </aside>
 
-        {% if request.user.customer_profile.role == 'owner' %}
-            <li>
-                <a href="{% url 'parking:parking_lot_list' %}">مدیریت پارکینگ‌ها</a>
-            </li>
+        <div class="app-workspace">
+            <header class="topbar">
+                <div class="user-chip">
+                    <span>
+                        <strong>{{ request.user.username }}</strong>
+                        <span>{% if request.user.customer_profile %}{{ request.user.customer_profile.get_role_display }}{% else %}کاربر{% endif %}</span>
+                    </span>
+                </div>
 
-            <li>
-                <a href="{% url 'parking:customer_settings' %}">تنظیمات پارکینگ</a>
-            </li>
+                <div class="topbar-actions">
+                    <button class="theme-toggle" type="button" data-theme-toggle>
+                        <span class="theme-toggle__icon" aria-hidden="true"></span>
+                        <span data-theme-label>حالت تاریک</span>
+                    </button>
+                    <form class="logout-form" method="post" action="{% url 'parking:logout' %}">
+                        {% csrf_token %}
+                        <button class="link-button" type="submit">خروج</button>
+                    </form>
+                </div>
+            </header>
 
-            <li>
-                <a href="{% url 'parking:parking_spot_list' %}">مدیریت جایگاه‌ها</a>
-            </li>
+            <main class="app-main">
+                {% if messages %}
+                    <div class="messages">
+                        {% for message in messages %}
+                            <div class="message">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
 
-            <li>
-                <a href="{% url 'parking:tariff_list' %}">مدیریت تعرفه‌ها</a>
-            </li>
-
-            <li>
-                <a href="{% url 'parking:report_dashboard' %}">گزارش‌ها</a>
-            </li>
-
-            <li>
-                <a href="{% url 'parking:customer_user_list' %}">کاربران و نقش‌ها</a>
-            </li>
-        {% endif %}
-
-        <li>
-            <a href="{% url 'parking:account_change_password' %}">تغییر رمز من</a>
-        </li>
-    </ul>
-
-        <form method="post" action="{% url 'parking:logout' %}">
-            {% csrf_token %}
-            <button type="submit">خروج</button>
-        </form>
-    </aside>
-
-    <hr>
-
-    <main>
-        {% block content %}
-        {% endblock %}
-    </main>
+                <div class="content-stack">
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+        </div>
+    </div>
+    {% endwith %}
 </body>
 </html>

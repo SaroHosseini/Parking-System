@@ -3,67 +3,74 @@
 {% block title %}کاربران و نقش‌ها{% endblock %}
 
 {% block content %}
-    <h1>کاربران و نقش‌ها</h1>
+    <section class="page-header">
+        <div>
+            <p class="eyebrow">کنترل دسترسی</p>
+            <h1>کاربران و نقش‌ها</h1>
+            <p>{{ customer.name }}</p>
+        </div>
+        <a class="button" href="{% url 'parking:customer_user_create' %}">افزودن کاربر جدید</a>
+    </section>
 
-    <p>پارکینگ: {{ customer.name }}</p>
+    <section class="panel filter-panel">
+        <div class="panel-header">
+            <h2>فیلترها</h2>
+            <a class="button secondary" href="{% url 'parking:customer_user_list' %}">پاک کردن فیلترها</a>
+        </div>
+        <form method="get">
+            {{ filter_form.as_p }}
+            <button type="submit">اعمال فیلتر</button>
+        </form>
+    </section>
 
-    <a href="{% url 'parking:customer_user_create' %}">افزودن کاربر جدید</a>
-
-    <hr>
-
-    <h2>فیلترها</h2>
-
-    <form method="get">
-        {{ filter_form.as_p }}
-
-        <button type="submit">اعمال فیلتر</button>
-        <a href="{% url 'parking:customer_user_list' %}">پاک کردن فیلترها</a>
-    </form>
-
-    <hr>
-    <div id="records-section"></div>
-    <table border="1" cellpadding="8">
-        <thead>
-            <tr>
-                <th>نام کاربری</th>
-                <th>نام</th>
-                <th>ایمیل</th>
-                <th>نقش</th>
-                <th>فعال</th>
-                <th>عملیات</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            {% for customer_user in users %}
-                <tr>
-                    <td>{{ customer_user.user.username }}</td>
-                    <td>{{ customer_user.user.first_name|default:"-" }}</td>
-                    <td>{{ customer_user.user.email|default:"-" }}</td>
-                    <td>{{ customer_user.get_role_display }}</td>
-                    <td>
-                        {% if customer_user.is_active and customer_user.user.is_active %}
-                            بله
-                        {% else %}
-                            خیر
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if customer_user.user != request.user %}
-                            <a href="{% url 'parking:customer_user_update' customer_user.id %}">ویرایش</a>
-                            |
-                            <a href="{% url 'parking:customer_user_change_password' customer_user.id %}">تغییر رمز</a>
-                        {% else %}
-                            کاربر فعلی
-                        {% endif %}
-                    </td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="6">هیچ کاربری با این فیلترها پیدا نشد.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% include 'parking/pagination.html' %}
+    <section class="panel" id="records-section">
+        <div class="panel-header">
+            <h2>لیست کاربران</h2>
+            <span class="status-pill">مالک و اپراتور</span>
+        </div>
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>نام کاربری</th>
+                        <th>نام</th>
+                        <th>ایمیل</th>
+                        <th>نقش</th>
+                        <th>فعال</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for customer_user in users %}
+                        <tr>
+                            <td>{{ customer_user.user.username }}</td>
+                            <td>{{ customer_user.user.first_name|default:"-" }}</td>
+                            <td>{{ customer_user.user.email|default:"-" }}</td>
+                            <td>{{ customer_user.get_role_display }}</td>
+                            <td>
+                                {% if customer_user.is_active and customer_user.user.is_active %}
+                                    <span class="status-pill">بله</span>
+                                {% else %}
+                                    <span class="status-pill danger">خیر</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if customer_user.user != request.user %}
+                                    <a href="{% url 'parking:customer_user_update' customer_user.id %}">ویرایش</a>
+                                    <a href="{% url 'parking:customer_user_change_password' customer_user.id %}">تغییر رمز</a>
+                                {% else %}
+                                    کاربر فعلی
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6">هیچ کاربری با این فیلترها پیدا نشد.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% include 'parking/pagination.html' %}
+    </section>
 {% endblock %}

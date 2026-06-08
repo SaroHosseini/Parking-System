@@ -3,126 +3,120 @@
 {% block title %}مدیریت جایگاه‌های پارک{% endblock %}
 
 {% block content %}
-    <h1>مدیریت جایگاه‌های پارک</h1>
+    <section class="page-header">
+        <div>
+            <p class="eyebrow">نقشه ظرفیت</p>
+            <h1>مدیریت جایگاه‌های پارک</h1>
+            <p>{{ customer.name }}</p>
+        </div>
+        <a class="button" href="{% url 'parking:parking_spot_create' %}">ثبت جایگاه جدید</a>
+    </section>
 
-    <p>پارکینگ: {{ customer.name }}</p>
+    <section class="panel">
+        <div class="panel-header">
+            <h2>وضعیت ساخت جایگاه‌ها</h2>
+            <span class="status-pill warning">ظرفیت باقی‌مانده</span>
+        </div>
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>پارکینگ</th>
+                        <th>ظرفیت خودرو</th>
+                        <th>ساخته شده خودرو</th>
+                        <th>باقی‌مانده خودرو</th>
+                        <th>ظرفیت موتور</th>
+                        <th>ساخته شده موتور</th>
+                        <th>باقی‌مانده موتور</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in capacity_rows %}
+                        <tr>
+                            <td>{{ row.parking_lot.name }}</td>
+                            <td>{{ row.car_capacity }}</td>
+                            <td>{{ row.car_spots_count }}</td>
+                            <td>
+                                {% if row.remaining_car_spots < 0 %}
+                                    ظرفیت کمتر از جایگاه‌های ساخته شده است
+                                {% else %}
+                                    {{ row.remaining_car_spots }}
+                                {% endif %}
+                            </td>
+                            <td>{{ row.motorcycle_capacity }}</td>
+                            <td>{{ row.motorcycle_spots_count }}</td>
+                            <td>
+                                {% if row.remaining_motorcycle_spots < 0 %}
+                                    ظرفیت کمتر از جایگاه‌های ساخته شده است
+                                {% else %}
+                                    {{ row.remaining_motorcycle_spots }}
+                                {% endif %}
+                            </td>
+                            <td><a href="{% url 'parking:parking_spot_auto_generate' row.parking_lot.id %}">ساخت خودکار</a></td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="8">هنوز پارکینگی ثبت نشده است.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
 
-    <a href="{% url 'parking:parking_spot_create' %}">ثبت جایگاه جدید</a>
+    <section class="panel filter-panel">
+        <div class="panel-header">
+            <h2>فیلترها</h2>
+            <a class="button secondary" href="{% url 'parking:parking_spot_list' %}">پاک کردن فیلترها</a>
+        </div>
+        <form method="get">
+            {{ filter_form.as_p }}
+            <button type="submit">اعمال فیلتر</button>
+        </form>
+    </section>
 
-    <hr>
-
-    <h2>وضعیت ساخت جایگاه‌ها</h2>
-
-    <table border="1" cellpadding="8">
-        <thead>
-            <tr>
-                <th>پارکینگ</th>
-
-                <th>ظرفیت خودرو</th>
-                <th>جایگاه خودرو ساخته‌شده</th>
-                <th>جایگاه خودرو باقی‌مانده</th>
-
-                <th>ظرفیت موتور</th>
-                <th>جایگاه موتور ساخته‌شده</th>
-                <th>جایگاه موتور باقی‌مانده</th>
-
-                <th>عملیات</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            {% for row in capacity_rows %}
-                <tr>
-                    <td>{{ row.parking_lot.name }}</td>
-
-                    <td>{{ row.car_capacity }}</td>
-                    <td>{{ row.car_spots_count }}</td>
-                    <td>
-                        {% if row.remaining_car_spots < 0 %}
-                            ظرفیت کمتر از جایگاه‌های ساخته‌شده است
-                        {% else %}
-                            {{ row.remaining_car_spots }}
-                        {% endif %}
-                    </td>
-
-                    <td>{{ row.motorcycle_capacity }}</td>
-                    <td>{{ row.motorcycle_spots_count }}</td>
-                    <td>
-                        {% if row.remaining_motorcycle_spots < 0 %}
-                            ظرفیت کمتر از جایگاه‌های ساخته‌شده است
-                        {% else %}
-                            {{ row.remaining_motorcycle_spots }}
-                        {% endif %}
-                    </td>
-
-                    <td>
-                        <a href="{% url 'parking:parking_spot_auto_generate' row.parking_lot.id %}">
-                            ساخت خودکار جایگاه‌ها
-                        </a>
-                    </td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="8">هنوز پارکینگی ثبت نشده است.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <hr>
-
-    <h2>فیلترها</h2>
-
-    <form method="get">
-        {{ filter_form.as_p }}
-
-        <button type="submit">اعمال فیلتر</button>
-        <a href="{% url 'parking:parking_spot_list' %}">پاک کردن فیلترها</a>
-    </form>
-
-    <hr>
-
-    <div id="records-section"></div>
-
-    <h2>لیست جایگاه‌ها</h2>
-
-    <table border="1" cellpadding="8">
-        <thead>
-            <tr>
-                <th>پارکینگ</th>
-                <th>کد جایگاه</th>
-                <th>طبقه</th>
-                <th>نوع جایگاه</th>
-                <th>وضعیت</th>
-                <th>عملیات</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            {% for spot in parking_spots %}
-                <tr>
-                    <td>{{ spot.parking_lot.name }}</td>
-                    <td>{{ spot.code }}</td>
-                    <td>{{ spot.level }}</td>
-                    <td>{{ spot.get_spot_type_display }}</td>
-                    <td>
-                        {% if spot.is_occupied %}
-                            اشغال
-                        {% else %}
-                            آزاد
-                        {% endif %}
-                    </td>
-                    <td>
-                        <a href="{% url 'parking:parking_spot_update' spot.id %}">ویرایش</a>
-                    </td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="6">هیچ جایگاهی با این فیلترها پیدا نشد.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    {% include 'parking/pagination.html' %}
+    <section class="panel" id="records-section">
+        <div class="panel-header">
+            <h2>لیست جایگاه‌ها</h2>
+            <span class="status-pill">فعال</span>
+        </div>
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>پارکینگ</th>
+                        <th>کد جایگاه</th>
+                        <th>طبقه</th>
+                        <th>نوع جایگاه</th>
+                        <th>وضعیت</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for spot in parking_spots %}
+                        <tr>
+                            <td>{{ spot.parking_lot.name }}</td>
+                            <td>{{ spot.code }}</td>
+                            <td>{{ spot.level }}</td>
+                            <td>{{ spot.get_spot_type_display }}</td>
+                            <td>
+                                {% if spot.is_occupied %}
+                                    <span class="status-pill danger">اشغال</span>
+                                {% else %}
+                                    <span class="status-pill">آزاد</span>
+                                {% endif %}
+                            </td>
+                            <td><a href="{% url 'parking:parking_spot_update' spot.id %}">ویرایش</a></td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6">هیچ جایگاهی با این فیلترها پیدا نشد.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% include 'parking/pagination.html' %}
+    </section>
 {% endblock %}

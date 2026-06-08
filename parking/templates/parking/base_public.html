@@ -1,0 +1,50 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Parkino{% endblock %}</title>
+    <link rel="icon" href="{% static 'parking/img/parkino-logo/favicon.ico' %}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'parking/img/parkino-logo/favicon-32x32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'parking/img/parkino-logo/favicon-16x16.png' %}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'parking/img/parkino-logo/apple-touch-icon.png' %}">
+    <link rel="manifest" href="{% static 'parking/img/parkino-logo/site.webmanifest' %}">
+    <link rel="stylesheet" href="{% static 'parking/css/app.css' %}">
+    <script src="{% static 'parking/js/theme.js' %}" defer></script>
+</head>
+<body class="public-shell">
+    <header class="public-nav">
+        <a class="brand" href="{% url 'parking:home' %}">
+            <img class="brand-logo-mark" src="{% static 'parking/img/parkino-logo/parkino-favicon-master-1024.png' %}" alt="Parkino">
+            <span>
+                Parkino
+                <small>سامانه مدیریت پارکینگ</small>
+            </span>
+        </a>
+        <nav class="public-nav__links" aria-label="ناوبری اصلی">
+            <a class="nav-anchor" href="{% url 'parking:home' %}#features">امکانات</a>
+            <a class="nav-anchor" href="{% url 'parking:home' %}#contact">تماس با ما</a>
+            <a class="button secondary" href="{% url 'parking:customer_request' %}">درخواست استفاده رایگان (نسخه آزمایشی)</a>
+            <a class="button" href="{% url 'parking:login' %}">ورود به پنل</a>
+            <button class="theme-toggle" type="button" data-theme-toggle>
+                <span class="theme-toggle__icon" aria-hidden="true"></span>
+                <span data-theme-label>حالت تاریک</span>
+            </button>
+        </nav>
+    </header>
+
+    <main class="public-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="public-footer">
+        <div>
+            <img class="footer-logo" src="{% static 'parking/img/parkino-logo/parkino-full-logo.png' %}" alt="Parkino">
+            <span>سامانه مدیریت پارکینگ، ورود و خروج، پرداخت و رسید</span>
+        </div>
+        <p>© کلیه حقوق برای پارکینو محفوظ است.</p>
+    </footer>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -4,65 +4,73 @@
 {% block title %}مدیریت رسیدها{% endblock %}
 
 {% block content %}
-    <h1>مدیریت رسیدها</h1>
+    <section class="page-header">
+        <div>
+            <p class="eyebrow">رسید و چاپ</p>
+            <h1>مدیریت رسیدها</h1>
+            <p>{{ customer.name }}</p>
+        </div>
+    </section>
 
-    <p>پارکینگ: {{ customer.name }}</p>
+    <section class="panel filter-panel">
+        <div class="panel-header">
+            <h2>فیلترها</h2>
+            <a class="button secondary" href="{% url 'parking:receipt_list' %}">پاک کردن فیلترها</a>
+        </div>
+        <form method="get">
+            {{ filter_form.as_p }}
+            <button type="submit">اعمال فیلتر</button>
+        </form>
+    </section>
 
-    <hr>
-
-    <h2>فیلترها</h2>
-
-    <form method="get">
-        {{ filter_form.as_p }}
-
-        <button type="submit">اعمال فیلتر</button>
-        <a href="{% url 'parking:receipt_list' %}">پاک کردن فیلترها</a>
-    </form>
-
-    <hr>
-    <div id="records-section"></div>
-    <table border="1" cellpadding="8">
-        <thead>
-            <tr>
-                <th>شماره رسید</th>
-                <th>پلاک</th>
-                <th>پارکینگ</th>
-                <th>جایگاه</th>
-                <th>مبلغ</th>
-                <th>روش پرداخت</th>
-                <th>زمان صدور</th>
-                <th>عملیات</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            {% for receipt in receipts %}
-                <tr>
-                    <td>{{ receipt.receipt_number }}</td>
-                    <td>{{ receipt.session.vehicle.plate_number }}</td>
-                    <td>{{ receipt.session.spot.parking_lot.name }}</td>
-                    <td>{{ receipt.session.spot.code }}</td>
-                    <td>{{ receipt.calculated_fee }}</td>
-                    <td>
-                        {% if receipt.payment %}
-                            {{ receipt.payment.get_payment_method_display }}
-                        {% else %}
-                            -
-                        {% endif %}
-                    </td>
-                    <td>{{ receipt.issue_time|jalali_gregorian }}</td>
-                    <td>
-                       <a href="{% url 'parking:receipt_detail' receipt.id %}">مشاهده رسید</a>
-                        |
-                        <a href="{% url 'parking:receipt_print' receipt.id %}">چاپ</a>
-                    </td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="8">هیچ رسیدی با این فیلترها پیدا نشد.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% include 'parking/pagination.html' %}
+    <section class="panel" id="records-section">
+        <div class="panel-header">
+            <h2>لیست رسیدها</h2>
+            <span class="status-pill">چاپ</span>
+        </div>
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>شماره رسید</th>
+                        <th>پلاک</th>
+                        <th>پارکینگ</th>
+                        <th>جایگاه</th>
+                        <th>مبلغ</th>
+                        <th>روش پرداخت</th>
+                        <th>زمان صدور</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for receipt in receipts %}
+                        <tr>
+                            <td>{{ receipt.receipt_number }}</td>
+                            <td>{{ receipt.session.vehicle.plate_number }}</td>
+                            <td>{{ receipt.session.spot.parking_lot.name }}</td>
+                            <td>{{ receipt.session.spot.code }}</td>
+                            <td>{{ receipt.calculated_fee }}</td>
+                            <td>
+                                {% if receipt.payment %}
+                                    {{ receipt.payment.get_payment_method_display }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ receipt.issue_time|jalali_gregorian }}</td>
+                            <td>
+                                <a href="{% url 'parking:receipt_detail' receipt.id %}">مشاهده</a>
+                                <a href="{% url 'parking:receipt_print' receipt.id %}">چاپ</a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="8">هیچ رسیدی با این فیلترها پیدا نشد.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% include 'parking/pagination.html' %}
+    </section>
 {% endblock %}

@@ -4,149 +4,209 @@
 {% block title %}داشبورد مدیریت پارکینگ{% endblock %}
 
 {% block content %}
-    <h1>داشبورد مدیریت پارکینگ</h1>
+    <section class="page-header">
+        <div>
+            <p class="eyebrow">مرکز کنترل امروز</p>
+            <h1>داشبورد مدیریت پارکینگ</h1>
+            <p>{{ customer.name }}، کاربر {{ request.user.username }}، نقش {{ user_profile.get_role_display }}</p>
+        </div>
+        <div class="action-row">
+            <a class="button" href="{% url 'parking:parking_session_create' %}">ثبت ورود</a>
+            <a class="button secondary" href="{% url 'parking:payment_list' %}">پرداخت‌ها</a>
+        </div>
+    </section>
 
-    <p>پارکینگ: {{ customer.name }}</p>
-    <p>کاربر وارد شده: {{ request.user.username }}</p>
-    <p>نقش: {{ user_profile.get_role_display }}</p>
-
-    <hr>
-
-    <h2>عملیات سریع</h2>
-
-    <ul>
-        <li>
-            <a href="{% url 'parking:parking_session_create' %}">ثبت ورود وسیله نقلیه</a>
-        </li>
-
-        <li>
-            {% if latest_receipt %}
-                <a href="{% url 'parking:receipt_detail' latest_receipt.id %}">مشاهده آخرین رسید</a>
-            {% else %}
-                <a href="{% url 'parking:receipt_list' %}">مشاهده رسیدها</a>
-            {% endif %}
-        </li>
-
-        <li>
-            <a href="{% url 'parking:payment_list' %}">مشاهده آخرین پرداخت</a>
-            {% if latest_payment %}
-                - {{ latest_payment.amount }}
-            {% endif %}
-        </li>
-
+    <section class="quick-grid">
+        <a class="quick-action" href="{% url 'parking:parking_session_create' %}">
+            <strong>ثبت ورود وسیله</strong>
+            <span>پلاک، نوع وسیله و جایگاه آزاد</span>
+        </a>
+        <a class="quick-action" href="{% url 'parking:parking_session_list' %}">
+            <strong>سشن‌های فعال</strong>
+            <span>کنترل ورود، خروج و لغو</span>
+        </a>
+        <a class="quick-action" href="{% url 'parking:receipt_list' %}">
+            <strong>رسیدها</strong>
+            <span>مشاهده و چاپ رسید</span>
+        </a>
         {% if is_owner_user %}
-            <li>
-                <a href="{% url 'parking:customer_user_create' %}">اضافه کردن کاربر جدید</a>
-            </li>
-
-            <li>
-                <a href="{% url 'parking:report_dashboard' %}?start_date={{ monthly_report_start|date:'Y-m-d' }}&end_date={{ monthly_report_end|date:'Y-m-d' }}">
-                    گزارش یک ماه اخیر
-                </a>
-            </li>
+            <a class="quick-action" href="{% url 'parking:report_dashboard' %}?start_date={{ monthly_report_start|date:'Y-m-d' }}&end_date={{ monthly_report_end|date:'Y-m-d' }}">
+                <strong>گزارش ماه اخیر</strong>
+                <span>درآمد، خروج و اشغال فضا</span>
+            </a>
+            <a class="quick-action" href="{% url 'parking:customer_user_create' %}">
+                <strong>کاربر جدید</strong>
+                <span>تعریف اپراتور یا مالک</span>
+            </a>
+        {% else %}
+            <a class="quick-action" href="{% url 'parking:account_change_password' %}">
+                <strong>حساب من</strong>
+                <span>تغییر رمز عبور</span>
+            </a>
         {% endif %}
-    </ul>
+    </section>
 
-    <hr>
-
-    <h2>آمار عملیاتی امروز</h2>
-
-    <ul>
-        <li>ورودهای امروز: {{ today_entries_count }}</li>
-        <li>خروج‌های امروز: {{ today_exits_count }}</li>
-        <li>سشن‌های فعال فعلی: {{ open_sessions_count }}</li>
-        <li>سشن‌های فعال خودرو: {{ open_car_sessions_count }}</li>
-        <li>سشن‌های فعال موتور: {{ open_motorcycle_sessions_count }}</li>
-        <li>پرداخت‌های در انتظار: {{ open_payments_count }}</li>
-        <li>رسیدهای صادرشده امروز: {{ today_receipts_count }}</li>
-    </ul>
+    <section class="stats-grid">
+        <article class="stat-card">
+            <span>ورودهای امروز</span>
+            <strong>{{ today_entries_count }}</strong>
+        </article>
+        <article class="stat-card">
+            <span>خروج‌های امروز</span>
+            <strong>{{ today_exits_count }}</strong>
+        </article>
+        <article class="stat-card">
+            <span>سشن فعال</span>
+            <strong>{{ open_sessions_count }}</strong>
+        </article>
+        <article class="stat-card">
+            <span>پرداخت در انتظار</span>
+            <strong>{{ open_payments_count }}</strong>
+        </article>
+        <article class="stat-card">
+            <span>رسیدهای امروز</span>
+            <strong>{{ today_receipts_count }}</strong>
+        </article>
+        <article class="stat-card">
+            <span>درآمد امروز</span>
+            <strong>{{ today_income }}</strong>
+        </article>
+        <article class="stat-card">
+            <span>جایگاه آزاد خودرو</span>
+            <strong>{{ car_available_spots }}</strong>
+        </article>
+        <article class="stat-card">
+            <span>جایگاه آزاد موتور</span>
+            <strong>{{ motorcycle_available_spots }}</strong>
+        </article>
+    </section>
 
     {% if is_owner_user %}
-        <hr>
+        <section class="dashboard-grid">
+            <article class="panel">
+                <div class="panel-header">
+                    <h2>ظرفیت و اشغال</h2>
+                    <span class="status-pill">زیرساخت</span>
+                </div>
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <span>کل جایگاه خودرو</span>
+                        <strong>{{ car_total_spots }}</strong>
+                        <p>اشغال: {{ car_occupied_spots }}، آزاد: {{ car_available_spots }}</p>
+                    </div>
+                    <div class="summary-card">
+                        <span>کل جایگاه موتور</span>
+                        <strong>{{ motorcycle_total_spots }}</strong>
+                        <p>اشغال: {{ motorcycle_occupied_spots }}، آزاد: {{ motorcycle_available_spots }}</p>
+                    </div>
+                    <div class="summary-card">
+                        <span>پارکینگ‌ها</span>
+                        <strong>{{ parking_lots_count }}</strong>
+                        <p>مجموعه‌های ثبت شده برای این مشتری</p>
+                    </div>
+                    <div class="summary-card">
+                        <span>کاربران</span>
+                        <strong>{{ users_count }}</strong>
+                        <p>کاربران فعال و غیرفعال مجموعه</p>
+                    </div>
+                </div>
+            </article>
 
-        <h2>آمار مدیریتی</h2>
-
-        <ul>
-            <li>کل جایگاه‌های خودرو: {{ car_total_spots }}</li>
-            <li>جایگاه‌های آزاد خودرو: {{ car_available_spots }}</li>
-            <li>جایگاه‌های اشغال خودرو: {{ car_occupied_spots }}</li>
-
-            <li>کل جایگاه‌های موتور: {{ motorcycle_total_spots }}</li>
-            <li>جایگاه‌های آزاد موتور: {{ motorcycle_available_spots }}</li>
-            <li>جایگاه‌های اشغال موتور: {{ motorcycle_occupied_spots }}</li>
-            <li>سشن‌های بسته‌شده: {{ closed_sessions_count }}</li>
-            <li>سشن‌های لغوشده: {{ cancelled_sessions_count }}</li>
-            <li>درآمد امروز: {{ today_income }}</li>
-            <li>تعداد پارکینگ‌ها: {{ parking_lots_count }}</li>
-            <li>تعداد کاربران: {{ users_count }}</li>
-        </ul>
+            <article class="panel">
+                <div class="panel-header">
+                    <h2>وضعیت سشن‌ها</h2>
+                    <span class="status-pill warning">امروز</span>
+                </div>
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <span>خودرو فعال</span>
+                        <strong>{{ open_car_sessions_count }}</strong>
+                    </div>
+                    <div class="summary-card">
+                        <span>موتور فعال</span>
+                        <strong>{{ open_motorcycle_sessions_count }}</strong>
+                    </div>
+                    <div class="summary-card">
+                        <span>بسته شده</span>
+                        <strong>{{ closed_sessions_count }}</strong>
+                    </div>
+                    <div class="summary-card">
+                        <span>لغو شده</span>
+                        <strong>{{ cancelled_sessions_count }}</strong>
+                    </div>
+                </div>
+            </article>
+        </section>
     {% endif %}
 
-    <hr>
+    <section class="dashboard-grid">
+        <article class="panel">
+            <div class="panel-header">
+                <h2>سشن‌های فعال</h2>
+                <a class="button secondary" href="{% url 'parking:parking_session_list' %}">همه سشن‌ها</a>
+            </div>
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>پلاک</th>
+                            <th>پارکینگ</th>
+                            <th>جایگاه</th>
+                            <th>زمان ورود</th>
+                            <th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for session in active_sessions %}
+                            <tr>
+                                <td>{{ session.vehicle.plate_number }}</td>
+                                <td>{{ session.spot.parking_lot.name }}</td>
+                                <td>{{ session.spot.code }}</td>
+                                <td>{{ session.entry_time|jalali_gregorian }}</td>
+                                <td>
+                                    <a href="{% url 'parking:parking_session_detail' session.id %}">جزئیات</a>
+                                    <a href="{% url 'parking:parking_session_close' session.id %}">ثبت خروج</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5">در حال حاضر هیچ سشن فعالی وجود ندارد.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
 
-    <h2>سشن‌های فعال</h2>
-
-    <table border="1" cellpadding="8">
-        <thead>
-            <tr>
-                <th>پلاک</th>
-                <th>پارکینگ</th>
-                <th>جایگاه</th>
-                <th>زمان ورود</th>
-                <th>عملیات</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            {% for session in active_sessions %}
-                <tr>
-                    <td>{{ session.vehicle.plate_number }}</td>
-                    <td>{{ session.spot.parking_lot.name }}</td>
-                    <td>{{ session.spot.code }}</td>
-                    <td>{{ session.entry_time|jalali_gregorian }}</td>
-                    <td>
-                        <a href="{% url 'parking:parking_session_detail' session.id %}">جزئیات</a>
-                        |
-                        <a href="{% url 'parking:parking_session_close' session.id %}">ثبت خروج</a>
-                    </td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="5">در حال حاضر هیچ سشن فعالی وجود ندارد.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <hr>
-
-    <h2>پرداخت‌های در انتظار</h2>
-
-    <table border="1" cellpadding="8">
-        <thead>
-            <tr>
-                <th>پلاک</th>
-                <th>مبلغ</th>
-                <th>زمان پرداخت</th>
-                <th>عملیات</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            {% for payment in open_payments %}
-                <tr>
-                    <td>{{ payment.session.vehicle.plate_number }}</td>
-                    <td>{{ payment.amount }}</td>
-                    <td>{{ payment.payment_time|jalali_gregorian }}</td>
-                    <td>
-                        <a href="{% url 'parking:payment_update' payment.id %}">ثبت روش پرداخت</a>
-                    </td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="4">پرداخت در انتظاری وجود ندارد.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+        <article class="panel">
+            <div class="panel-header">
+                <h2>پرداخت‌های در انتظار</h2>
+                <a class="button secondary" href="{% url 'parking:payment_list' %}">همه پرداخت‌ها</a>
+            </div>
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>پلاک</th>
+                            <th>مبلغ</th>
+                            <th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in open_payments %}
+                            <tr>
+                                <td>{{ payment.session.vehicle.plate_number }}</td>
+                                <td>{{ payment.amount }}</td>
+                                <td><a href="{% url 'parking:payment_update' payment.id %}">ثبت روش پرداخت</a></td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="3">پرداخت در انتظاری وجود ندارد.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </section>
 {% endblock %}

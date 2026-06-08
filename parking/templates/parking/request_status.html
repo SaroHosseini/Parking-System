@@ -1,22 +1,31 @@
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>وضعیت درخواست</title>
-</head>
-<body>
-    <h1>وضعیت درخواست شما</h1>
+{% extends 'parking/base_public.html' %}
 
-    <p>نام مجموعه: {{ customer.name }}</p>
-    <p>وضعیت: {{ customer.get_status_display }}</p>
+{% block title %}وضعیت درخواست{% endblock %}
 
-    {% if customer.status == 'pending' %}
-        <p>درخواست شما ثبت شده و در انتظار بررسی مدیر سیستم است.</p>
-    {% elif customer.status == 'approved' %}
-        <p>درخواست شما تأیید شد. اکنون می‌توانید با نام کاربری و رمز عبور خود وارد شوید.</p>
-        <a href="{% url 'parking:login' %}">ورود به سیستم</a>
-    {% elif customer.status == 'rejected' %}
-        <p>درخواست شما رد شده است.</p>
-    {% endif %}
-</body>
-</html>
+{% block content %}
+    <section class="section">
+        <article class="notice-card">
+            <p class="eyebrow">پیگیری درخواست</p>
+            <h1>وضعیت درخواست شما</h1>
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <span>نام مجموعه</span>
+                    <strong>{{ customer.name }}</strong>
+                </div>
+                <div class="summary-card">
+                    <span>وضعیت</span>
+                    <strong>{{ customer.get_status_display }}</strong>
+                </div>
+            </div>
+
+            {% if customer.status == 'pending' %}
+                <p>درخواست شما ثبت شده و در انتظار بررسی مدیر سیستم است.</p>
+            {% elif customer.status == 'approved' %}
+                <p>درخواست شما تأیید شد. اکنون می‌توانید با نام کاربری و رمز عبور خود وارد شوید.</p>
+                <a class="button" href="{% url 'parking:login' %}">ورود به سیستم</a>
+            {% elif customer.status == 'rejected' %}
+                <p>درخواست شما رد شده است.</p>
+            {% endif %}
+        </article>
+    </section>
+{% endblock %}

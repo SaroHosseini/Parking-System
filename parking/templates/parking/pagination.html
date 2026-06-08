@@ -1,19 +1,15 @@
 {% if page_obj.has_other_pages %}
-    <hr>
-
-    <div>
+    <nav class="pagination" aria-label="صفحه‌بندی">
         {% if page_obj.has_previous %}
             <a href="?{% if query_string %}{{ query_string }}&{% endif %}page=1#records-section">اول</a>
             <a href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.previous_page_number }}#records-section">قبلی</a>
         {% endif %}
 
-        <span>
-            صفحه {{ page_obj.number }} از {{ page_obj.paginator.num_pages }}
-        </span>
+        <span>صفحه {{ page_obj.number }} از {{ page_obj.paginator.num_pages }}</span>
 
         {% if page_obj.has_next %}
             <a href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.next_page_number }}#records-section">بعدی</a>
             <a href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.paginator.num_pages }}#records-section">آخر</a>
         {% endif %}
-    </div>
+    </nav>
 {% endif %}

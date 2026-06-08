@@ -1,17 +1,17 @@
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>درخواست ثبت شد</title>
-</head>
-<body>
-    <h1>درخواست شما ثبت شد</h1>
+{% extends 'parking/base_public.html' %}
 
-    <p>
-        اطلاعات شما با موفقیت دریافت شد. پس از بررسی و تأیید مدیر سیستم،
-        امکان استفاده از سامانه برای شما فعال خواهد شد.
-    </p>
+{% block title %}درخواست ثبت شد{% endblock %}
 
-    <a href="/">بازگشت به فرم درخواست</a>
-</body>
-</html>
+{% block content %}
+    <section class="section">
+        <article class="notice-card">
+            <p class="eyebrow">ثبت موفق</p>
+            <h1>درخواست شما ثبت شد</h1>
+            <p>
+                اطلاعات شما با موفقیت دریافت شد. پس از بررسی و تأیید مدیر سیستم،
+                امکان استفاده از سامانه برای شما فعال خواهد شد.
+            </p>
+            <a class="button" href="{% url 'parking:home' %}">بازگشت به صفحه اصلی</a>
+        </article>
+    </section>
+{% endblock %}

@@ -4,200 +4,234 @@
 {% block title %}گزارش‌ها{% endblock %}
 
 {% block content %}
-    <h1>گزارش‌ها</h1>
+    <section class="page-header">
+        <div>
+            <p class="eyebrow">تحلیل عملکرد</p>
+            <h1>گزارش‌ها</h1>
+            <p>{{ customer.name }}</p>
+        </div>
+    </section>
 
-    <p>پارکینگ: {{ customer.name }}</p>
+    <section class="panel filter-panel">
+        <div class="panel-header">
+            <h2>فیلتر گزارش</h2>
+            <span class="status-pill">بازه انتخابی</span>
+        </div>
+        <form method="get">
+            {{ form.as_p }}
+            <button type="submit">نمایش گزارش</button>
+        </form>
+    </section>
 
-    <hr>
+    <section class="panel">
+        <div class="panel-header">
+            <div>
+                <h2>خلاصه گزارش</h2>
+                <p>
+                    {{ start_date|jalali_gregorian_date }}
+                    تا
+                    {{ end_date|jalali_gregorian_date }}
+                </p>
+            </div>
+        </div>
 
-    <h2>فیلتر گزارش</h2>
+        <div class="stats-grid">
+            <article class="stat-card">
+                <span>ورودها</span>
+                <strong>{{ entries_count }}</strong>
+            </article>
+            <article class="stat-card">
+                <span>خروج‌ها</span>
+                <strong>{{ exits_count }}</strong>
+            </article>
+            <article class="stat-card">
+                <span>پرداخت موفق</span>
+                <strong>{{ successful_payments_count }}</strong>
+            </article>
+            <article class="stat-card">
+                <span>درآمد کل</span>
+                <strong>{{ total_income }}</strong>
+            </article>
+            <article class="stat-card">
+                <span>میانگین توقف</span>
+                <strong>{{ average_duration }}</strong>
+                <span>دقیقه</span>
+            </article>
+            <article class="stat-card">
+                <span>سشن فعال</span>
+                <strong>{{ active_sessions_count }}</strong>
+            </article>
+            <article class="stat-card">
+                <span>درصد اشغال</span>
+                <strong>{{ occupancy_rate }}٪</strong>
+            </article>
+            <article class="stat-card">
+                <span>جایگاه آزاد</span>
+                <strong>{{ free_spots }}</strong>
+            </article>
+        </div>
+    </section>
 
-    <form method="get">
-        {{ form.as_p }}
+    <section class="dashboard-grid">
+        <article class="panel">
+            <div class="panel-header">
+                <h2>تفکیک خودرو و موتور</h2>
+            </div>
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>نوع وسیله</th>
+                            <th>تعداد ورود</th>
+                            <th>تعداد خروج</th>
+                            <th>درآمد</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>خودرو</td>
+                            <td>{{ car_entries_count }}</td>
+                            <td>{{ car_exits_count }}</td>
+                            <td>{{ car_income }}</td>
+                        </tr>
+                        <tr>
+                            <td>موتور</td>
+                            <td>{{ motorcycle_entries_count }}</td>
+                            <td>{{ motorcycle_exits_count }}</td>
+                            <td>{{ motorcycle_income }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
 
-        <button type="submit">نمایش گزارش</button>
-    </form>
+        <article class="panel">
+            <div class="panel-header">
+                <h2>وضعیت اشغال فضا</h2>
+            </div>
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <span>کل جایگاه‌ها</span>
+                    <strong>{{ total_spots }}</strong>
+                </div>
+                <div class="summary-card">
+                    <span>اشغال</span>
+                    <strong>{{ occupied_spots }}</strong>
+                </div>
+                <div class="summary-card">
+                    <span>آزاد</span>
+                    <strong>{{ free_spots }}</strong>
+                </div>
+                <div class="summary-card">
+                    <span>نرخ اشغال</span>
+                    <strong>{{ occupancy_rate }}٪</strong>
+                </div>
+            </div>
+        </article>
+    </section>
 
-    <hr>
+    <section class="dashboard-grid">
+        <article class="panel">
+            <div class="panel-header">
+                <h2>تفکیک جایگاه‌ها</h2>
+            </div>
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>نوع جایگاه</th>
+                            <th>کل</th>
+                            <th>آزاد</th>
+                            <th>اشغال</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>خودرو</td>
+                            <td>{{ car_total_spots }}</td>
+                            <td>{{ car_free_spots }}</td>
+                            <td>{{ car_occupied_spots }}</td>
+                        </tr>
+                        <tr>
+                            <td>موتور</td>
+                            <td>{{ motorcycle_total_spots }}</td>
+                            <td>{{ motorcycle_free_spots }}</td>
+                            <td>{{ motorcycle_occupied_spots }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
 
-    <h2>خلاصه گزارش</h2>
+        <article class="panel">
+            <div class="panel-header">
+                <h2>روش پرداخت</h2>
+            </div>
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>روش پرداخت</th>
+                            <th>تعداد</th>
+                            <th>درآمد</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in payment_method_rows %}
+                            <tr>
+                                <td>{{ row.label }}</td>
+                                <td>{{ row.count }}</td>
+                                <td>{{ row.total }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="3">پرداخت موفقی در این بازه ثبت نشده است.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </section>
 
-    <p>
-        بازه گزارش:
-        {{ start_date|jalali_gregorian_date }}
-        تا
-        {{ end_date|jalali_gregorian_date }}
-    </p>
-
-    <ul>
-        <li>تعداد ورودها: {{ entries_count }}</li>
-        <li>تعداد خروج‌ها: {{ exits_count }}</li>
-        <li>تعداد پرداخت‌های موفق: {{ successful_payments_count }}</li>
-        <li>درآمد کل: {{ total_income }}</li>
-        <li>میانگین مدت توقف: {{ average_duration }} دقیقه</li>
-        <li>سشن‌های فعال فعلی: {{ active_sessions_count }}</li>
-    </ul>
-
-    <hr>
-
-    <h2>گزارش تفکیکی خودرو و موتور</h2>
-
-    <table border="1" cellpadding="8">
-        <thead>
-            <tr>
-                <th>نوع وسیله</th>
-                <th>تعداد ورود</th>
-                <th>تعداد خروج</th>
-                <th>درآمد</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            <tr>
-                <td>خودرو</td>
-                <td>{{ car_entries_count }}</td>
-                <td>{{ car_exits_count }}</td>
-                <td>{{ car_income }}</td>
-            </tr>
-
-            <tr>
-                <td>موتور</td>
-                <td>{{ motorcycle_entries_count }}</td>
-                <td>{{ motorcycle_exits_count }}</td>
-                <td>{{ motorcycle_income }}</td>
-            </tr>
-        </tbody>
-    </table>
-
-    <hr>
-
-    <h2>وضعیت اشغال فضا</h2>
-
-    <ul>
-        <li>کل جایگاه‌ها: {{ total_spots }}</li>
-        <li>جایگاه‌های اشغال: {{ occupied_spots }}</li>
-        <li>جایگاه‌های آزاد: {{ free_spots }}</li>
-        <li>درصد اشغال: {{ occupancy_rate }}٪</li>
-    </ul>
-
-    <h3>تفکیک جایگاه‌ها</h3>
-
-    <table border="1" cellpadding="8">
-        <thead>
-            <tr>
-                <th>نوع جایگاه</th>
-                <th>کل</th>
-                <th>آزاد</th>
-                <th>اشغال</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            <tr>
-                <td>خودرو</td>
-                <td>{{ car_total_spots }}</td>
-                <td>{{ car_free_spots }}</td>
-                <td>{{ car_occupied_spots }}</td>
-            </tr>
-
-            <tr>
-                <td>موتور</td>
-                <td>{{ motorcycle_total_spots }}</td>
-                <td>{{ motorcycle_free_spots }}</td>
-                <td>{{ motorcycle_occupied_spots }}</td>
-            </tr>
-        </tbody>
-    </table>
-
-    <hr>
-
-    <h2>گزارش بر اساس نوع وسیله</h2>
-
-    <table border="1" cellpadding="8">
-        <thead>
-            <tr>
-                <th>نوع وسیله</th>
-                <th>تعداد ورود</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            {% for row in vehicle_type_rows %}
-                <tr>
-                    <td>{{ row.label }}</td>
-                    <td>{{ row.count }}</td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="2">داده‌ای برای نوع وسیله وجود ندارد.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <hr>
-
-    <h2>گزارش بر اساس روش پرداخت</h2>
-
-    <table border="1" cellpadding="8">
-        <thead>
-            <tr>
-                <th>روش پرداخت</th>
-                <th>تعداد پرداخت</th>
-                <th>مجموع درآمد</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            {% for row in payment_method_rows %}
-                <tr>
-                    <td>{{ row.label }}</td>
-                    <td>{{ row.count }}</td>
-                    <td>{{ row.total }}</td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="3">پرداخت موفقی در این بازه ثبت نشده است.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <hr>
-
-    <h2>سشن‌های بسته‌شده در بازه انتخابی</h2>
-
-    <table border="1" cellpadding="8">
-        <thead>
-            <tr>
-                <th>پلاک</th>
-                <th>نوع وسیله</th>
-                <th>پارکینگ</th>
-                <th>جایگاه</th>
-                <th>زمان ورود</th>
-                <th>زمان خروج</th>
-                <th>مدت توقف</th>
-                <th>هزینه</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            {% for session in closed_sessions %}
-                <tr>
-                    <td>{{ session.vehicle.plate_number }}</td>
-                    <td>{{ session.vehicle.get_type_display }}</td>
-                    <td>{{ session.spot.parking_lot.name }}</td>
-                    <td>{{ session.spot.code }}</td>
-                    <td>{{ session.entry_time|jalali_gregorian }}</td>
-                    <td>{{ session.exit_time|jalali_gregorian }}</td>
-                    <td>{{ session.total_duration_minutes }} دقیقه</td>
-                    <td>{{ session.calculated_fee }}</td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="8">در این بازه هیچ سشن بسته‌شده‌ای وجود ندارد.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <section class="panel">
+        <div class="panel-header">
+            <h2>سشن‌های بسته شده در بازه انتخابی</h2>
+            <span class="status-pill">خروج‌ها</span>
+        </div>
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>پلاک</th>
+                        <th>نوع وسیله</th>
+                        <th>پارکینگ</th>
+                        <th>جایگاه</th>
+                        <th>زمان ورود</th>
+                        <th>زمان خروج</th>
+                        <th>مدت توقف</th>
+                        <th>هزینه</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for session in closed_sessions %}
+                        <tr>
+                            <td>{{ session.vehicle.plate_number }}</td>
+                            <td>{{ session.vehicle.get_type_display }}</td>
+                            <td>{{ session.spot.parking_lot.name }}</td>
+                            <td>{{ session.spot.code }}</td>
+                            <td>{{ session.entry_time|jalali_gregorian }}</td>
+                            <td>{{ session.exit_time|jalali_gregorian }}</td>
+                            <td>{{ session.total_duration_minutes }} دقیقه</td>
+                            <td>{{ session.calculated_fee }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="8">در این بازه هیچ سشن بسته شده‌ای وجود ندارد.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
 {% endblock %}

@@ -1,21 +1,72 @@
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>درخواست استفاده از سیستم</title>
-</head>
-<body>
-    <h1>فرم درخواست استفاده از سیستم مدیریت پارکینگ</h1>
+{% extends 'parking/base_public.html' %}
 
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
+{% block title %}درخواست استفاده از Parkino{% endblock %}
 
-        <button type="submit">ارسال درخواست</button>
-    </form>
+{% block content %}
+    <section class="auth-layout request-layout">
+        <div class="auth-card request-card">
+            <p class="eyebrow">راه‌اندازی پارکینگ</p>
+            <h1>فرم درخواست استفاده رایگان (نسخه آزمایشی)</h1>
+            <p>اطلاعات مجموعه و حساب مالک را وارد کنید تا درخواست در صف بررسی مدیر سیستم قرار بگیرد.</p>
 
-    <hr>
+            <form class="request-form" method="post">
+                {% csrf_token %}
 
-    <a href="/admin/">ورود مدیر سیستم</a>
-</body>
-</html>
+                {% if form.non_field_errors %}
+                    <div class="errorlist request-errors">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                <div class="request-grid">
+                    <div class="field-block">
+                        {{ form.name.label_tag }}
+                        {{ form.name }}
+                        {{ form.name.errors }}
+                    </div>
+                    <div class="field-block">
+                        {{ form.owner_name.label_tag }}
+                        {{ form.owner_name }}
+                        {{ form.owner_name.errors }}
+                    </div>
+                    <div class="field-block">
+                        {{ form.phone.label_tag }}
+                        {{ form.phone }}
+                        {{ form.phone.errors }}
+                    </div>
+                    <div class="field-block">
+                        {{ form.email.label_tag }}
+                        {{ form.email }}
+                        {{ form.email.errors }}
+                    </div>
+                    <div class="field-block">
+                        {{ form.username.label_tag }}
+                        {{ form.username }}
+                        {{ form.username.errors }}
+                    </div>
+                    <div class="field-block">
+                        {{ form.password.label_tag }}
+                        {{ form.password }}
+                        {{ form.password.errors }}
+                    </div>
+                    <div class="field-block">
+                        {{ form.password_confirm.label_tag }}
+                        {{ form.password_confirm }}
+                        {{ form.password_confirm.errors }}
+                    </div>
+                    <div class="field-block field-wide">
+                        {{ form.address.label_tag }}
+                        {{ form.address }}
+                        {{ form.address.errors }}
+                    </div>
+                </div>
+
+                <div class="action-row">
+                    <button type="submit">ارسال درخواست</button>
+                    <a class="button secondary" href="{% url 'parking:home' %}">صفحه اصلی</a>
+                    <a class="button secondary" href="{% url 'parking:home' %}#contact">تماس با ما</a>
+                </div>
+            </form>
+        </div>
+
+        <div class="auth-visual request-visual" role="img" aria-label="نمای پارکینگ"></div>
+    </section>
+{% endblock %}

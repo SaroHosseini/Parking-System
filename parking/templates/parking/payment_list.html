@@ -4,67 +4,84 @@
 {% block title %}مدیریت پرداخت‌ها{% endblock %}
 
 {% block content %}
-    <h1>مدیریت پرداخت‌ها</h1>
+    <section class="page-header">
+        <div>
+            <p class="eyebrow">مالی</p>
+            <h1>مدیریت پرداخت‌ها</h1>
+            <p>{{ customer.name }}</p>
+        </div>
+    </section>
 
-    <p>پارکینگ: {{ customer.name }}</p>
+    <section class="panel filter-panel">
+        <div class="panel-header">
+            <h2>فیلترها</h2>
+            <a class="button secondary" href="{% url 'parking:payment_list' %}">پاک کردن فیلترها</a>
+        </div>
+        <form method="get">
+            {{ filter_form.as_p }}
+            <button type="submit">اعمال فیلتر</button>
+        </form>
+    </section>
 
-    <hr>
-
-    <h2>فیلترها</h2>
-
-    <form method="get">
-        {{ filter_form.as_p }}
-
-        <button type="submit">اعمال فیلتر</button>
-        <a href="{% url 'parking:payment_list' %}">پاک کردن فیلترها</a>
-    </form>
-
-    <hr>
-    <div id="records-section"></div>
-    <table border="1" cellpadding="8">
-        <thead>
-            <tr>
-                <th>پلاک</th>
-                <th>پارکینگ</th>
-                <th>جایگاه</th>
-                <th>مبلغ</th>
-                <th>روش پرداخت</th>
-                <th>وضعیت</th>
-                <th>زمان پرداخت</th>
-                <th>عملیات</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            {% for payment in payments %}
-                <tr>
-                    <td>{{ payment.session.vehicle.plate_number }}</td>
-                    <td>{{ payment.session.spot.parking_lot.name }}</td>
-                    <td>{{ payment.session.spot.code }}</td>
-                    <td>{{ payment.amount }}</td>
-                    <td>{{ payment.get_payment_method_display|default:"-" }}</td>
-                    <td>{{ payment.get_payment_status_display }}</td>
-                    <td>
-                        {% if payment.payment_time %}
-                            {{ payment.payment_time|jalali_gregorian }}
-                        {% else %}
-                            -
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if payment.payment_status == 'open' %}
-                            <a href="{% url 'parking:payment_update' payment.id %}">ثبت روش پرداخت</a>
-                        {% else %}
-                            پرداخت شده
-                        {% endif %}
-                    </td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="8">هیچ پرداختی با این فیلترها پیدا نشد.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% include 'parking/pagination.html' %}
+    <section class="panel" id="records-section">
+        <div class="panel-header">
+            <h2>لیست پرداخت‌ها</h2>
+            <span class="status-pill warning">تسویه</span>
+        </div>
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>پلاک</th>
+                        <th>پارکینگ</th>
+                        <th>جایگاه</th>
+                        <th>مبلغ</th>
+                        <th>روش پرداخت</th>
+                        <th>وضعیت</th>
+                        <th>زمان پرداخت</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in payments %}
+                        <tr>
+                            <td>{{ payment.session.vehicle.plate_number }}</td>
+                            <td>{{ payment.session.spot.parking_lot.name }}</td>
+                            <td>{{ payment.session.spot.code }}</td>
+                            <td>{{ payment.amount }}</td>
+                            <td>{{ payment.get_payment_method_display|default:"-" }}</td>
+                            <td>
+                                {% if payment.payment_status == 'open' %}
+                                    <span class="status-pill warning">در انتظار</span>
+                                {% elif payment.payment_status == 'closed' %}
+                                    <span class="status-pill">پرداخت شده</span>
+                                {% else %}
+                                    <span class="status-pill danger">لغو</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if payment.payment_time %}
+                                    {{ payment.payment_time|jalali_gregorian }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if payment.payment_status == 'open' %}
+                                    <a href="{% url 'parking:payment_update' payment.id %}">ثبت روش پرداخت</a>
+                                {% else %}
+                                    پرداخت شده
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="8">هیچ پرداختی با این فیلترها پیدا نشد.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% include 'parking/pagination.html' %}
+    </section>
 {% endblock %}

@@ -1,68 +1,83 @@
 {% extends 'parking/base_dashboard.html' %}
+{% load static %}
 
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-    <h1>{{ title }}</h1>
+    <section class="page-header">
+        <div>
+            <p class="eyebrow">ورود وسیله نقلیه</p>
+            <h1>{{ title }}</h1>
+            <p>پلاک، نوع وسیله و جایگاه آزاد را انتخاب کنید.</p>
+        </div>
+        <a class="button secondary" href="{% url 'parking:parking_session_list' %}">بازگشت به سشن‌ها</a>
+    </section>
 
-    <form method="post">
-        {% csrf_token %}
+    <section class="panel entry-panel">
+        <form class="entry-form" method="post">
+            {% csrf_token %}
 
-        {{ form.as_p }}
+            {% if form.non_field_errors %}
+                <div class="errorlist">{{ form.non_field_errors }}</div>
+            {% endif %}
 
-        <button type="submit">ثبت ورود</button>
-    </form>
+            <div class="entry-grid">
+                <div class="field-block">
+                    {{ form.plate_number.label_tag }}
+                    {{ form.plate_number }}
+                    {{ form.plate_number.errors }}
+                    {% if form.plate_number.help_text %}
+                        <span class="helptext">{{ form.plate_number.help_text }}</span>
+                    {% endif %}
+                </div>
 
-    <hr>
+                <div class="field-block">
+                    {{ form.vehicle_type.label_tag }}
+                    {{ form.vehicle_type }}
+                    {{ form.vehicle_type.errors }}
+                </div>
 
-    <a href="{% url 'parking:parking_session_list' %}">بازگشت به لیست سشن‌ها</a>
+                <div class="field-block">
+                    {{ form.color.label_tag }}
+                    {{ form.color }}
+                    {{ form.color.errors }}
+                </div>
+            </div>
 
-    <script>
-        const vehicleTypeSelect = document.getElementById('id_vehicle_type');
-        const spotSelect = document.getElementById('id_spot');
+            <div class="spot-picker" data-spot-picker data-api-url="{% url 'parking:available_spots_api' %}" data-input-id="id_spot" data-vehicle-type-id="id_vehicle_type">
+                {{ form.spot }}
+                <div class="spot-picker__header">
+                    <div>
+                        <label for="spot-search">انتخاب جایگاه آزاد</label>
+                        <p>جستجو بر اساس کد، طبقه یا نام پارکینگ. نتایج ۱۰ تا ۱۰ تا نمایش داده می‌شوند.</p>
+                    </div>
+                    <button class="button secondary" type="button" data-spot-clear>پاک کردن انتخاب</button>
+                </div>
 
-        function loadAvailableSpots() {
-            const vehicleType = vehicleTypeSelect.value;
+                <input id="spot-search" type="search" placeholder="مثلا CNM_12 یا طبقه 1" data-spot-search>
 
-            spotSelect.innerHTML = '';
-            const loadingOption = document.createElement('option');
-            loadingOption.value = '';
-            loadingOption.textContent = 'در حال دریافت جایگاه‌ها...';
-            spotSelect.appendChild(loadingOption);
+                <div class="spot-picker__selected">
+                    <span>انتخاب فعلی:</span>
+                    <strong data-spot-selected>هنوز جایگاهی انتخاب نشده است</strong>
+                </div>
 
-            fetch("{% url 'parking:available_spots_api' %}?vehicle_type=" + vehicleType)
-                .then(response => response.json())
-                .then(data => {
-                    spotSelect.innerHTML = '';
+                <div class="spot-picker__list" data-spot-list></div>
 
-                    const emptyOption = document.createElement('option');
-                    emptyOption.value = '';
-                    emptyOption.textContent = 'انتخاب جایگاه آزاد';
-                    spotSelect.appendChild(emptyOption);
+                <div class="spot-picker__footer">
+                    <button class="button secondary" type="button" data-spot-prev>قبلی</button>
+                    <span data-spot-status>در حال دریافت...</span>
+                    <button class="button secondary" type="button" data-spot-next>بعدی</button>
+                </div>
 
-                    if (data.spots.length === 0) {
-                        const noSpotOption = document.createElement('option');
-                        noSpotOption.value = '';
-                        noSpotOption.textContent = 'جایگاه آزاد برای این نوع وسیله وجود ندارد';
-                        spotSelect.appendChild(noSpotOption);
-                        return;
-                    }
+                {{ form.spot.errors }}
+            </div>
 
-                    data.spots.forEach(spot => {
-                        const option = document.createElement('option');
-                        option.value = spot.id;
-                        option.textContent = spot.text;
-                        spotSelect.appendChild(option);
-                    });
-                });
-        }
+            <div class="action-row">
+                <button type="submit">ثبت ورود</button>
+                <a class="button secondary" href="{% url 'parking:parking_session_list' %}">انصراف</a>
+            </div>
+        </form>
+    </section>
 
-        vehicleTypeSelect.addEventListener('change', loadAvailableSpots);
-
-        window.addEventListener('load', function () {
-            if (vehicleTypeSelect.value) {
-                loadAvailableSpots();
-            }
-        });
-    </script>
+    <script src="{% static 'parking/js/spot-picker.js' %}" defer></script>
 {% endblock %}

@@ -3,21 +3,62 @@
 {% block title %}تنظیمات پارکینگ{% endblock %}
 
 {% block content %}
-    <h1>تنظیمات پارکینگ</h1>
+    <section class="page-header settings-header">
+        <div>
+            <p class="eyebrow">مشخصات مجموعه</p>
+            <h1>تنظیمات پارکینگ</h1>
+            <p>{{ customer.name }}</p>
+        </div>
+        <a class="button secondary" href="{% url 'parking:dashboard' %}">بازگشت به داشبورد</a>
+    </section>
 
-    <p>پارکینگ: {{ customer.name }}</p>
+    <section class="panel settings-panel">
+        <div class="panel-header">
+            <div>
+                <h2>اطلاعات اصلی</h2>
+                <p>این اطلاعات برای نمایش در پنل، رسیدها و حساب مالک استفاده می‌شود.</p>
+            </div>
+        </div>
 
-    <hr>
+        <form class="settings-form" method="post">
+            {% csrf_token %}
 
-    <form method="post">
-        {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="errorlist">{{ form.non_field_errors }}</div>
+            {% endif %}
 
-        {{ form.as_p }}
+            <div class="settings-grid">
+                <div class="field-block">
+                    {{ form.name.label_tag }}
+                    {{ form.name }}
+                    {{ form.name.errors }}
+                </div>
+                <div class="field-block">
+                    {{ form.owner_name.label_tag }}
+                    {{ form.owner_name }}
+                    {{ form.owner_name.errors }}
+                </div>
+                <div class="field-block">
+                    {{ form.phone.label_tag }}
+                    {{ form.phone }}
+                    {{ form.phone.errors }}
+                </div>
+                <div class="field-block">
+                    {{ form.email.label_tag }}
+                    {{ form.email }}
+                    {{ form.email.errors }}
+                </div>
+                <div class="field-block field-wide">
+                    {{ form.address.label_tag }}
+                    {{ form.address }}
+                    {{ form.address.errors }}
+                </div>
+            </div>
 
-        <button type="submit">ذخیره تغییرات</button>
-    </form>
-
-    <hr>
-
-    <a href="{% url 'parking:dashboard' %}">بازگشت به داشبورد</a>
+            <div class="action-row">
+                <button type="submit">ذخیره تغییرات</button>
+                <a class="button secondary" href="{% url 'parking:dashboard' %}">انصراف</a>
+            </div>
+        </form>
+    </section>
 {% endblock %}
