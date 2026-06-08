@@ -185,7 +185,6 @@
             {% for session in closed_sessions %}
                 <tr>
                     <td>{{ session.vehicle.plate_number }}</td>
-                    <td>{{ session.vehicle.owner_name|default:"-" }}</td>
                     <td>{{ session.vehicle.get_type_display }}</td>
                     <td>{{ session.spot.parking_lot.name }}</td>
                     <td>{{ session.spot.code }}</td>
@@ -196,7 +195,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="9">در این بازه هیچ سشن بسته‌شده‌ای وجود ندارد.</td>
+                    <td colspan="8">در این بازه هیچ سشن بسته‌شده‌ای وجود ندارد.</td>
                 </tr>
             {% endfor %}
         </tbody>

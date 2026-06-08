@@ -101,7 +101,6 @@
             {% for session in active_sessions %}
                 <tr>
                     <td>{{ session.vehicle.plate_number }}</td>
-                    <td>{{ session.vehicle.owner_name|default:"-" }}</td>
                     <td>{{ session.spot.parking_lot.name }}</td>
                     <td>{{ session.spot.code }}</td>
                     <td>{{ session.entry_time|jalali_gregorian }}</td>
@@ -113,7 +112,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="6">در حال حاضر هیچ سشن فعالی وجود ندارد.</td>
+                    <td colspan="5">در حال حاضر هیچ سشن فعالی وجود ندارد.</td>
                 </tr>
             {% endfor %}
         </tbody>
@@ -145,7 +144,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="5">پرداخت در انتظاری وجود ندارد.</td>
+                    <td colspan="4">پرداخت در انتظاری وجود ندارد.</td>
                 </tr>
             {% endfor %}
         </tbody>
