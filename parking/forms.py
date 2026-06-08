@@ -138,6 +138,27 @@ class ParkingLotForm(forms.ModelForm):
             'motorcycle_capacity': 'ظرفیت جایگاه موتور',
         }
 
+    def __init__(self, *args, **kwargs):
+        self.customer = kwargs.pop('customer', None)
+        super().__init__(*args, **kwargs)
+
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+
+        if self.customer and name:
+            duplicate = ParkingLot.objects.filter(
+                customer=self.customer,
+                name__iexact=name
+            )
+
+            if self.instance.pk:
+                duplicate = duplicate.exclude(pk=self.instance.pk)
+
+            if duplicate.exists():
+                raise forms.ValidationError('پارکینگی با این نام قبلاً ثبت شده است.')
+
+        return name
+
     def clean(self):
         cleaned_data = super().clean()
 
@@ -153,24 +174,26 @@ class ParkingLotForm(forms.ModelForm):
         if self.instance.pk:
             current_car_spots = ParkingSpot.objects.filter(
                 parking_lot=self.instance,
-                spot_type=Vehicle.VEHICLE_TYPE_CAR
+                spot_type=Vehicle.VEHICLE_TYPE_CAR,
+                is_active=True
             ).count()
 
             current_motorcycle_spots = ParkingSpot.objects.filter(
                 parking_lot=self.instance,
-                spot_type=Vehicle.VEHICLE_TYPE_MOTORCYCLE
+                spot_type=Vehicle.VEHICLE_TYPE_MOTORCYCLE,
+                is_active=True
             ).count()
 
             if car_capacity < current_car_spots:
                 self.add_error(
                     'car_capacity',
-                    f'ظرفیت خودرو نمی‌تواند کمتر از تعداد جایگاه‌های خودروی ثبت‌شده باشد. تعداد فعلی: {current_car_spots}'
+                    f'ظرفیت خودرو نمی‌تواند کمتر از تعداد جایگاه‌های خودروی فعال باشد. تعداد فعلی: {current_car_spots}'
                 )
 
             if motorcycle_capacity < current_motorcycle_spots:
                 self.add_error(
                     'motorcycle_capacity',
-                    f'ظرفیت موتور نمی‌تواند کمتر از تعداد جایگاه‌های موتور ثبت‌شده باشد. تعداد فعلی: {current_motorcycle_spots}'
+                    f'ظرفیت موتور نمی‌تواند کمتر از تعداد جایگاه‌های موتور فعال باشد. تعداد فعلی: {current_motorcycle_spots}'
                 )
 
         return cleaned_data
@@ -201,6 +224,22 @@ class ParkingSpotForm(forms.ModelForm):
 
         parking_lot = cleaned_data.get('parking_lot')
         spot_type = cleaned_data.get('spot_type')
+        code = cleaned_data.get('code')
+        if parking_lot and code:
+            duplicate_code = ParkingSpot.objects.filter(
+                parking_lot=parking_lot,
+                code__iexact=code,
+                is_active=True
+            )
+
+            if self.instance.pk:
+                duplicate_code = duplicate_code.exclude(pk=self.instance.pk)
+
+            if duplicate_code.exists():
+                self.add_error(
+                    'code',
+                    'برای این پارکینگ، جایگاه فعالی با این کد قبلاً ثبت شده است.'
+                )
 
         if not parking_lot or not spot_type:
             return cleaned_data
@@ -211,7 +250,8 @@ class ParkingSpotForm(forms.ModelForm):
 
         existing_spots = ParkingSpot.objects.filter(
             parking_lot=parking_lot,
-            spot_type=spot_type
+            spot_type=spot_type,
+            is_active=True
         )
 
         if self.instance.pk:
