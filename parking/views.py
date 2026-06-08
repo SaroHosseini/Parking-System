@@ -171,8 +171,34 @@ def dashboard(request):
     occupied_spots = spots.filter(is_occupied=True).count()
     available_spots = spots.filter(is_occupied=False).count()
 
+    car_spots = spots.filter(
+    spot_type=Vehicle.VEHICLE_TYPE_CAR
+    )
+
+    motorcycle_spots = spots.filter(
+        spot_type=Vehicle.VEHICLE_TYPE_MOTORCYCLE
+    )
+
+    car_total_spots = car_spots.count()
+    car_occupied_spots = car_spots.filter(is_occupied=True).count()
+    car_available_spots = car_spots.filter(is_occupied=False).count()
+
+    motorcycle_total_spots = motorcycle_spots.count()
+    motorcycle_occupied_spots = motorcycle_spots.filter(is_occupied=True).count()
+    motorcycle_available_spots = motorcycle_spots.filter(is_occupied=False).count()
+
     open_sessions_count = sessions.filter(
         status=ParkingSession.SESSION_STATUS_OPEN
+    ).count()
+
+    open_car_sessions_count = sessions.filter(
+    status=ParkingSession.SESSION_STATUS_OPEN,
+    vehicle__type=Vehicle.VEHICLE_TYPE_CAR
+    ).count()
+
+    open_motorcycle_sessions_count = sessions.filter(
+        status=ParkingSession.SESSION_STATUS_OPEN,
+        vehicle__type=Vehicle.VEHICLE_TYPE_MOTORCYCLE
     ).count()
 
     closed_sessions_count = sessions.filter(
@@ -246,7 +272,16 @@ def dashboard(request):
         'latest_receipt': latest_receipt,
         'monthly_report_start': monthly_report_start,
         'monthly_report_end': monthly_report_end,
+        'car_total_spots': car_total_spots,
+        'car_occupied_spots': car_occupied_spots,
+        'car_available_spots': car_available_spots,
 
+        'motorcycle_total_spots': motorcycle_total_spots,
+        'motorcycle_occupied_spots': motorcycle_occupied_spots,
+        'motorcycle_available_spots': motorcycle_available_spots,
+
+        'open_car_sessions_count': open_car_sessions_count,
+        'open_motorcycle_sessions_count': open_motorcycle_sessions_count,
     }
 
     return render(request, 'parking/dashboard.html', context)

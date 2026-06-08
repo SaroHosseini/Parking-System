@@ -55,6 +55,8 @@
         <li>ورودهای امروز: {{ today_entries_count }}</li>
         <li>خروج‌های امروز: {{ today_exits_count }}</li>
         <li>سشن‌های فعال فعلی: {{ open_sessions_count }}</li>
+        <li>سشن‌های فعال خودرو: {{ open_car_sessions_count }}</li>
+        <li>سشن‌های فعال موتور: {{ open_motorcycle_sessions_count }}</li>
         <li>پرداخت‌های در انتظار: {{ open_payments_count }}</li>
         <li>رسیدهای صادرشده امروز: {{ today_receipts_count }}</li>
     </ul>
@@ -65,9 +67,13 @@
         <h2>آمار مدیریتی</h2>
 
         <ul>
-            <li>کل جایگاه‌ها: {{ total_spots }}</li>
-            <li>جایگاه‌های آزاد: {{ available_spots }}</li>
-            <li>جایگاه‌های اشغال: {{ occupied_spots }}</li>
+            <li>کل جایگاه‌های خودرو: {{ car_total_spots }}</li>
+            <li>جایگاه‌های آزاد خودرو: {{ car_available_spots }}</li>
+            <li>جایگاه‌های اشغال خودرو: {{ car_occupied_spots }}</li>
+
+            <li>کل جایگاه‌های موتور: {{ motorcycle_total_spots }}</li>
+            <li>جایگاه‌های آزاد موتور: {{ motorcycle_available_spots }}</li>
+            <li>جایگاه‌های اشغال موتور: {{ motorcycle_occupied_spots }}</li>
             <li>سشن‌های بسته‌شده: {{ closed_sessions_count }}</li>
             <li>سشن‌های لغوشده: {{ cancelled_sessions_count }}</li>
             <li>درآمد امروز: {{ today_income }}</li>
