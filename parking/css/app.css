@@ -305,24 +305,26 @@ input[type="submit"]:hover {
 .hero-metrics {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.75rem;
-    max-width: 700px;
+    gap: 0.65rem;
+    max-width: 640px;
     margin-top: 1.55rem;
 }
 
 .hero-metric {
+    min-width: 0;
     border: 1px solid rgba(255, 255, 255, 0.2);
     background: rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(16px);
     border-radius: var(--radius);
-    padding: 0.8rem;
+    padding: 0.75rem 0.85rem;
+    text-align: center;
 }
 
 .hero-metric strong,
 .stat-card strong,
 .summary-card strong {
     display: block;
-    font-size: 1.55rem;
+    font-size: 1.42rem;
     line-height: 1.2;
 }
 
@@ -336,6 +338,7 @@ input[type="submit"]:hover {
 
 .hero-metric span {
     color: rgba(255, 255, 255, 0.75);
+    white-space: nowrap;
 }
 
 .hero-dashboard {
