@@ -40,6 +40,37 @@
 
     <hr>
 
+    <h2>گزارش تفکیکی خودرو و موتور</h2>
+
+    <table border="1" cellpadding="8">
+        <thead>
+            <tr>
+                <th>نوع وسیله</th>
+                <th>تعداد ورود</th>
+                <th>تعداد خروج</th>
+                <th>درآمد</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <tr>
+                <td>خودرو</td>
+                <td>{{ car_entries_count }}</td>
+                <td>{{ car_exits_count }}</td>
+                <td>{{ car_income }}</td>
+            </tr>
+
+            <tr>
+                <td>موتور</td>
+                <td>{{ motorcycle_entries_count }}</td>
+                <td>{{ motorcycle_exits_count }}</td>
+                <td>{{ motorcycle_income }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <hr>
+
     <h2>وضعیت اشغال فضا</h2>
 
     <ul>
@@ -48,6 +79,35 @@
         <li>جایگاه‌های آزاد: {{ free_spots }}</li>
         <li>درصد اشغال: {{ occupancy_rate }}٪</li>
     </ul>
+
+    <h3>تفکیک جایگاه‌ها</h3>
+
+    <table border="1" cellpadding="8">
+        <thead>
+            <tr>
+                <th>نوع جایگاه</th>
+                <th>کل</th>
+                <th>آزاد</th>
+                <th>اشغال</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <tr>
+                <td>خودرو</td>
+                <td>{{ car_total_spots }}</td>
+                <td>{{ car_free_spots }}</td>
+                <td>{{ car_occupied_spots }}</td>
+            </tr>
+
+            <tr>
+                <td>موتور</td>
+                <td>{{ motorcycle_total_spots }}</td>
+                <td>{{ motorcycle_free_spots }}</td>
+                <td>{{ motorcycle_occupied_spots }}</td>
+            </tr>
+        </tbody>
+    </table>
 
     <hr>
 
@@ -126,7 +186,7 @@
             {% for session in closed_sessions %}
                 <tr>
                     <td>{{ session.vehicle.plate_number }}</td>
-                    <td>{{ session.vehicle.owner_name }}</td>
+                    <td>{{ session.vehicle.owner_name|default:"-" }}</td>
                     <td>{{ session.vehicle.get_type_display }}</td>
                     <td>{{ session.spot.parking_lot.name }}</td>
                     <td>{{ session.spot.code }}</td>

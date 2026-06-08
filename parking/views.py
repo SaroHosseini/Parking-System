@@ -1251,6 +1251,34 @@ def report_dashboard(request):
         total=Sum('amount')
     )['total'] or 0
 
+    car_entries_count = entries_in_range.filter(
+    vehicle__type=Vehicle.VEHICLE_TYPE_CAR
+    ).count()
+
+    motorcycle_entries_count = entries_in_range.filter(
+        vehicle__type=Vehicle.VEHICLE_TYPE_MOTORCYCLE
+    ).count()
+
+    car_exits_count = exits_in_range.filter(
+        vehicle__type=Vehicle.VEHICLE_TYPE_CAR
+    ).count()
+
+    motorcycle_exits_count = exits_in_range.filter(
+        vehicle__type=Vehicle.VEHICLE_TYPE_MOTORCYCLE
+    ).count()
+
+    car_income = successful_payments.filter(
+        session__vehicle__type=Vehicle.VEHICLE_TYPE_CAR
+    ).aggregate(
+        total=Sum('amount')
+    )['total'] or 0
+
+    motorcycle_income = successful_payments.filter(
+        session__vehicle__type=Vehicle.VEHICLE_TYPE_MOTORCYCLE
+    ).aggregate(
+        total=Sum('amount')
+    )['total'] or 0
+
     average_duration = exits_in_range.aggregate(
         average=Avg('total_duration_minutes')
     )['average'] or 0
@@ -1258,6 +1286,22 @@ def report_dashboard(request):
     total_spots = spots.count()
     occupied_spots = spots.filter(is_occupied=True).count()
     free_spots = spots.filter(is_occupied=False).count()
+
+    car_spots = spots.filter(
+    spot_type=Vehicle.VEHICLE_TYPE_CAR
+    )
+
+    motorcycle_spots = spots.filter(
+        spot_type=Vehicle.VEHICLE_TYPE_MOTORCYCLE
+    )
+
+    car_total_spots = car_spots.count()
+    car_occupied_spots = car_spots.filter(is_occupied=True).count()
+    car_free_spots = car_spots.filter(is_occupied=False).count()
+
+    motorcycle_total_spots = motorcycle_spots.count()
+    motorcycle_occupied_spots = motorcycle_spots.filter(is_occupied=True).count()
+    motorcycle_free_spots = motorcycle_spots.filter(is_occupied=False).count()
 
     occupancy_rate = 0
 
@@ -1326,6 +1370,21 @@ def report_dashboard(request):
         'vehicle_type_rows': vehicle_type_rows,
         'payment_method_rows': payment_method_rows,
         'closed_sessions': exits_in_range.order_by('-exit_time'),
+        'car_total_spots': car_total_spots,
+        'car_occupied_spots': car_occupied_spots,
+        'car_free_spots': car_free_spots,
+
+        'motorcycle_total_spots': motorcycle_total_spots,
+        'motorcycle_occupied_spots': motorcycle_occupied_spots,
+        'motorcycle_free_spots': motorcycle_free_spots,
+
+        'car_entries_count': car_entries_count,
+        'motorcycle_entries_count': motorcycle_entries_count,
+        'car_exits_count': car_exits_count,
+        'motorcycle_exits_count': motorcycle_exits_count,
+
+        'car_income': car_income,
+        'motorcycle_income': motorcycle_income,
     }
 
     return render(request, 'parking/report_dashboard.html', context)
