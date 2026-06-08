@@ -440,7 +440,7 @@ def parking_lot_create(request):
         return redirect('parking:dashboard')
 
     if request.method == 'POST':
-        form = ParkingLotForm(request.POST)
+        form = ParkingLotForm(request.POST, customer=customer)
 
         if form.is_valid():
             parking_lot = form.save(commit=False)
@@ -450,7 +450,7 @@ def parking_lot_create(request):
             return redirect('parking:parking_lot_list')
 
     else:
-        form = ParkingLotForm()
+        form = ParkingLotForm(customer=customer)
 
     return render(request, 'parking/parking_lot_form.html', {
         'form': form,
@@ -477,15 +477,15 @@ def parking_lot_update(request, pk):
     )
 
     if request.method == 'POST':
-        form = ParkingLotForm(request.POST, instance=parking_lot)
+        form = ParkingLotForm(request.POST, instance=parking_lot, customer=customer)
 
         if form.is_valid():
             form.save()
             return redirect('parking:parking_lot_list')
 
     else:
-        form = ParkingLotForm(instance=parking_lot)
-
+        form = ParkingLotForm(instance=parking_lot, customer=customer)
+                    
     return render(request, 'parking/parking_lot_form.html', {
         'form': form,
         'title': 'ویرایش پارکینگ',
