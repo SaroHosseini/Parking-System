@@ -3,8 +3,8 @@
 
     <div>
         {% if page_obj.has_previous %}
-            <a href="?{% if query_string %}{{ query_string }}&{% endif %}page=1">اول</a>
-            <a href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.previous_page_number }}">قبلی</a>
+            <a href="?{% if query_string %}{{ query_string }}&{% endif %}page=1#records-section">اول</a>
+            <a href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.previous_page_number }}#records-section">قبلی</a>
         {% endif %}
 
         <span>
@@ -12,8 +12,8 @@
         </span>
 
         {% if page_obj.has_next %}
-            <a href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.next_page_number }}">بعدی</a>
-            <a href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.paginator.num_pages }}">آخر</a>
+            <a href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.next_page_number }}#records-section">بعدی</a>
+            <a href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.paginator.num_pages }}#records-section">آخر</a>
         {% endif %}
     </div>
 {% endif %}
