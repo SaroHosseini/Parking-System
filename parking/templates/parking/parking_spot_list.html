@@ -11,6 +11,58 @@
 
     <hr>
 
+    <h2>وضعیت ساخت جایگاه‌ها</h2>
+
+    <table border="1" cellpadding="8">
+        <thead>
+            <tr>
+                <th>پارکینگ</th>
+
+                <th>ظرفیت خودرو</th>
+                <th>جایگاه خودرو ساخته‌شده</th>
+                <th>جایگاه خودرو باقی‌مانده</th>
+
+                <th>ظرفیت موتور</th>
+                <th>جایگاه موتور ساخته‌شده</th>
+                <th>جایگاه موتور باقی‌مانده</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for row in capacity_rows %}
+                <tr>
+                    <td>{{ row.parking_lot.name }}</td>
+
+                    <td>{{ row.car_capacity }}</td>
+                    <td>{{ row.car_spots_count }}</td>
+                    <td>
+                        {% if row.remaining_car_spots < 0 %}
+                            ظرفیت کمتر از جایگاه‌های ساخته‌شده است
+                        {% else %}
+                            {{ row.remaining_car_spots }}
+                        {% endif %}
+                    </td>
+
+                    <td>{{ row.motorcycle_capacity }}</td>
+                    <td>{{ row.motorcycle_spots_count }}</td>
+                    <td>
+                        {% if row.remaining_motorcycle_spots < 0 %}
+                            ظرفیت کمتر از جایگاه‌های ساخته‌شده است
+                        {% else %}
+                            {{ row.remaining_motorcycle_spots }}
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7">هنوز پارکینگی ثبت نشده است.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <hr>
+
     <h2>فیلترها</h2>
 
     <form method="get">
@@ -21,7 +73,11 @@
     </form>
 
     <hr>
+
     <div id="records-section"></div>
+
+    <h2>لیست جایگاه‌ها</h2>
+
     <table border="1" cellpadding="8">
         <thead>
             <tr>
@@ -59,5 +115,6 @@
             {% endfor %}
         </tbody>
     </table>
+
     {% include 'parking/pagination.html' %}
 {% endblock %}

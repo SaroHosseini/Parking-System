@@ -485,6 +485,8 @@ def parking_spot_list(request):
         parking_lot__customer=customer
     )
 
+    selected_parking_lot = None
+
     if filter_form.is_valid():
         parking_lot = filter_form.cleaned_data.get('parking_lot')
         code = filter_form.cleaned_data.get('code')
@@ -493,6 +495,7 @@ def parking_spot_list(request):
         spot_type = filter_form.cleaned_data.get('spot_type')
 
         if parking_lot:
+            selected_parking_lot = parking_lot
             parking_spots = parking_spots.filter(parking_lot=parking_lot)
 
         if code:
@@ -510,6 +513,42 @@ def parking_spot_list(request):
         if status == 'occupied':
             parking_spots = parking_spots.filter(is_occupied=True)
 
+    capacity_parking_lots = ParkingLot.objects.filter(
+        customer=customer
+    ).annotate(
+        car_spots_count=Count(
+            'spots',
+            filter=Q(spots__spot_type=Vehicle.VEHICLE_TYPE_CAR)
+        ),
+        motorcycle_spots_count=Count(
+            'spots',
+            filter=Q(spots__spot_type=Vehicle.VEHICLE_TYPE_MOTORCYCLE)
+        ),
+    ).order_by('name')
+
+    if selected_parking_lot:
+        capacity_parking_lots = capacity_parking_lots.filter(
+            pk=selected_parking_lot.pk
+        )
+
+    capacity_rows = []
+
+    for parking_lot in capacity_parking_lots:
+        remaining_car_spots = parking_lot.car_capacity - parking_lot.car_spots_count
+        remaining_motorcycle_spots = parking_lot.motorcycle_capacity - parking_lot.motorcycle_spots_count
+
+        capacity_rows.append({
+            'parking_lot': parking_lot,
+
+            'car_capacity': parking_lot.car_capacity,
+            'car_spots_count': parking_lot.car_spots_count,
+            'remaining_car_spots': remaining_car_spots,
+
+            'motorcycle_capacity': parking_lot.motorcycle_capacity,
+            'motorcycle_spots_count': parking_lot.motorcycle_spots_count,
+            'remaining_motorcycle_spots': remaining_motorcycle_spots,
+        })
+
     parking_spots = parking_spots.order_by(
         'parking_lot__name',
         'level',
@@ -520,6 +559,7 @@ def parking_spot_list(request):
 
     return render(request, 'parking/parking_spot_list.html', {
         'parking_spots': page_obj,
+        'capacity_rows': capacity_rows,
         'customer': customer,
         'filter_form': filter_form,
         'page_obj': page_obj,
