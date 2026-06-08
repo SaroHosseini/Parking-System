@@ -14,7 +14,6 @@
 
     <ul>
         <li>پلاک: {{ session.vehicle.plate_number }}</li>
-        <li>مالک: {{ session.vehicle.owner_name|default:"-" }}</li>
         <li>نوع وسیله: {{ session.vehicle.get_type_display }}</li>
         <li>رنگ: {{ session.vehicle.color|default:"-" }}</li>
     </ul>

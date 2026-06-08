@@ -25,7 +25,6 @@
         <thead>
             <tr>
                 <th>پلاک</th>
-                <th>مالک</th>
                 <th>پارکینگ</th>
                 <th>جایگاه</th>
                 <th>مبلغ</th>
@@ -40,7 +39,6 @@
             {% for payment in payments %}
                 <tr>
                     <td>{{ payment.session.vehicle.plate_number }}</td>
-                    <td>{{ payment.session.vehicle.owner_name|default:"-" }}</td>
                     <td>{{ payment.session.spot.parking_lot.name }}</td>
                     <td>{{ payment.session.spot.code }}</td>
                     <td>{{ payment.amount }}</td>

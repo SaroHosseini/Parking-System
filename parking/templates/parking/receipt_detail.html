@@ -22,7 +22,6 @@
 
     <ul>
         <li>پلاک: {{ receipt.session.vehicle.plate_number }}</li>
-        <li>مالک: {{ receipt.session.vehicle.owner_name }}</li>
         <li>پارکینگ: {{ receipt.session.spot.parking_lot.name }}</li>
         <li>جایگاه: {{ receipt.session.spot.code }}</li>
         <li>زمان ورود: {{ receipt.session.entry_time|jalali_gregorian }}</li>
@@ -52,5 +51,5 @@
     <a href="{% url 'parking:receipt_print' receipt.id %}">چاپ رسید</a>
     <br>
     <a href="{% url 'parking:receipt_list' %}">بازگشت به لیست رسیدها</a>
-    
+
 {% endblock %}

@@ -90,7 +90,6 @@
         <thead>
             <tr>
                 <th>پلاک</th>
-                <th>مالک</th>
                 <th>پارکینگ</th>
                 <th>جایگاه</th>
                 <th>زمان ورود</th>
@@ -128,7 +127,6 @@
         <thead>
             <tr>
                 <th>پلاک</th>
-                <th>مالک</th>
                 <th>مبلغ</th>
                 <th>زمان پرداخت</th>
                 <th>عملیات</th>
@@ -139,7 +137,6 @@
             {% for payment in open_payments %}
                 <tr>
                     <td>{{ payment.session.vehicle.plate_number }}</td>
-                    <td>{{ payment.session.vehicle.owner_name|default:"-" }}</td>
                     <td>{{ payment.amount }}</td>
                     <td>{{ payment.payment_time|jalali_gregorian }}</td>
                     <td>

@@ -118,11 +118,10 @@ class CustomerRequestForm(forms.ModelForm):
 class VehicleForm(forms.ModelForm):
     class Meta:
         model = Vehicle
-        fields = ['plate_number', 'owner_name', 'type', 'color']
+        fields = ['plate_number', 'type', 'color']
 
         labels = {
             'plate_number': 'شماره پلاک',
-            'owner_name': 'نام مالک',
             'type': 'نوع وسیله',
             'color': 'رنگ',
         }
@@ -321,12 +320,6 @@ class ParkingSessionEntryForm(forms.Form):
         label='شماره پلاک',
         max_length=15,
         help_text='برای خودرو: 12ب345-67 ، برای موتور: 8 رقم'
-    )
-
-    owner_name = forms.CharField(
-        label='نام مالک',
-        max_length=100,
-        required=False
     )
 
     vehicle_type = forms.ChoiceField(
@@ -724,10 +717,6 @@ class ParkingSessionFilterForm(forms.Form):
         required=False
     )
 
-    owner_name = forms.CharField(
-        label='نام مالک',
-        required=False
-    )
 
     vehicle_type = forms.ChoiceField(
         label='نوع وسیله',
@@ -785,11 +774,6 @@ class ParkingSessionFilterForm(forms.Form):
 class PaymentFilterForm(forms.Form):
     plate_number = forms.CharField(
         label='شماره پلاک',
-        required=False
-    )
-
-    owner_name = forms.CharField(
-        label='نام مالک',
         required=False
     )
 
@@ -855,10 +839,6 @@ class ReceiptFilterForm(forms.Form):
         required=False
     )
 
-    owner_name = forms.CharField(
-        label='نام مالک',
-        required=False
-    )
 
     parking_lot = forms.ModelChoiceField(
         label='پارکینگ',

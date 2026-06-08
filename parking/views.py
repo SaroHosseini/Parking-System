@@ -810,7 +810,6 @@ def parking_session_list(request):
 
     if filter_form.is_valid():
         plate_number = filter_form.cleaned_data.get('plate_number')
-        owner_name = filter_form.cleaned_data.get('owner_name')
         vehicle_type = filter_form.cleaned_data.get('vehicle_type')
         parking_lot = filter_form.cleaned_data.get('parking_lot')
         status = filter_form.cleaned_data.get('status')
@@ -822,8 +821,6 @@ def parking_session_list(request):
         if plate_number:
             sessions = sessions.filter(vehicle__plate_number__icontains=plate_number)
 
-        if owner_name:
-            sessions = sessions.filter(vehicle__owner_name__icontains=owner_name)
 
         if vehicle_type:
             sessions = sessions.filter(vehicle__type=vehicle_type)
@@ -873,7 +870,6 @@ def parking_session_create(request):
 
         if form.is_valid():
             plate_number = form.cleaned_data['plate_number']
-            owner_name = form.cleaned_data.get('owner_name')
             vehicle_type = form.cleaned_data['vehicle_type']
             color = form.cleaned_data.get('color')
             spot = form.cleaned_data['spot']
@@ -882,14 +878,12 @@ def parking_session_create(request):
                 customer=customer,
                 plate_number=plate_number,
                 defaults={
-                    'owner_name': owner_name,
                     'type': vehicle_type,
                     'color': color,
                 }
             )
 
             if not created:
-                vehicle.owner_name = owner_name
                 vehicle.type = vehicle_type
                 vehicle.color = color
                 vehicle.save()
@@ -1035,7 +1029,6 @@ def payment_list(request):
 
     if filter_form.is_valid():
         plate_number = filter_form.cleaned_data.get('plate_number')
-        owner_name = filter_form.cleaned_data.get('owner_name')
         parking_lot = filter_form.cleaned_data.get('parking_lot')
         payment_method = filter_form.cleaned_data.get('payment_method')
         payment_status = filter_form.cleaned_data.get('payment_status')
@@ -1046,9 +1039,6 @@ def payment_list(request):
 
         if plate_number:
             payments = payments.filter(session__vehicle__plate_number__icontains=plate_number)
-
-        if owner_name:
-            payments = payments.filter(session__vehicle__owner_name__icontains=owner_name)
 
         if parking_lot:
             payments = payments.filter(session__spot__parking_lot=parking_lot)
@@ -1149,7 +1139,6 @@ def receipt_list(request):
     if filter_form.is_valid():
         receipt_number = filter_form.cleaned_data.get('receipt_number')
         plate_number = filter_form.cleaned_data.get('plate_number')
-        owner_name = filter_form.cleaned_data.get('owner_name')
         parking_lot = filter_form.cleaned_data.get('parking_lot')
         payment_method = filter_form.cleaned_data.get('payment_method')
         issue_from = filter_form.cleaned_data.get('issue_from')
@@ -1161,8 +1150,6 @@ def receipt_list(request):
         if plate_number:
             receipts = receipts.filter(session__vehicle__plate_number__icontains=plate_number)
 
-        if owner_name:
-            receipts = receipts.filter(session__vehicle__owner_name__icontains=owner_name)
 
         if parking_lot:
             receipts = receipts.filter(session__spot__parking_lot=parking_lot)
