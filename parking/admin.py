@@ -35,9 +35,9 @@ class CustomerUserAdmin(admin.ModelAdmin):
 @admin.register(models.Vehicle)
 class VehicleAdmin(admin.ModelAdmin):
     list_per_page = 20
-    list_display = ['id', 'customer', 'plate_number_display', 'owner_name','type', 'color']
+    list_display = ['id', 'customer', 'plate_number_display','type', 'color']
     list_filter = ['customer', 'type', 'color']
-    search_fields = ['plate_number', 'owner_name__istartswith','customer__name']
+    search_fields = ['plate_number','customer__name']
     list_select_related = ['customer']
 
     def plate_number_display(self, obj):
@@ -111,7 +111,7 @@ class ParkingSessionAdmin(admin.ModelAdmin):
         'calculated_fee',
     ]
     list_filter = ['vehicle__customer', 'status', 'spot__parking_lot', 'vehicle__type']
-    search_fields = ['vehicle__plate_number', 'vehicle__owner_name', 'spot__code', 'vehicle__customer__name']
+    search_fields = ['vehicle__plate_number','spot__code', 'vehicle__customer__name']
     readonly_fields = ['total_duration_minutes', 'calculated_fee']
     list_select_related = ['vehicle', 'vehicle__customer', 'spot', 'spot__parking_lot']
 
@@ -143,8 +143,6 @@ class PaymentAdmin(admin.ModelAdmin):
     list_filter = ['session__vehicle__customer', 'payment_method', 'payment_status', 'payment_time']
     search_fields = [
         'session__vehicle__plate_number',
-        'session__vehicle__owner_name',
-        'session__vehicle__owner_phone',
         'session__vehicle__customer__name',
     ]
     readonly_fields = ['amount', 'payment_time']
@@ -176,7 +174,6 @@ class ReceiptAdmin(admin.ModelAdmin):
     search_fields = [
         'receipt_number',
         'session__vehicle__plate_number',
-        'session__vehicle__owner_name',
         'session__vehicle__customer__name',
         'payment__payment_method',
     ]
