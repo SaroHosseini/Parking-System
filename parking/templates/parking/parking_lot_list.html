@@ -26,6 +26,8 @@
         <thead>
             <tr>
                 <th>نام پارکینگ</th>
+                <th>ظرفیت خودرو</th>
+                <th>ظرفیت موتور</th>
                 <th>ظرفیت کل</th>
                 <th>عملیات</th>
             </tr>
@@ -35,6 +37,8 @@
             {% for parking_lot in parking_lots %}
                 <tr>
                     <td>{{ parking_lot.name }}</td>
+                    <td>{{ parking_lot.car_capacity }}</td>
+                    <td>{{ parking_lot.motorcycle_capacity }}</td>
                     <td>{{ parking_lot.total_capacity }}</td>
                     <td>
                         <a href="{% url 'parking:parking_lot_update' parking_lot.id %}">ویرایش</a>
@@ -42,7 +46,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="3">هیچ پارکینگی با این فیلترها پیدا نشد.</td>
+                    <td colspan="5">هیچ پارکینگی با این فیلترها پیدا نشد.</td>
                 </tr>
             {% endfor %}
         </tbody>

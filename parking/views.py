@@ -7,6 +7,7 @@ from django.core.paginator import Paginator
 from django.contrib.auth import update_session_auth_hash
 from datetime import timedelta
 from django.urls import reverse
+from django.http import JsonResponse
 
 from .models import (
     ParkingSpot,
@@ -428,7 +429,6 @@ def parking_lot_update(request, pk):
         'title': 'ویرایش پارکینگ',
     })
 
-
 def parking_spot_list(request):
     if not request.user.is_authenticated:
         return redirect('parking:login')
@@ -455,6 +455,7 @@ def parking_spot_list(request):
         code = filter_form.cleaned_data.get('code')
         level = filter_form.cleaned_data.get('level')
         status = filter_form.cleaned_data.get('status')
+        spot_type = filter_form.cleaned_data.get('spot_type')
 
         if parking_lot:
             parking_spots = parking_spots.filter(parking_lot=parking_lot)
@@ -464,6 +465,9 @@ def parking_spot_list(request):
 
         if level:
             parking_spots = parking_spots.filter(level__icontains=level)
+
+        if spot_type:
+            parking_spots = parking_spots.filter(spot_type=spot_type)
 
         if status == 'free':
             parking_spots = parking_spots.filter(is_occupied=False)
@@ -486,7 +490,6 @@ def parking_spot_list(request):
         'page_obj': page_obj,
         'query_string': query_string,
     })
-
 
 def parking_spot_create(request):
     if not request.user.is_authenticated:
@@ -1543,3 +1546,38 @@ def customer_settings(request):
         'form': form,
         'customer': customer,
     })
+
+def available_spots_api(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({'spots': []})
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return JsonResponse({'spots': []})
+
+    vehicle_type = request.GET.get('vehicle_type')
+
+    spots = ParkingSpot.objects.filter(
+        parking_lot__customer=customer,
+        is_occupied=False
+    ).select_related('parking_lot')
+
+    if vehicle_type:
+        spots = spots.filter(spot_type=vehicle_type)
+
+    spots = spots.order_by(
+        'parking_lot__name',
+        'level',
+        'code'
+    )
+
+    data = []
+
+    for spot in spots:
+        data.append({
+            'id': spot.id,
+            'text': f'{spot.parking_lot.name} - {spot.code} - {spot.get_spot_type_display()}'
+        })
+
+    return JsonResponse({'spots': data})

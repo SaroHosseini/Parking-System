@@ -49,4 +49,5 @@ urlpatterns = [
     path('users/<int:pk>/change-password/',views.customer_user_change_password,name='customer_user_change_password'),
     path('account/change-password/',views.account_change_password,name='account_change_password'),
     path('settings/', views.customer_settings, name='customer_settings'),
+    path('ajax/available-spots/', views.available_spots_api, name='available_spots_api'),
 ]

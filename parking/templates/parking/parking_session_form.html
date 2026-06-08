@@ -16,4 +16,53 @@
     <hr>
 
     <a href="{% url 'parking:parking_session_list' %}">بازگشت به لیست سشن‌ها</a>
+
+    <script>
+        const vehicleTypeSelect = document.getElementById('id_vehicle_type');
+        const spotSelect = document.getElementById('id_spot');
+
+        function loadAvailableSpots() {
+            const vehicleType = vehicleTypeSelect.value;
+
+            spotSelect.innerHTML = '';
+            const loadingOption = document.createElement('option');
+            loadingOption.value = '';
+            loadingOption.textContent = 'در حال دریافت جایگاه‌ها...';
+            spotSelect.appendChild(loadingOption);
+
+            fetch("{% url 'parking:available_spots_api' %}?vehicle_type=" + vehicleType)
+                .then(response => response.json())
+                .then(data => {
+                    spotSelect.innerHTML = '';
+
+                    const emptyOption = document.createElement('option');
+                    emptyOption.value = '';
+                    emptyOption.textContent = 'انتخاب جایگاه آزاد';
+                    spotSelect.appendChild(emptyOption);
+
+                    if (data.spots.length === 0) {
+                        const noSpotOption = document.createElement('option');
+                        noSpotOption.value = '';
+                        noSpotOption.textContent = 'جایگاه آزاد برای این نوع وسیله وجود ندارد';
+                        spotSelect.appendChild(noSpotOption);
+                        return;
+                    }
+
+                    data.spots.forEach(spot => {
+                        const option = document.createElement('option');
+                        option.value = spot.id;
+                        option.textContent = spot.text;
+                        spotSelect.appendChild(option);
+                    });
+                });
+        }
+
+        vehicleTypeSelect.addEventListener('change', loadAvailableSpots);
+
+        window.addEventListener('load', function () {
+            if (vehicleTypeSelect.value) {
+                loadAvailableSpots();
+            }
+        });
+    </script>
 {% endblock %}

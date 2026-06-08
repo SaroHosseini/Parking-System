@@ -28,6 +28,7 @@
                 <th>پارکینگ</th>
                 <th>کد جایگاه</th>
                 <th>طبقه</th>
+                <th>نوع جایگاه</th>
                 <th>وضعیت</th>
                 <th>عملیات</th>
             </tr>
@@ -39,6 +40,7 @@
                     <td>{{ spot.parking_lot.name }}</td>
                     <td>{{ spot.code }}</td>
                     <td>{{ spot.level }}</td>
+                    <td>{{ spot.get_spot_type_display }}</td>
                     <td>
                         {% if spot.is_occupied %}
                             اشغال
@@ -52,7 +54,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="5">هیچ جایگاهی با این فیلترها پیدا نشد.</td>
+                    <td colspan="6">هیچ جایگاهی با این فیلترها پیدا نشد.</td>
                 </tr>
             {% endfor %}
         </tbody>

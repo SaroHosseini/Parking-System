@@ -131,34 +131,109 @@ class VehicleForm(forms.ModelForm):
 class ParkingLotForm(forms.ModelForm):
     class Meta:
         model = ParkingLot
-        fields = ['name', 'total_capacity']
+        fields = ['name', 'car_capacity', 'motorcycle_capacity']
 
         labels = {
             'name': 'نام پارکینگ',
-            'total_capacity': 'ظرفیت کل',
+            'car_capacity': 'ظرفیت جایگاه خودرو',
+            'motorcycle_capacity': 'ظرفیت جایگاه موتور',
         }
 
+    def clean(self):
+        cleaned_data = super().clean()
+
+        car_capacity = cleaned_data.get('car_capacity') or 0
+        motorcycle_capacity = cleaned_data.get('motorcycle_capacity') or 0
+
+        if car_capacity < 0:
+            self.add_error('car_capacity', 'ظرفیت خودرو نمی‌تواند منفی باشد.')
+
+        if motorcycle_capacity < 0:
+            self.add_error('motorcycle_capacity', 'ظرفیت موتور نمی‌تواند منفی باشد.')
+
+        if self.instance.pk:
+            current_car_spots = ParkingSpot.objects.filter(
+                parking_lot=self.instance,
+                spot_type=Vehicle.VEHICLE_TYPE_CAR
+            ).count()
+
+            current_motorcycle_spots = ParkingSpot.objects.filter(
+                parking_lot=self.instance,
+                spot_type=Vehicle.VEHICLE_TYPE_MOTORCYCLE
+            ).count()
+
+            if car_capacity < current_car_spots:
+                self.add_error(
+                    'car_capacity',
+                    f'ظرفیت خودرو نمی‌تواند کمتر از تعداد جایگاه‌های خودروی ثبت‌شده باشد. تعداد فعلی: {current_car_spots}'
+                )
+
+            if motorcycle_capacity < current_motorcycle_spots:
+                self.add_error(
+                    'motorcycle_capacity',
+                    f'ظرفیت موتور نمی‌تواند کمتر از تعداد جایگاه‌های موتور ثبت‌شده باشد. تعداد فعلی: {current_motorcycle_spots}'
+                )
+
+        return cleaned_data
 
 class ParkingSpotForm(forms.ModelForm):
     class Meta:
         model = ParkingSpot
-        fields = ['parking_lot', 'code', 'level']
+        fields = ['parking_lot', 'code', 'level', 'spot_type']
 
         labels = {
             'parking_lot': 'پارکینگ',
             'code': 'کد جایگاه',
             'level': 'طبقه',
+            'spot_type': 'نوع جایگاه',
         }
 
     def __init__(self, *args, **kwargs):
-        customer = kwargs.pop('customer', None)
+        self.customer = kwargs.pop('customer', None)
         super().__init__(*args, **kwargs)
 
-        if customer:
+        if self.customer:
             self.fields['parking_lot'].queryset = ParkingLot.objects.filter(
-                customer=customer
+                customer=self.customer
             ).order_by('name')
 
+    def clean(self):
+        cleaned_data = super().clean()
+
+        parking_lot = cleaned_data.get('parking_lot')
+        spot_type = cleaned_data.get('spot_type')
+
+        if not parking_lot or not spot_type:
+            return cleaned_data
+
+        if self.customer and parking_lot.customer != self.customer:
+            self.add_error('parking_lot', 'این پارکینگ مربوط به حساب شما نیست.')
+            return cleaned_data
+
+        existing_spots = ParkingSpot.objects.filter(
+            parking_lot=parking_lot,
+            spot_type=spot_type
+        )
+
+        if self.instance.pk:
+            existing_spots = existing_spots.exclude(pk=self.instance.pk)
+
+        current_count = existing_spots.count()
+
+        if spot_type == Vehicle.VEHICLE_TYPE_CAR:
+            allowed_capacity = parking_lot.car_capacity
+            label = 'خودرو'
+        else:
+            allowed_capacity = parking_lot.motorcycle_capacity
+            label = 'موتور'
+
+        if current_count >= allowed_capacity:
+            self.add_error(
+                'spot_type',
+                f'ظرفیت جایگاه‌های {label} در این پارکینگ تکمیل شده است.'
+            )
+
+        return cleaned_data
 
 class TariffForm(forms.ModelForm):
     class Meta:
@@ -268,21 +343,38 @@ class ParkingSessionEntryForm(forms.Form):
     spot = forms.ModelChoiceField(
         label='جایگاه پارک',
         queryset=ParkingSpot.objects.none(),
-        empty_label='انتخاب جایگاه آزاد'
+        empty_label='انتخاب جایگاه آزاد',
+        error_messages={
+            'invalid_choice': 'جایگاه انتخاب‌شده معتبر نیست یا با نوع وسیله انتخاب‌شده هماهنگ نیست.'
+        }
     )
-
+    
     def __init__(self, *args, **kwargs):
         self.customer = kwargs.pop('customer', None)
         super().__init__(*args, **kwargs)
 
+        vehicle_type = None
+
+        if self.data:
+            vehicle_type = self.data.get('vehicle_type')
+
         if self.customer:
-            self.fields['spot'].queryset = ParkingSpot.objects.filter(
+            spots = ParkingSpot.objects.filter(
                 parking_lot__customer=self.customer,
                 is_occupied=False
-            ).select_related('parking_lot').order_by(
+            ).select_related('parking_lot')
+
+            if vehicle_type:
+                spots = spots.filter(spot_type=vehicle_type)
+
+            self.fields['spot'].queryset = spots.order_by(
                 'parking_lot__name',
                 'level',
                 'code'
+            )
+
+            self.fields['spot'].label_from_instance = lambda obj: (
+                f"{obj.parking_lot.name} - {obj.code} - {obj.get_spot_type_display()}"
             )
 
     def clean(self):
@@ -316,6 +408,12 @@ class ParkingSessionEntryForm(forms.Form):
                 self.add_error(
                     'spot',
                     'این جایگاه در حال حاضر اشغال است.'
+                )
+
+            if vehicle_type and spot.spot_type != vehicle_type:
+                self.add_error(
+                    'spot',
+                    'نوع جایگاه با نوع وسیله نقلیه انتخاب‌شده هماهنگ نیست.'
                 )
 
         if self.customer and plate_number and vehicle_type:
@@ -577,6 +675,12 @@ class ParkingSpotFilterForm(forms.Form):
         label='وضعیت',
         required=False,
         choices=STATUS_CHOICES
+    )
+
+    spot_type = forms.ChoiceField(
+    label='نوع جایگاه',
+    required=False,
+    choices=[('', 'همه نوع‌ها')] + list(Vehicle.VEHICLE_TYPE_CHOICES)
     )
 
     def __init__(self, *args, **kwargs):

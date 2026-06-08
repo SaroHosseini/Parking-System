@@ -199,11 +199,23 @@ class ParkingLot(models.Model):
     )
 
     name = models.CharField("نام پارکینگ", max_length=100)
+
+    car_capacity = models.PositiveIntegerField(
+    "ظرفیت جایگاه خودرو",
+    default=0
+    )
+    motorcycle_capacity = models.PositiveIntegerField(
+        "ظرفیت جایگاه موتور",
+        default=0
+    )
     total_capacity = models.PositiveIntegerField("ظرفیت کل")
 
-    def __str__(self):
-        return f"{self.name} - {self.customer.name}"
+    def save(self, *args, **kwargs):
+        self.total_capacity = self.car_capacity + self.motorcycle_capacity
+        super().save(*args, **kwargs)
 
+    def __str__(self):
+        return self.name
     class Meta:
         ordering = ['customer', 'name']
         verbose_name = 'پارکینگ'
@@ -222,6 +234,13 @@ class ParkingSpot(models.Model):
         on_delete=models.CASCADE,
         related_name="spots",
         verbose_name="پارکینگ",
+    )
+
+    spot_type = models.CharField(
+    "نوع جایگاه",
+    max_length=20,
+    choices=Vehicle.VEHICLE_TYPE_CHOICES,
+    default=Vehicle.VEHICLE_TYPE_CAR
     )
 
     code = models.CharField('کد محل', max_length=255)
