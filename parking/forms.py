@@ -377,6 +377,7 @@ class ParkingSessionEntryForm(forms.Form):
         label='جایگاه پارک',
         queryset=ParkingSpot.objects.none(),
         empty_label='انتخاب جایگاه آزاد',
+        widget=forms.HiddenInput,
         error_messages={
             'invalid_choice': 'جایگاه انتخاب‌شده معتبر نیست یا با نوع وسیله انتخاب‌شده هماهنگ نیست.'
         }
@@ -459,7 +460,11 @@ class ParkingSessionEntryForm(forms.Form):
             try:
                 temp_vehicle.clean()
             except Exception as error:
-                self.add_error('plate_number', error)
+                if hasattr(error, 'message_dict'):
+                    for field, messages in error.message_dict.items():
+                        self.add_error(field if field in self.fields else None, messages)
+                else:
+                    self.add_error('plate_number', error)
 
             existing_vehicle = Vehicle.objects.filter(
                 customer=self.customer,
@@ -1096,4 +1101,4 @@ class CustomerSettingsForm(forms.ModelForm):
         if user_exists:
             raise forms.ValidationError('این ایمیل قبلاً برای یک کاربر دیگر ثبت شده است.')
 
-        return email         
+        return email
