@@ -126,12 +126,10 @@ class CustomerUser(models.Model):
 class Vehicle(models.Model):
     VEHICLE_TYPE_CAR = 'car'
     VEHICLE_TYPE_MOTORCYCLE = 'motorcycle'
-    VEHICLE_TYPE_TRUCK = 'truck'
 
     VEHICLE_TYPE_CHOICES = [
         (VEHICLE_TYPE_CAR, 'سواری'),
         (VEHICLE_TYPE_MOTORCYCLE, 'موتورسیکلت'),
-        (VEHICLE_TYPE_TRUCK, 'وانت/کامیون'),
     ]
 
     customer = models.ForeignKey(
@@ -147,8 +145,6 @@ class Vehicle(models.Model):
         help_text="مثال: برای خودرو: 12ب345-67 ، برای موتور: 8 رقم",
     )
 
-    owner_name = models.CharField("نام مالک", max_length=100, blank=True)
-
     type = models.CharField(
         "نوع وسیله",
         max_length=20,
@@ -159,7 +155,7 @@ class Vehicle(models.Model):
     color = models.CharField("رنگ", max_length=30, blank=True)
 
     def __str__(self):
-        return f"{self.plate_number} \n {self.owner_name or 'بدون نام'}"
+        return f"{self.plate_number}"
 
     def clean(self):
         super().clean()
@@ -181,7 +177,7 @@ class Vehicle(models.Model):
     class Meta:
         verbose_name = 'وسیله نقلیه'
         verbose_name_plural = 'وسایل نقلیه'
-        ordering = ['customer', 'owner_name', 'plate_number']
+        ordering = ['plate_number']
         constraints = [
             models.UniqueConstraint(
                 fields=['customer', 'plate_number'],
@@ -255,7 +251,8 @@ class ParkingSpot(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=['parking_lot', 'code'],
-                name='unique_spot_code_per_parking_lot'
+                condition=Q(is_active=True),
+                name='unique_active_spot_code_per_lot'
             )
         ]
         verbose_name = "جایگاه پارک"
@@ -270,12 +267,10 @@ class ParkingSpot(models.Model):
 class Tariff(models.Model):
     VEHICLE_TYPE_CAR = 'car'
     VEHICLE_TYPE_MOTORCYCLE = 'motorcycle'
-    VEHICLE_TYPE_TRUCK = 'truck'
 
     VEHICLE_TYPE_CHOICES = [
         (VEHICLE_TYPE_CAR, 'سواری'),
         (VEHICLE_TYPE_MOTORCYCLE, 'موتورسیکلت'),
-        (VEHICLE_TYPE_TRUCK, 'وانت/کامیون'),
     ]
 
     customer = models.ForeignKey(
@@ -392,25 +387,68 @@ class ParkingSession(models.Model):
                 fields=['vehicle'],
                 condition=Q(status='open'),
                 name='unique_open_session_per_vehicle'
-            )
+            ),
+            models.UniqueConstraint(
+                fields=['spot'],
+                condition=Q(status='open'),
+                name='unique_open_session_per_spot'
+            ),
         ]
 
     def clean(self):
         super().clean()
 
-        if self.vehicle and self.spot:
-            vehicle_customer = self.vehicle.customer
-            spot_customer = self.spot.parking_lot.customer
-
-            if vehicle_customer != spot_customer:
+        if self.vehicle_id and self.spot_id:
+            if self.vehicle.customer != self.spot.parking_lot.customer:
                 raise ValidationError(
-                    "وسیله نقلیه و جایگاه انتخاب‌شده باید مربوط به یک مشتری باشند."
+                    'وسیله نقلیه و جایگاه پارک باید مربوط به یک مشتری باشند.'
                 )
+
+            if self.vehicle.type != self.spot.spot_type:
+                raise ValidationError(
+                    'نوع جایگاه با نوع وسیله نقلیه هماهنگ نیست.'
+                )
+
+            if self.status == self.SESSION_STATUS_OPEN and not self.spot.is_active:
+                raise ValidationError(
+                    'نمی‌توان برای جایگاه غیرفعال سشن باز ایجاد کرد.'
+                )
+
+            if self.status == self.SESSION_STATUS_OPEN:
+                other_open_session_for_spot = ParkingSession.objects.filter(
+                    spot=self.spot,
+                    status=self.SESSION_STATUS_OPEN,
+                ).exclude(pk=self.pk).exists()
+
+                if other_open_session_for_spot:
+                    raise ValidationError(
+                        'برای این جایگاه یک سشن باز وجود دارد.'
+                    )
+
+                other_open_session_for_vehicle = ParkingSession.objects.filter(
+                    vehicle=self.vehicle,
+                    status=self.SESSION_STATUS_OPEN,
+                ).exclude(pk=self.pk).exists()
+
+                if other_open_session_for_vehicle:
+                    raise ValidationError(
+                        f"برای پلاک {self.vehicle.plate_number} یک سشن باز دیگر وجود دارد."
+                    )
+
+        if self.entry_time and self.exit_time and self.exit_time < self.entry_time:
+            raise ValidationError(
+                'زمان خروج نمی‌تواند قبل از زمان ورود باشد.'
+            )
 
     def calculate_duration(self):
         if self.entry_time and self.exit_time:
             duration = self.exit_time - self.entry_time
-            minutes = math.ceil(duration.total_seconds() / 60)
+            total_seconds = duration.total_seconds()
+
+            if total_seconds < 0:
+                return None
+
+            minutes = math.ceil(total_seconds / 60)
             return max(minutes, 1)
 
         return None
@@ -453,65 +491,72 @@ class ParkingSession(models.Model):
         return total_fee
 
     def save(self, *args, **kwargs):
-        self.full_clean()
-
         is_new = self.pk is None
-        old_exit = None
+
+        old_exit_time = None
         old_spot = None
 
         if not is_new:
-            old_obj = ParkingSession.objects.filter(pk=self.pk).first()
-            if old_obj:
-                old_exit = old_obj.exit_time
-                old_spot = old_obj.spot
+            old_session = ParkingSession.objects.filter(pk=self.pk).first()
 
-        if is_new and self.spot.is_occupied:
-            raise ValidationError(f"جایگاه {self.spot.code} در حال حاضر اشغال است!")
+            if old_session:
+                old_exit_time = old_session.exit_time
+                old_spot = old_session.spot
 
-        if self.status == self.SESSION_STATUS_OPEN:
-            open_session_exists = ParkingSession.objects.filter(
-                vehicle=self.vehicle,
-                status=self.SESSION_STATUS_OPEN,
-            ).exclude(pk=self.pk).exists()
+        is_being_closed_now = (
+            self.exit_time is not None and
+            old_exit_time is None and
+            self.status != self.SESSION_STATUS_CANCELLED
+        )
 
-            if open_session_exists:
-                raise ValidationError(
-                    f"برای خودروی {self.vehicle.plate_number} یک سشن باز دیگر وجود دارد!"
-                )
-
-        if self.exit_time and old_exit is None:
+        if is_being_closed_now:
             self.total_duration_minutes = self.calculate_duration()
             self.calculated_fee = self.calculate_fee()
             self.status = self.SESSION_STATUS_CLOSED
 
+        self.full_clean()
+
         super().save(*args, **kwargs)
 
         if old_spot and old_spot != self.spot:
-            old_spot.is_occupied = False
-            old_spot.save(update_fields=["is_occupied"])
+            old_spot_has_open_session = ParkingSession.objects.filter(
+                spot=old_spot,
+                status=self.SESSION_STATUS_OPEN,
+            ).exists()
 
-        if is_new:
-            self.spot.is_occupied = True
-            self.spot.save(update_fields=["is_occupied"])
+            if not old_spot_has_open_session and old_spot.is_occupied:
+                old_spot.is_occupied = False
+                old_spot.save(update_fields=['is_occupied'])
 
-        if self.exit_time and old_exit is None:
-            self.spot.is_occupied = False
-            self.spot.save(update_fields=["is_occupied"])
+        if self.spot:
+            if self.status == self.SESSION_STATUS_OPEN:
+                if not self.spot.is_occupied:
+                    self.spot.is_occupied = True
+                    self.spot.save(update_fields=['is_occupied'])
+            else:
+                current_spot_has_other_open_session = ParkingSession.objects.filter(
+                    spot=self.spot,
+                    status=self.SESSION_STATUS_OPEN,
+                ).exclude(pk=self.pk).exists()
 
-            if not Payment.objects.filter(session=self).exists():
-                Payment.objects.create(
-                    session=self,
-                    amount=self.calculated_fee,
-                    payment_status=Payment.PAYMENT_STATUS_OPEN,
-                )
+                if not current_spot_has_other_open_session and self.spot.is_occupied:
+                    self.spot.is_occupied = False
+                    self.spot.save(update_fields=['is_occupied'])
+
+        if is_being_closed_now:
+            Payment.objects.get_or_create(
+                session=self,
+                defaults={
+                    'amount': self.calculated_fee,
+                    'payment_status': Payment.PAYMENT_STATUS_OPEN,
+                }
+            )
 
         try_create_receipt(self)
 
     def __str__(self):
         vehicle_plate = self.vehicle.plate_number if self.vehicle else "نامشخص"
-        owner_name = self.vehicle.owner_name if self.vehicle else "نامشخص"
-        return f"پلاک: {vehicle_plate} \n مالک: {owner_name}"
-
+        return f"پلاک: {vehicle_plate}"
 
 class Payment(models.Model):
     PAYMENT_METHOD_POS = 'pos'
@@ -564,8 +609,6 @@ class Payment(models.Model):
         on_delete=models.CASCADE,
         related_name='payments',
         verbose_name='سشن پارک',
-        null=True,
-        blank=True,
     )
 
     class Meta:
@@ -576,22 +619,64 @@ class Payment(models.Model):
     def __str__(self):
         return f"پرداخت #{self.id} - {self.amount} - {self.get_payment_method_display()}"
 
+    def _get_session_for_validation(self):
+        if not self.session_id:
+            return None
+
+        try:
+            return self.session
+        except ParkingSession.DoesNotExist:
+            return None
+
+
+    def clean(self):
+        super().clean()
+
+        session = self._get_session_for_validation()
+
+        if session is None:
+            raise ValidationError({
+                'session': 'پرداخت باید به یک سشن پارک متصل باشد.'
+            })
+
+        if session.status != ParkingSession.SESSION_STATUS_CLOSED:
+            raise ValidationError({
+                'session': 'پرداخت فقط برای سشن بسته‌شده قابل ثبت است.'
+            })
+
+        if session.calculated_fee is None:
+            raise ValidationError({
+                'session': 'هزینه سشن هنوز محاسبه نشده است.'
+            })
+
+        if self.payment_status == self.PAYMENT_STATUS_CLOSED and not self.payment_method:
+            raise ValidationError({
+                'payment_method': 'برای بستن پرداخت، انتخاب روش پرداخت الزامی است.'
+            })
+
     def save(self, *args, **kwargs):
+        session = self._get_session_for_validation()
+
+        if session is not None:
+            self.amount = session.calculated_fee
+
         payment_is_being_closed = (
             self.payment_method and
-            self.payment_status == Payment.PAYMENT_STATUS_OPEN
+            self.payment_status == self.PAYMENT_STATUS_OPEN
         )
 
         if payment_is_being_closed:
-            self.payment_status = Payment.PAYMENT_STATUS_CLOSED
+            self.payment_status = self.PAYMENT_STATUS_CLOSED
             self.payment_time = timezone.now()
 
-        if self.session:
-            self.amount = self.session.calculated_fee
+        if self.payment_status == self.PAYMENT_STATUS_CLOSED and not self.payment_time:
+            self.payment_time = timezone.now()
+
+        self.full_clean()
 
         super().save(*args, **kwargs)
 
-        if self.session:
+        if self.session_id:
             try_create_receipt(self.session)
 
 class Receipt(models.Model):
@@ -825,7 +910,7 @@ class PaymentHistory(models.Model):
     )
 
     amount = models.DecimalField('مقدار', max_digits=10, decimal_places=2, blank=True)
-    payment_time = models.DateTimeField('زمان پرداخت')
+    payment_time = models.DateTimeField('زمان پرداخت',null=True,blank=True,)
 
     payment_method = models.CharField(
         'نحوه پرداخت',
