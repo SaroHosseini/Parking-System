@@ -29,6 +29,10 @@ CSRF_TRUSTED_ORIGINS = config(
     cast=Csv()
 )
 
+ADMIN_URL = config('ADMIN_URL', default='parkino-control/')
+
+if not ADMIN_URL.endswith('/'):
+    ADMIN_URL += '/'
 
 # =========================
 # Application definition
