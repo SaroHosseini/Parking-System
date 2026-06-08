@@ -1,3 +1,6 @@
+import random
+import re
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db import transaction
 from django.contrib.auth.models import User
@@ -117,6 +120,12 @@ PERSIAN_TO_LATIN = {
     'و': 'V', 'ه': 'H', 'ی': 'Y',
 }
 
+PERSIAN_DIGITS = str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹')
+
+
+def to_persian_digits(value):
+    return str(value).translate(PERSIAN_DIGITS)
+
 
 def make_parking_lot_code_prefix(name):
     letters = []
@@ -135,6 +144,23 @@ def make_parking_lot_code_prefix(name):
 
     return ''.join(letters[:2])
 
+
+def natural_sort_key(value):
+    parts = re.split(r'(\d+)', str(value or ''))
+    return [
+        int(part) if part.isdigit() else part.casefold()
+        for part in parts
+    ]
+
+
+def parking_spot_sort_key(spot):
+    return (
+        natural_sort_key(spot.parking_lot.name),
+        natural_sort_key(spot.level),
+        natural_sort_key(spot.code),
+    )
+
+
 def home(request):
     if request.user.is_authenticated and get_user_customer(request.user):
         return redirect('parking:dashboard')
@@ -144,7 +170,19 @@ def home(request):
     if request_id and Customer.objects.filter(id=request_id).exists():
         return redirect('parking:request_status')
 
-    return render(request, 'parking/home.html')
+    today_entries = random.randint(200, 1000)
+    successful_payments = today_entries - random.randint(20, 50)
+
+    hero_stats = {
+        'today_entries': to_persian_digits(today_entries),
+        'free_spots': to_persian_digits(random.randint(50, 250)),
+        'successful_payments': to_persian_digits(successful_payments),
+        'average_duration': to_persian_digits(random.randint(50, 150)),
+    }
+
+    return render(request, 'parking/home.html', {
+        'hero_stats': hero_stats,
+    })
 
 def dashboard(request):
     if not request.user.is_authenticated:
@@ -485,7 +523,7 @@ def parking_lot_update(request, pk):
 
     else:
         form = ParkingLotForm(instance=parking_lot, customer=customer)
-                    
+
     return render(request, 'parking/parking_lot_form.html', {
         'form': form,
         'title': 'ویرایش پارکینگ',
@@ -583,11 +621,7 @@ def parking_spot_list(request):
             'remaining_motorcycle_spots': remaining_motorcycle_spots,
         })
 
-    parking_spots = parking_spots.order_by(
-        'parking_lot__name',
-        'level',
-        'code'
-    )
+    parking_spots = sorted(parking_spots, key=parking_spot_sort_key)
 
     page_obj, query_string = paginate_queryset(request, parking_spots, per_page=10)
 
@@ -1713,6 +1747,20 @@ def available_spots_api(request):
         return JsonResponse({'spots': []})
 
     vehicle_type = request.GET.get('vehicle_type')
+    query = (request.GET.get('q') or '').strip()
+    selected_id = request.GET.get('selected_id')
+
+    try:
+        page = max(int(request.GET.get('page', 1)), 1)
+    except (TypeError, ValueError):
+        page = 1
+
+    try:
+        page_size = int(request.GET.get('page_size', 10))
+    except (TypeError, ValueError):
+        page_size = 10
+
+    page_size = min(max(page_size, 1), 10)
 
     spots = ParkingSpot.objects.filter(
         parking_lot__customer=customer,
@@ -1723,21 +1771,68 @@ def available_spots_api(request):
     if vehicle_type:
         spots = spots.filter(spot_type=vehicle_type)
 
-    spots = spots.order_by(
-        'parking_lot__name',
-        'level',
-        'code'
-    )
+    if query:
+        spots = spots.filter(
+            Q(parking_lot__name__icontains=query) |
+            Q(code__icontains=query) |
+            Q(level__icontains=query)
+        )
+
+    spots = sorted(spots, key=parking_spot_sort_key)
+
+    total = len(spots)
+    start = (page - 1) * page_size
+    end = start + page_size
+    page_spots = spots[start:end]
+
+    def serialize_spot(spot):
+        return {
+            'id': spot.id,
+            'text': f'{spot.parking_lot.name} - {spot.code} - {spot.get_spot_type_display()}',
+            'code': spot.code,
+            'parking_lot': spot.parking_lot.name,
+            'level': spot.level,
+            'type': spot.get_spot_type_display(),
+        }
 
     data = []
 
-    for spot in spots:
-        data.append({
-            'id': spot.id,
-            'text': f'{spot.parking_lot.name} - {spot.code} - {spot.get_spot_type_display()}'
-        })
+    for spot in page_spots:
+        data.append(serialize_spot(spot))
 
-    return JsonResponse({'spots': data})
+    selected_spot = None
+
+    if selected_id:
+        try:
+            selected_spot_id = int(selected_id)
+        except (TypeError, ValueError):
+            selected_spot_id = None
+
+        if selected_spot_id and not any(spot['id'] == selected_spot_id for spot in data):
+            selected = (
+                ParkingSpot.objects
+                .filter(
+                    id=selected_spot_id,
+                    parking_lot__customer=customer,
+                    is_occupied=False,
+                    is_active=True,
+                )
+                .select_related('parking_lot')
+                .first()
+            )
+
+            if selected and (not vehicle_type or selected.spot_type == vehicle_type):
+                selected_spot = serialize_spot(selected)
+
+    return JsonResponse({
+        'spots': data,
+        'selected_spot': selected_spot,
+        'page': page,
+        'page_size': page_size,
+        'total': total,
+        'has_next': end < total,
+        'has_previous': page > 1,
+    })
 
 def parking_spot_auto_generate(request, pk):
     if not request.user.is_authenticated:
