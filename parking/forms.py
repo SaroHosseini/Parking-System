@@ -158,6 +158,10 @@ class CustomerRequestForm(forms.ModelForm):
                 'rows': 4,
                 'placeholder': 'تهران، خیابان آزادی، پلاک ۱۲',
             }),
+            'email': forms.EmailInput(attrs={
+            'maxlength': '50',
+            'placeholder': 'example@gmail.com',
+            }),
         }
         error_messages = {
             'name': {
