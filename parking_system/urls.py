@@ -11,6 +11,11 @@ urlpatterns = [
     path('', include('parking.urls')),
 ]
 
+handler400 = 'parking.views.custom_bad_request'
+handler403 = 'parking.views.custom_permission_denied'
+handler404 = 'parking.views.custom_page_not_found'
+handler500 = 'parking.views.custom_server_error'
+
 
 if settings.DEBUG:
     import debug_toolbar

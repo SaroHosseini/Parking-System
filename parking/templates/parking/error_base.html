@@ -1,0 +1,123 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block error_title %}خطا | Parkino{% endblock %}</title>
+    <meta name="robots" content="noindex,follow">
+    <meta name="description" content="{% block error_description %}خطایی در پارکینو رخ داده است.{% endblock %}">
+    <link rel="icon" href="{% static 'parking/img/parkino-logo/favicon.ico' %}">
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #f6f1e8;
+            --surface: #fffaf1;
+            --text: #142326;
+            --muted: #60706f;
+            --primary: #0f8277;
+            --primary-strong: #09675e;
+            --line: #ddd2bd;
+            --shadow: 0 24px 70px rgba(34, 25, 12, 0.12);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                color-scheme: dark;
+                --bg: #121817;
+                --surface: #1d2826;
+                --text: #f3eee4;
+                --muted: #a9b7b2;
+                --primary: #39bdb0;
+                --primary-strong: #62d5ca;
+                --line: #354542;
+                --shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            min-height: 100%;
+        }
+
+        body {
+            margin: 0;
+            background:
+                radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--primary) 13%, transparent), transparent 34%),
+                linear-gradient(180deg, color-mix(in srgb, var(--surface) 70%, var(--bg)), var(--bg));
+            color: var(--text);
+            font-family: Vazirmatn, Tahoma, Arial, sans-serif;
+        }
+
+        .error-page {
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 1rem;
+        }
+
+        .error-card {
+            display: grid;
+            justify-items: center;
+            gap: 0.9rem;
+            width: min(100%, 540px);
+            padding: 2.5rem 1.5rem;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: color-mix(in srgb, var(--surface) 92%, transparent);
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .error-code {
+            color: var(--primary);
+            font-size: clamp(5rem, 17vw, 9.5rem);
+            font-weight: 900;
+            line-height: 0.92;
+        }
+
+        .error-card h1 {
+            margin: 0;
+            font-size: clamp(1.35rem, 3vw, 2.1rem);
+            line-height: 1.7;
+        }
+
+        .error-card a {
+            min-height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 0.25rem;
+            padding: 0.55rem 1rem;
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            background: var(--primary);
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 800;
+            line-height: 1.4;
+            text-decoration: none;
+            transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+        }
+
+        .error-card a:hover {
+            background: var(--primary-strong);
+            border-color: var(--primary-strong);
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <main class="error-page">
+        <section class="error-card" aria-label="{% block error_aria %}خطا{% endblock %}">
+            <strong class="error-code">{% block error_code %}Error{% endblock %}</strong>
+            <h1>{% block error_message %}خطایی رخ داده است!{% endblock %}</h1>
+            <a href="/">بازگشت به صفحه اصلی</a>
+        </section>
+    </main>
+</body>
+</html>

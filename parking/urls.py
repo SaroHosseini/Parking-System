@@ -8,6 +8,8 @@ app_name = 'parking'
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path('robots.txt', views.robots_txt, name='robots_txt'),
+    path('sitemap.xml', views.sitemap_xml, name='sitemap_xml'),
 
     path('request/', views.customer_request_view, name='customer_request'),
     path('request/status/', views.request_status_view, name='request_status'),

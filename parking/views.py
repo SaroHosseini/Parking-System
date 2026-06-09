@@ -2,6 +2,7 @@ import random
 import re
 
 from django.shortcuts import render, redirect, get_object_or_404
+from django.conf import settings
 from django.db import transaction
 from django.contrib.auth.models import User
 from django.db.models import Sum, Avg, Count, Q
@@ -10,7 +11,7 @@ from django.core.paginator import Paginator
 from django.contrib.auth import update_session_auth_hash
 from datetime import timedelta
 from django.urls import reverse
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_POST
 
 from .models import (
@@ -77,6 +78,81 @@ def get_user_customer(user):
         return None
 
     return profile.customer
+
+
+def site_url(path=''):
+    return f"{settings.SITE_URL}{path}"
+
+
+def robots_txt(request):
+    content = '\n'.join([
+        'User-agent: *',
+        'Allow: /',
+        'Disallow: /dashboard/',
+        'Disallow: /sessions/',
+        'Disallow: /payments/',
+        'Disallow: /receipts/',
+        'Disallow: /reports/',
+        'Disallow: /users/',
+        'Disallow: /settings/',
+        f'Sitemap: {site_url("/sitemap.xml")}',
+        '',
+    ])
+    return HttpResponse(content, content_type='text/plain; charset=utf-8')
+
+
+def sitemap_xml(request):
+    today = timezone.localdate().isoformat()
+    urls = [
+        {
+            'loc': site_url(reverse('parking:home')),
+            'priority': '1.0',
+            'changefreq': 'weekly',
+        },
+        {
+            'loc': site_url(reverse('parking:customer_request')),
+            'priority': '0.8',
+            'changefreq': 'monthly',
+        },
+        {
+            'loc': site_url(reverse('parking:login')),
+            'priority': '0.6',
+            'changefreq': 'monthly',
+        },
+    ]
+    urlset = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ]
+
+    for row in urls:
+        urlset.extend([
+            '  <url>',
+            f'    <loc>{row["loc"]}</loc>',
+            f'    <lastmod>{today}</lastmod>',
+            f'    <changefreq>{row["changefreq"]}</changefreq>',
+            f'    <priority>{row["priority"]}</priority>',
+            '  </url>',
+        ])
+
+    urlset.append('</urlset>')
+    return HttpResponse('\n'.join(urlset), content_type='application/xml; charset=utf-8')
+
+
+def custom_page_not_found(request, exception=None, unmatched_path=None):
+    return render(request, 'parking/404.html', status=404)
+
+
+def custom_bad_request(request, exception=None):
+    return render(request, 'parking/400.html', status=400)
+
+
+def custom_permission_denied(request, exception=None):
+    return render(request, 'parking/403.html', status=403)
+
+
+def custom_server_error(request):
+    return render(request, 'parking/500.html', status=500)
 
 
 @require_POST
