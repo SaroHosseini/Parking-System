@@ -148,7 +148,7 @@ class CustomerRequestForm(forms.ModelForm):
             }),
             'owner_name': forms.TextInput(attrs={
                 'maxlength': '50',
-                'placeholder': 'مثلا سارو حسینی',
+                'placeholder': 'مثلا محمد پسندیده',
             }),
             'phone': forms.TextInput(attrs={
                 'maxlength': '11',
@@ -1603,7 +1603,7 @@ class CustomerSettingsForm(forms.ModelForm):
             }),
             'owner_name': forms.TextInput(attrs={
                 'maxlength': '50',
-                'placeholder': 'مثلا سارو حسینی',
+                'placeholder': 'مثلا محمد پسندیده',
             }),
             'phone': forms.TextInput(attrs={
                 'maxlength': '11',
