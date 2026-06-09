@@ -2,6 +2,8 @@
 
 {% block title %}ورود به Parkino{% endblock %}
 
+{% block public_request_cta %}{% endblock %}
+
 {% block content %}
     <section class="auth-layout">
         <div class="auth-visual" role="img" aria-label="پارکینگ شهری"></div>
@@ -11,16 +13,35 @@
             <h1>ورود به سیستم</h1>
             <p>برای مدیریت ورود، خروج، پرداخت و رسید وارد حساب پارکینگ شوید.</p>
 
-            <form method="post">
+            <form class="stacked-form login-form" method="post" novalidate>
                 {% csrf_token %}
-                {{ form.as_p }}
+
+                {% if form.non_field_errors %}
+                    <div class="errorlist login-errors">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                <div class="field-block stable-field">
+                    {{ form.username.label_tag }}
+                    {{ form.username }}
+                    <div class="field-feedback">
+                        {{ form.username.errors }}
+                    </div>
+                </div>
+
+                <div class="field-block stable-field">
+                    {{ form.password.label_tag }}
+                    {{ form.password }}
+                    <div class="field-feedback">
+                        {{ form.password.errors }}
+                    </div>
+                </div>
+
                 <button type="submit">ورود</button>
             </form>
 
             <hr>
             <div class="action-row">
                 <a class="button secondary" href="{% url 'parking:home' %}">بازگشت به صفحه اصلی</a>
-                <a class="button secondary" href="{% url 'parking:customer_request' %}">درخواست استفاده رایگان (نسخه آزمایشی)</a>
             </div>
         </div>
     </section>

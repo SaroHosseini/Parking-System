@@ -4,8 +4,9 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>چاپ رسید</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>چاپ رسید {{ receipt.receipt_number }}</title>
+    <link rel="icon" href="{% static 'parking/img/parkino-logo/favicon.ico' %}">
     <style>
         @font-face {
             font-family: "Vazirmatn";
@@ -15,126 +16,375 @@
             font-display: swap;
         }
 
+        :root {
+            --bg: #f6f1e8;
+            --surface: #fffaf1;
+            --surface-strong: #f1eadb;
+            --text: #111c1d;
+            --muted: #657070;
+            --line: #dfd2bd;
+            --primary: #0f7f73;
+            --shadow: 0 26px 70px rgba(23, 21, 17, 0.13);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
+            margin: 0;
             font-family: "Vazirmatn", Tahoma, Arial, sans-serif;
             direction: rtl;
-            text-align: right;
-            padding: 20px;
+            color: var(--text);
+            background:
+                radial-gradient(circle at 12% 10%, rgba(15, 127, 115, 0.13), transparent 28rem),
+                linear-gradient(135deg, #fbf7ef 0%, var(--bg) 100%);
+            overflow-x: hidden;
         }
 
-        .receipt-box {
-            width: 320px;
-            border: 1px solid #000;
-            padding: 15px;
+        .print-page {
+            width: min(100% - 2rem, 980px);
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 0.65rem;
             margin: 0 auto;
+            padding: 0.6rem 0 0.75rem;
         }
 
-        h1, h2 {
+        .print-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.65rem 0.85rem;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: rgba(255, 250, 241, 0.88);
+            box-shadow: var(--shadow);
+        }
+
+        .print-toolbar h1,
+        .print-toolbar p {
+            margin: 0;
+        }
+
+        .print-toolbar p {
+            margin-top: 0.25rem;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .print-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        a,
+        button {
+            min-height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.45rem 0.8rem;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            color: var(--text);
+            background: var(--surface);
+            font: inherit;
+            font-weight: 900;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        button {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .receipt-shell {
+            display: grid;
+            grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+            gap: 1rem;
+            align-items: start;
+        }
+
+        .receipt-card {
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: var(--surface);
+            box-shadow: var(--shadow);
+        }
+
+        .receipt-head {
+            display: grid;
+            justify-items: center;
+            gap: 0.45rem;
+            padding: 0.85rem 0.9rem 0.65rem;
+            background: linear-gradient(135deg, rgba(15, 127, 115, 0.12), rgba(241, 234, 219, 0.4));
+            border-bottom: 1px solid var(--line);
             text-align: center;
-            margin: 8px 0;
         }
 
-        .row {
-            margin: 8px 0;
-            border-bottom: 1px dashed #999;
-            padding-bottom: 6px;
+        .receipt-logo {
+            width: 118px;
+            height: auto;
         }
 
-        .print-button {
+        .receipt-head h2,
+        .receipt-head p {
+            margin: 0;
+        }
+
+        .receipt-head p {
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .receipt-body {
+            display: grid;
+            gap: 0.22rem;
+            padding: 0.62rem 0.85rem 0.75rem;
+        }
+
+        .receipt-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding: 0.38rem 0;
+            border-bottom: 1px dashed var(--line);
+        }
+
+        .receipt-row:last-child {
+            border-bottom: 0;
+        }
+
+        .receipt-row span {
+            color: var(--muted);
+            font-size: 0.86rem;
+            font-weight: 800;
+        }
+
+        .receipt-row strong {
+            text-align: left;
+            overflow-wrap: anywhere;
+        }
+
+        .receipt-total {
+            margin-top: 0.35rem;
+            padding: 0.8rem;
+            border-radius: 12px;
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .receipt-total span,
+        .receipt-total strong {
+            color: #fff;
+        }
+
+        .receipt-foot {
+            padding: 0.62rem 0.85rem 0.75rem;
+            border-top: 1px solid var(--line);
+            color: var(--muted);
             text-align: center;
-            margin-top: 20px;
+            font-weight: 900;
+        }
+
+        .receipt-side {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .info-panel {
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: rgba(255, 250, 241, 0.86);
+            box-shadow: var(--shadow);
+            padding: 0.75rem;
+        }
+
+        .info-panel h2,
+        .info-panel p {
+            margin: 0;
+        }
+
+        .info-panel p {
+            margin-top: 0.35rem;
+            color: var(--muted);
+            line-height: 1.9;
+        }
+
+        @media (max-width: 760px) {
+            .print-toolbar,
+            .receipt-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .print-toolbar {
+                align-items: flex-start;
+                flex-direction: column;
+            }
         }
 
         @media print {
-            .print-button {
-                display: none;
+            body {
+                background: #fff;
             }
 
-            body {
+            .print-page {
+                width: 80mm;
+                min-height: auto;
+                display: block;
                 padding: 0;
             }
 
-            .receipt-box {
-                border: none;
-                width: 100%;
+            .print-toolbar,
+            .receipt-side {
+                display: none;
+            }
+
+            .receipt-shell {
+                display: block;
+            }
+
+            .receipt-card {
+                border: 0;
+                border-radius: 0;
+                box-shadow: none;
+                background: #fff;
+            }
+
+            .receipt-head {
+                background: #fff;
+            }
+
+            .receipt-logo {
+                width: 92px;
+            }
+
+            .receipt-row,
+            .receipt-row strong {
+                font-size: 11px;
+            }
+
+            .receipt-total {
+                color: #000;
+                background: #fff;
+                border: 1px solid #000;
+            }
+
+            .receipt-total span,
+            .receipt-total strong {
+                color: #000;
             }
         }
     </style>
 </head>
 <body>
-    <div class="receipt-box">
-        <h1>Parkino</h1>
-        <h2>رسید پارکینگ</h2>
+    <main class="print-page">
+        <header class="print-toolbar">
+            <div>
+                <h1>چاپ رسید</h1>
+                <p>رسید شماره {{ receipt.receipt_number }} برای {{ customer.name }}</p>
+            </div>
+            <div class="print-actions">
+                <button type="button" onclick="window.print()">چاپ رسید</button>
+                <a href="{% url 'parking:receipt_detail' receipt.id %}">جزئیات رسید</a>
+                <a href="{% url 'parking:receipt_list' %}">لیست رسیدها</a>
+                <a href="{% url 'parking:dashboard' %}">داشبورد</a>
+            </div>
+        </header>
 
-        <div class="row">
-            شماره رسید: {{ receipt.receipt_number }}
-        </div>
+        <section class="receipt-shell">
+            <article class="receipt-card">
+                <div class="receipt-head">
+                    <img class="receipt-logo" src="{% static 'parking/img/parkino-logo/parkino-full-logo.png' %}" alt="Parkino">
+                    <h2>رسید پارکینگ</h2>
+                    <p>{{ receipt.receipt_number }}</p>
+                </div>
 
-        <div class="row">
-            پارکینگ: {{ customer.name }}
-        </div>
+                <div class="receipt-body">
+                    <div class="receipt-row">
+                        <span>پارکینگ</span>
+                        <strong>{{ customer.name }}</strong>
+                    </div>
+                    <div class="receipt-row">
+                        <span>پلاک</span>
+                        <strong>{{ receipt.session.vehicle.plate_number }}</strong>
+                    </div>
+                    <div class="receipt-row">
+                        <span>نوع وسیله</span>
+                        <strong>{{ receipt.session.vehicle.get_type_display }}</strong>
+                    </div>
+                    <div class="receipt-row">
+                        <span>جایگاه</span>
+                        <strong>{{ receipt.session.spot.code }}</strong>
+                    </div>
+                    <div class="receipt-row">
+                        <span>ورود</span>
+                        <strong>{{ receipt.session.entry_time|jalali_gregorian }}</strong>
+                    </div>
+                    <div class="receipt-row">
+                        <span>خروج</span>
+                        <strong>{{ receipt.session.exit_time|jalali_gregorian }}</strong>
+                    </div>
+                    <div class="receipt-row">
+                        <span>مدت توقف</span>
+                        <strong>{{ receipt.session.total_duration_minutes }} دقیقه</strong>
+                    </div>
+                    <div class="receipt-row">
+                        <span>روش پرداخت</span>
+                        <strong>
+                            {% if receipt.payment %}
+                                {{ receipt.payment.get_payment_method_display }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </strong>
+                    </div>
+                    <div class="receipt-row">
+                        <span>زمان صدور</span>
+                        <strong>{{ receipt.issue_time|jalali_gregorian }}</strong>
+                    </div>
+                    <div class="receipt-row receipt-total">
+                        <span>مبلغ نهایی</span>
+                        <strong>{{ receipt.calculated_fee }}</strong>
+                    </div>
+                </div>
 
-        <div class="row">
-            پلاک: {{ receipt.session.vehicle.plate_number }}
-        </div>
+                <footer class="receipt-foot">با تشکر از انتخاب پارکینو</footer>
+            </article>
 
-        <div class="row">
-            نوع وسیله: {{ receipt.session.vehicle.get_type_display }}
-        </div>
+            <aside class="receipt-side">
+                <section class="info-panel">
+                    <h2>پیش‌نمایش چاپ</h2>
+                    <p>رسید برای چاپ حرارتی و چاپ معمولی آماده شده است. در حالت چاپ، دکمه‌ها حذف می‌شوند و فقط خود رسید چاپ می‌شود.</p>
+                </section>
+                <section class="info-panel">
+                    <h2>اطلاعات پرداخت</h2>
+                    <p>
+                        مبلغ: {{ receipt.calculated_fee }}<br>
+                        وضعیت: {% if receipt.payment %}{{ receipt.payment.get_payment_status_display }}{% else %}-{% endif %}<br>
+                        روش: {% if receipt.payment %}{{ receipt.payment.get_payment_method_display }}{% else %}-{% endif %}
+                    </p>
+                </section>
+            </aside>
+        </section>
+    </main>
 
-        <div class="row">
-            جایگاه: {{ receipt.session.spot.code }}
-        </div>
-
-        <div class="row">
-            زمان ورود: {{ receipt.session.entry_time|jalali_gregorian }}
-        </div>
-
-        <div class="row">
-            زمان خروج: {{ receipt.session.exit_time|jalali_gregorian }}
-        </div>
-
-        <div class="row">
-            مدت توقف: {{ receipt.session.total_duration_minutes }} دقیقه
-        </div>
-
-        <div class="row">
-            مبلغ: {{ receipt.calculated_fee }}
-        </div>
-
-        <div class="row">
-            روش پرداخت:
-            {% if receipt.payment %}
-                {{ receipt.payment.get_payment_method_display }}
-            {% else %}
-                -
-            {% endif %}
-        </div>
-
-        <div class="row">
-            زمان صدور: {{ receipt.issue_time|jalali_gregorian }}
-        </div>
-
-        <h2>با تشکر</h2>
-    </div>
-
-    <div class="print-button">
-        <button onclick="window.print()">چاپ رسید</button>
-        <br><br>
-        <a href="{% url 'parking:receipt_detail' receipt.id %}">بازگشت به جزئیات رسید</a>
-        <br>
-        <a href="{% url 'parking:receipt_list' %}">بازگشت به لیست رسیدها</a>
-        <br>
-        <a href="{% url 'parking:dashboard' %}">بازگشت به داشبورد</a>
-    </div>
-{% if auto_print %}
-    <script>
-        window.addEventListener('load', function () {
-            setTimeout(function () {
-                window.print();
-            }, 500);
-        });
-    </script>
-{% endif %}
+    {% if auto_print %}
+        <script>
+            window.addEventListener('load', function () {
+                setTimeout(function () {
+                    window.print();
+                }, 500);
+            });
+        </script>
+    {% endif %}
 </body>
 </html>

@@ -6,10 +6,11 @@ from django.db import models
 from django.db.models import Q
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from django.core.validators import RegexValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 
 
 PERSIAN_PLATE_LETTERS = "ابپتثجچحخدذرزسشصضطظعغفقکگلمنوهی"
+PERSIAN_NAME_LETTERS = "آابپتثجچحخدذرزژسشصضطظعغفقکكگلمنوهیيىۀةئؤء"
 
 
 car_plate_validator = RegexValidator(
@@ -27,6 +28,12 @@ motorcycle_plate_validator = RegexValidator(
 )
 
 
+persian_name_validator = RegexValidator(
+    regex=r'^[' + PERSIAN_NAME_LETTERS + r'\s‌]+$',
+    message="این فیلد فقط می‌تواند شامل حروف فارسی باشد.",
+)
+
+
 class Customer(models.Model):
     STATUS_PENDING = 'pending'
     STATUS_APPROVED = 'approved'
@@ -38,8 +45,16 @@ class Customer(models.Model):
         (STATUS_REJECTED, 'رد شده'),
     ]
 
-    name = models.CharField("نام پارکینگ / مشتری", max_length=100)
-    owner_name = models.CharField("نام مالک", max_length=100)
+    name = models.CharField(
+        "نام پارکینگ / مشتری",
+        max_length=50,
+        validators=[persian_name_validator],
+    )
+    owner_name = models.CharField(
+        "نام مالک",
+        max_length=50,
+        validators=[persian_name_validator],
+    )
     phone = models.CharField("شماره تماس", max_length=20)
     email = models.EmailField("ایمیل", blank=True)
     address = models.TextField("آدرس", blank=True)
@@ -111,6 +126,15 @@ class CustomerUser(models.Model):
         choices=ROLE_CHOICES,
         default=ROLE_OPERATOR,
     )
+
+    parking_lot = models.ForeignKey(
+        'ParkingLot',
+        on_delete=models.SET_NULL,
+        related_name='assigned_users',
+        verbose_name='پارکینگ مجاز',
+        null=True,
+        blank=True,
+    )
     
     is_active = models.BooleanField("فعال است؟", default=True)
 
@@ -118,6 +142,25 @@ class CustomerUser(models.Model):
         verbose_name = "کاربر مشتری"
         verbose_name_plural = "کاربران مشتریان"
         ordering = ['customer', 'user__username']
+
+    def clean(self):
+        super().clean()
+
+        if self.role == self.ROLE_OPERATOR and not self.parking_lot_id:
+            raise ValidationError({
+                'parking_lot': 'برای اپراتور انتخاب پارکینگ الزامی است.'
+            })
+
+        if self.parking_lot_id and self.customer_id and self.parking_lot.customer_id != self.customer_id:
+            raise ValidationError({
+                'parking_lot': 'پارکینگ انتخاب‌شده مربوط به این مشتری نیست.'
+            })
+
+    def save(self, *args, **kwargs):
+        if self.role == self.ROLE_OWNER:
+            self.parking_lot = None
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.user.username} - {self.customer.name} - {self.get_role_display()}"
@@ -194,15 +237,22 @@ class ParkingLot(models.Model):
         verbose_name='مشتری',
     )
 
-    name = models.CharField("نام پارکینگ", max_length=100)
+    name = models.CharField("نام پارکینگ", max_length=20)
 
     car_capacity = models.PositiveIntegerField(
-    "ظرفیت جایگاه خودرو",
-    default=0
+        "ظرفیت جایگاه خودرو",
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(5000)],
     )
     motorcycle_capacity = models.PositiveIntegerField(
         "ظرفیت جایگاه موتور",
-        default=0
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(1000)],
+    )
+    floor_count = models.PositiveIntegerField(
+        "تعداد طبقات",
+        default=1,
+        validators=[MinValueValidator(1), MaxValueValidator(20)],
     )
     total_capacity = models.PositiveIntegerField("ظرفیت کل")
 
@@ -830,6 +880,54 @@ def try_create_receipt(session):
             receipt.calculated_fee = Decimal("0.00")
 
     receipt.save()
+
+
+class BugReport(models.Model):
+    STATUS_REVIEWING = 'reviewing'
+    STATUS_RESOLVED = 'resolved'
+    STATUS_REJECTED = 'rejected'
+
+    STATUS_CHOICES = [
+        (STATUS_REVIEWING, 'در حال بررسی'),
+        (STATUS_RESOLVED, 'حل شده'),
+        (STATUS_REJECTED, 'رد شده'),
+    ]
+
+    customer = models.ForeignKey(
+        Customer,
+        on_delete=models.CASCADE,
+        related_name='bug_reports',
+        verbose_name='مشتری',
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        related_name='bug_reports',
+        verbose_name='کاربر',
+        null=True,
+        blank=True,
+    )
+    username = models.CharField('نام کاربری', max_length=150)
+    role = models.CharField('نقش', max_length=50, blank=True)
+    phone = models.CharField('شماره تماس', max_length=20, blank=True)
+    subject = models.CharField('موضوع', max_length=120)
+    description = models.TextField('توضیحات')
+    status = models.CharField(
+        'وضعیت',
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_REVIEWING,
+    )
+    created_at = models.DateTimeField('زمان ثبت', auto_now_add=True)
+    updated_at = models.DateTimeField('آخرین بروزرسانی', auto_now=True)
+
+    class Meta:
+        verbose_name = 'گزارش مشکل'
+        verbose_name_plural = 'باگ‌ها'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.subject} - {self.username}'
 
 
 # History Models

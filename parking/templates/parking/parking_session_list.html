@@ -4,33 +4,86 @@
 {% block title %}مدیریت سشن‌های پارک{% endblock %}
 
 {% block content %}
-    <section class="page-header">
+    <section class="page-header page-header--compact session-page-header">
         <div>
             <p class="eyebrow">ورود و خروج</p>
             <h1>مدیریت سشن‌های پارک</h1>
-            <p>{{ customer.name }}</p>
         </div>
         <a class="button" href="{% url 'parking:parking_session_create' %}">ثبت ورود وسیله نقلیه</a>
     </section>
 
-    <section class="panel filter-panel">
+    <section class="panel filter-panel compact-filter-panel session-filter-panel">
         <div class="panel-header">
             <h2>فیلترها</h2>
-            <a class="button secondary" href="{% url 'parking:parking_session_list' %}">پاک کردن فیلترها</a>
         </div>
-        <form method="get">
-            {{ filter_form.as_p }}
-            <button type="submit">اعمال فیلتر</button>
+        <form class="compact-filter-form session-filter-form" method="get" novalidate>
+            <div class="field-block">
+                {{ filter_form.plate_number.label_tag }}
+                {{ filter_form.plate_number }}
+                {{ filter_form.plate_number.errors }}
+            </div>
+            <div class="field-block">
+                {{ filter_form.vehicle_type.label_tag }}
+                {{ filter_form.vehicle_type }}
+                {{ filter_form.vehicle_type.errors }}
+            </div>
+            <div class="field-block">
+                {{ filter_form.parking_lot.label_tag }}
+                {{ filter_form.parking_lot }}
+                {{ filter_form.parking_lot.errors }}
+            </div>
+            <div class="field-block">
+                {{ filter_form.status.label_tag }}
+                {{ filter_form.status }}
+                {{ filter_form.status.errors }}
+            </div>
+            <div class="field-block">
+                {{ filter_form.entry_from.label_tag }}
+                {{ filter_form.entry_from }}
+                {{ filter_form.entry_from.errors }}
+            </div>
+            <div class="field-block">
+                {{ filter_form.entry_to.label_tag }}
+                {{ filter_form.entry_to }}
+                {{ filter_form.entry_to.errors }}
+            </div>
+            <div class="field-block">
+                {{ filter_form.exit_from.label_tag }}
+                {{ filter_form.exit_from }}
+                {{ filter_form.exit_from.errors }}
+            </div>
+            <div class="field-block">
+                {{ filter_form.exit_to.label_tag }}
+                {{ filter_form.exit_to }}
+                {{ filter_form.exit_to.errors }}
+            </div>
+            <div class="filter-actions">
+                <button type="submit">اعمال فیلتر</button>
+                <a class="button secondary" href="{% url 'parking:parking_session_list' %}">پاک کردن فیلترها</a>
+            </div>
         </form>
     </section>
 
-    <section class="panel" id="records-section">
+    <section class="panel compact-list-panel session-list-panel" id="records-section">
         <div class="panel-header">
-            <h2>لیست سشن‌ها</h2>
-            <span class="status-pill">عملیاتی</span>
+            <div>
+                <h2>لیست سشن‌ها</h2>
+                <p class="table-result-summary">
+                    {% if page_obj.paginator.count %}
+                        نمایش {{ page_obj.start_index }} تا {{ page_obj.end_index }} از {{ page_obj.paginator.count }} سشن
+                    {% else %}
+                        هیچ سشنی برای نمایش وجود ندارد
+                    {% endif %}
+                </p>
+            </div>
+            {% if page_obj.has_other_pages %}
+                {% include 'parking/pagination.html' %}
+            {% else %}
+                <span class="status-pill">عملیاتی</span>
+            {% endif %}
         </div>
-        <div class="table-scroll">
-            <table>
+        <div class="table-scroll session-table-scroll">
+            <table class="compact-table sessions-table">
                 <thead>
                     <tr>
                         <th>پلاک</th>
@@ -81,6 +134,5 @@
                 </tbody>
             </table>
         </div>
-        {% include 'parking/pagination.html' %}
     </section>
 {% endblock %}

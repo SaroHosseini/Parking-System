@@ -3,21 +3,62 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-    <h1>{{ title }}</h1>
+    <section class="page-header page-header--compact">
+        <div>
+            <p class="eyebrow">کنترل دسترسی</p>
+            <h1>{{ title }}</h1>
+            {% if customer_user %}
+                <p>نام کاربری: {{ customer_user.user.username }}</p>
+            {% else %}
+                <p>کاربر جدید را بسازید و در صورت اپراتور بودن، پارکینگ مجاز او را مشخص کنید.</p>
+            {% endif %}
+        </div>
+        <a class="button secondary" href="{% url 'parking:customer_user_list' %}">بازگشت به کاربران</a>
+    </section>
 
-    {% if customer_user %}
-        <p>نام کاربری: {{ customer_user.user.username }}</p>
-    {% endif %}
+    <section class="panel form-panel user-form-panel">
+        <form class="stacked-form user-form" method="post" novalidate>
+            {% csrf_token %}
 
-    <form method="post">
-        {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="errorlist">{{ form.non_field_errors }}</div>
+            {% endif %}
 
-        {{ form.as_p }}
+            <div class="form-grid form-grid--two user-form-grid">
+                {% for field in form %}
+                    {% if field.name == 'is_active' %}
+                        <div class="field-block stable-field checkbox-block user-active-field">
+                            <span class="field-label-spacer">وضعیت</span>
+                            <label for="{{ field.id_for_label }}">
+                                {{ field }}
+                                {{ field.label }}
+                            </label>
+                            <div class="field-feedback">
+                                {{ field.errors }}
+                                {% if not field.errors and field.help_text %}
+                                    <span class="helptext">{{ field.help_text }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="field-block stable-field">
+                            {{ field.label_tag }}
+                            {{ field }}
+                            <div class="field-feedback">
+                                {{ field.errors }}
+                                {% if not field.errors and field.help_text %}
+                                    <span class="helptext">{{ field.help_text }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
 
-        <button type="submit">ذخیره</button>
-    </form>
-
-    <hr>
-
-    <a href="{% url 'parking:customer_user_list' %}">بازگشت به لیست کاربران</a>
+            <div class="action-row">
+                <button type="submit">ذخیره</button>
+                <a class="button secondary" href="{% url 'parking:customer_user_list' %}">انصراف</a>
+            </div>
+        </form>
+    </section>
 {% endblock %}

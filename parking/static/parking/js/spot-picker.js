@@ -60,7 +60,7 @@
                 code.textContent = spot.code;
 
                 const meta = document.createElement('span');
-                meta.textContent = `${spot.parking_lot} · طبقه ${spot.level} · ${spot.type}`;
+                meta.textContent = `${spot.parking_lot} · ${spot.level} · ${spot.type}`;
 
                 button.append(code, meta);
                 button.addEventListener('click', function () {

@@ -22,6 +22,7 @@ urlpatterns = [
     ), name='logout'),
 
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('bug-reports/create/', views.bug_report_create, name='bug_report_create'),
 
     path('parking-lots/', views.parking_lot_list, name='parking_lot_list'),
     path('parking-lots/add/', views.parking_lot_create, name='parking_lot_create'),
@@ -32,6 +33,7 @@ urlpatterns = [
     path('tariffs/', views.tariff_list, name='tariff_list'),
     path('tariffs/add/', views.tariff_create, name='tariff_create'),
     path('tariffs/<int:pk>/edit/', views.tariff_update, name='tariff_update'),
+    path('tariffs/<int:pk>/delete/', views.tariff_delete, name='tariff_delete'),
     path('sessions/', views.parking_session_list, name='parking_session_list'),
     path('sessions/add/', views.parking_session_create, name='parking_session_create'),
     path('sessions/<int:pk>/close/', views.parking_session_close, name='parking_session_close'),

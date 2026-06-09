@@ -10,7 +10,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="{% static 'parking/img/parkino-logo/favicon-16x16.png' %}">
     <link rel="apple-touch-icon" sizes="180x180" href="{% static 'parking/img/parkino-logo/apple-touch-icon.png' %}">
     <link rel="manifest" href="{% static 'parking/img/parkino-logo/site.webmanifest' %}">
-    <link rel="stylesheet" href="{% static 'parking/css/app.css' %}">
+    <link rel="stylesheet" href="{% static 'parking/css/app.css' %}?v=20260609-6">
     <script src="{% static 'parking/js/theme.js' %}" defer></script>
 </head>
 <body class="public-shell">
@@ -25,7 +25,9 @@
         <nav class="public-nav__links" aria-label="ناوبری اصلی">
             <a class="nav-anchor" href="{% url 'parking:home' %}#features">امکانات</a>
             <a class="nav-anchor" href="{% url 'parking:home' %}#contact">تماس با ما</a>
-            <a class="button secondary" href="{% url 'parking:customer_request' %}">درخواست استفاده رایگان (نسخه آزمایشی)</a>
+            {% block public_request_cta %}
+                <a class="button secondary" href="{% url 'parking:customer_request' %}">درخواست استفاده رایگان (نسخه آزمایشی)</a>
+            {% endblock %}
             <a class="button" href="{% url 'parking:login' %}">ورود به پنل</a>
             <button class="theme-toggle" type="button" data-theme-toggle>
                 <span class="theme-toggle__icon" aria-hidden="true"></span>

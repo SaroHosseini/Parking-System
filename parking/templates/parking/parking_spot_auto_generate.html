@@ -3,62 +3,110 @@
 {% block title %}ساخت خودکار جایگاه‌ها{% endblock %}
 
 {% block content %}
-    <h1>ساخت خودکار جایگاه‌ها</h1>
+    <section class="page-header">
+        <div>
+            <p class="eyebrow">نقشه ظرفیت</p>
+            <h1>ساخت خودکار جایگاه‌ها</h1>
+            <p>پارکینگ: {{ parking_lot.name }}</p>
+        </div>
+        <a class="button secondary" href="{% url 'parking:parking_spot_list' %}">بازگشت به جایگاه‌ها</a>
+    </section>
 
-    <p>پارکینگ: {{ parking_lot.name }}</p>
+    <section class="panel">
+        <div class="panel-header">
+            <h2>اطلاعات ظرفیت</h2>
+            <span class="status-pill">تعداد طبقات: {{ parking_lot.floor_count }}</span>
+        </div>
+        <div class="summary-grid">
+            <div class="summary-card">
+                <span>ظرفیت خودرو</span>
+                <strong>{{ parking_lot.car_capacity }}</strong>
+            </div>
+            <div class="summary-card">
+                <span>ظرفیت موتور</span>
+                <strong>{{ parking_lot.motorcycle_capacity }}</strong>
+            </div>
+            <div class="summary-card">
+                <span>ظرفیت کل</span>
+                <strong>{{ parking_lot.total_capacity }}</strong>
+            </div>
+            <div class="summary-card">
+                <span>جایگاه فعال فعلی</span>
+                <strong>{{ existing_spots_count }}</strong>
+            </div>
+            <div class="summary-card">
+                <span>سشن باز</span>
+                <strong>{{ open_sessions_count }}</strong>
+            </div>
+            <div class="summary-card">
+                <span>سشن بسته‌شده</span>
+                <strong>{{ closed_sessions_count }}</strong>
+            </div>
+        </div>
+    </section>
 
-    <hr>
-
-    <h2>اطلاعات ظرفیت</h2>
-
-    <ul>
-        <li>ظرفیت خودرو: {{ parking_lot.car_capacity }}</li>
-        <li>ظرفیت موتور: {{ parking_lot.motorcycle_capacity }}</li>
-        <li>ظرفیت کل: {{ parking_lot.total_capacity }}</li>
-        <li>تعداد جایگاه‌های فعلی: {{ existing_spots_count }}</li>
-        <li>سشن‌های باز این پارکینگ: {{ open_sessions_count }}</li>
-        <li>سشن‌های بسته‌شده این پارکینگ: {{ closed_sessions_count }}</li>
-    </ul>
-
-    <hr>
-
-    {% if error_message %}
-        <p style="color: red;">
-            {{ error_message }}
-        </p>
-
-        <a href="{% url 'parking:parking_spot_list' %}">بازگشت به مدیریت جایگاه‌ها</a>
-    {% else %}
-        <h2>هشدار مهم</h2>
-
-        <p>
-            با انجام این عملیات، همه جایگاه‌های فعلی این پارکینگ حذف می‌شوند و جایگاه‌های جدید بر اساس ظرفیت خودرو و موتور ساخته می‌شوند.
-        </p>
-
-        <p>
-            کد جایگاه‌ها به این شکل ساخته می‌شود:
-        </p>
-
-        <ul>
-            <li>خودرو: C + کد پارکینگ + شماره، مثل CAZ_1</li>
-            <li>موتور: M + کد پارکینگ + شماره، مثل MAZ_1</li>
-        </ul>
-
-        {% if open_sessions_count > 0 %}
-            <p style="color: red;">
-                برای این پارکینگ سشن باز وجود دارد؛ ابتدا خروج خودروهای فعال را ثبت کنید.
-            </p>
-
-            <a href="{% url 'parking:parking_spot_list' %}">بازگشت به مدیریت جایگاه‌ها</a>
+    <section class="panel">
+        {% if error_message %}
+            <p class="errorlist">{{ error_message }}</p>
+            <a class="button secondary" href="{% url 'parking:parking_spot_list' %}">بازگشت به مدیریت جایگاه‌ها</a>
         {% else %}
-            <form method="post">
-                {% csrf_token %}
-                <button type="submit">بله، جایگاه‌های فعلی غیرفعال و جایگاه‌های جدید ساخته شوند</button>
-            </form>
+            <div class="panel-header">
+                <div>
+                    <h2>تعداد جایگاه هر طبقه</h2>
+                    <p>برای هر طبقه تعداد جایگاه خودرو و موتور را جدا وارد کنید. مجموع هر ستون نباید از ظرفیت همان نوع بیشتر شود.</p>
+                </div>
+            </div>
+
+            <div class="hint-box">
+                <strong>هشدار:</strong>
+                با تایید این عملیات، جایگاه‌های فعال فعلی این پارکینگ غیرفعال می‌شوند و جایگاه‌های جدید با کدهایی مانند
+                <code>CNM_F1_1</code> برای خودرو و <code>MNM_F1_1</code> برای موتور ساخته می‌شوند.
+            </div>
+
+            {% if open_sessions_count > 0 %}
+                <p class="errorlist">برای این پارکینگ سشن باز وجود دارد؛ ابتدا خروج خودروهای فعال را ثبت کنید.</p>
+                <a class="button secondary" href="{% url 'parking:parking_spot_list' %}">بازگشت به مدیریت جایگاه‌ها</a>
+            {% else %}
+                <form class="auto-generate-form stable-form" method="post" novalidate>
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="errorlist">{{ form.non_field_errors }}</div>
+                    {% endif %}
+
+                    <div class="table-scroll">
+                        <table class="compact-form-table">
+                            <thead>
+                                <tr>
+                                    <th>طبقه</th>
+                                    <th>تعداد جایگاه خودرو</th>
+                                    <th>تعداد جایگاه موتور</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in form.floor_rows %}
+                                    <tr>
+                                        <td>{{ row.level_label }}</td>
+                                        <td>
+                                            {{ row.car_field }}
+                                            {{ row.car_field.errors }}
+                                        </td>
+                                        <td>
+                                            {{ row.motorcycle_field }}
+                                            {{ row.motorcycle_field.errors }}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="action-row">
+                        <button type="submit">غیرفعال‌سازی جایگاه‌های فعلی و ساخت جایگاه‌های جدید</button>
+                        <a class="button secondary" href="{% url 'parking:parking_spot_list' %}">انصراف</a>
+                    </div>
+                </form>
+            {% endif %}
         {% endif %}
-
-        <hr>
-
-        <a href="{% url 'parking:parking_spot_list' %}">انصراف و بازگشت</a>
-    {% endif %}
+    </section>
 {% endblock %}

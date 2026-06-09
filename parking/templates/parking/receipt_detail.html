@@ -4,52 +4,93 @@
 {% block title %}جزئیات رسید{% endblock %}
 
 {% block content %}
-    <h1>جزئیات رسید</h1>
+    <section class="page-header">
+        <div>
+            <p class="eyebrow">رسید و چاپ</p>
+            <h1>جزئیات رسید</h1>
+            <p>{{ customer.name }}</p>
+        </div>
+        <div class="action-row">
+            <a class="button" href="{% url 'parking:receipt_print' receipt.id %}">چاپ رسید</a>
+            <a class="button secondary" href="{% url 'parking:receipt_list' %}">بازگشت به رسیدها</a>
+        </div>
+    </section>
 
-    <p>پارکینگ: {{ customer.name }}</p>
+    <section class="receipt-detail-grid">
+        <div class="panel receipt-card receipt-card--highlight">
+            <span>شماره رسید</span>
+            <strong>{{ receipt.receipt_number }}</strong>
+            <small>{{ receipt.issue_time|jalali_gregorian }}</small>
+        </div>
 
-    <hr>
+        <div class="panel receipt-card">
+            <span>مبلغ</span>
+            <strong>{{ receipt.calculated_fee }}</strong>
+            <small>تومان</small>
+        </div>
 
-    <h2>اطلاعات رسید</h2>
+        <div class="panel receipt-card">
+            <span>پلاک</span>
+            <strong>{{ receipt.session.vehicle.plate_number }}</strong>
+            <small>{{ receipt.session.vehicle.get_type_display }}</small>
+        </div>
 
-    <ul>
-        <li>شماره رسید: {{ receipt.receipt_number }}</li>
-        <li>زمان صدور: {{ receipt.issue_time|jalali_gregorian }}</li>
-        <li>مبلغ: {{ receipt.calculated_fee }}</li>
-    </ul>
+        <div class="panel receipt-card">
+            <span>جایگاه</span>
+            <strong>{{ receipt.session.spot.code }}</strong>
+            <small>{{ receipt.session.spot.parking_lot.name }}</small>
+        </div>
+    </section>
 
-    <h2>اطلاعات خودرو و پارک</h2>
+    <section class="receipt-main-grid">
+        <div class="panel">
+            <div class="panel-header">
+                <h2>زمان و توقف</h2>
+            </div>
+            <dl class="detail-list">
+                <div>
+                    <dt>زمان ورود</dt>
+                    <dd>{{ receipt.session.entry_time|jalali_gregorian }}</dd>
+                </div>
+                <div>
+                    <dt>زمان خروج</dt>
+                    <dd>{{ receipt.session.exit_time|jalali_gregorian }}</dd>
+                </div>
+                <div>
+                    <dt>مدت توقف</dt>
+                    <dd>{{ receipt.session.total_duration_minutes }} دقیقه</dd>
+                </div>
+            </dl>
+        </div>
 
-    <ul>
-        <li>پلاک: {{ receipt.session.vehicle.plate_number }}</li>
-        <li>پارکینگ: {{ receipt.session.spot.parking_lot.name }}</li>
-        <li>جایگاه: {{ receipt.session.spot.code }}</li>
-        <li>زمان ورود: {{ receipt.session.entry_time|jalali_gregorian }}</li>
-        <li>زمان خروج: {{ receipt.session.exit_time|jalali_gregorian }}</li>
-        <li>مدت توقف: {{ receipt.session.total_duration_minutes }} دقیقه</li>
-    </ul>
+        <div class="panel">
+            <div class="panel-header">
+                <h2>پرداخت</h2>
+            </div>
+            <dl class="detail-list">
+                {% if receipt.payment %}
+                    <div>
+                        <dt>روش پرداخت</dt>
+                        <dd>{{ receipt.payment.get_payment_method_display }}</dd>
+                    </div>
+                    <div>
+                        <dt>وضعیت پرداخت</dt>
+                        <dd>{{ receipt.payment.get_payment_status_display }}</dd>
+                    </div>
+                {% else %}
+                    <div>
+                        <dt>پرداخت</dt>
+                        <dd>نامشخص</dd>
+                    </div>
+                {% endif %}
+            </dl>
+        </div>
+    </section>
 
-    <h2>پرداخت</h2>
-
-    <ul>
-        {% if receipt.payment %}
-            <li>روش پرداخت: {{ receipt.payment.get_payment_method_display }}</li>
-            <li>وضعیت پرداخت: {{ receipt.payment.get_payment_status_display }}</li>
-        {% else %}
-            <li>پرداخت: نامشخص</li>
-        {% endif %}
-    </ul>
-
-    <hr>
-
-    <h2>متن رسید</h2>
-
-    <pre>{{ receipt.content }}</pre>
-
-    <hr>
-
-    <a href="{% url 'parking:receipt_print' receipt.id %}">چاپ رسید</a>
-    <br>
-    <a href="{% url 'parking:receipt_list' %}">بازگشت به لیست رسیدها</a>
-
+    <section class="panel">
+        <div class="panel-header">
+            <h2>متن رسید</h2>
+        </div>
+        <pre class="receipt-content-preview">{{ receipt.content }}</pre>
+    </section>
 {% endblock %}

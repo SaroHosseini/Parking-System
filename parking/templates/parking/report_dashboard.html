@@ -4,7 +4,8 @@
 {% block title %}گزارش‌ها{% endblock %}
 
 {% block content %}
-    <section class="page-header">
+<div class="report-page">
+    <section class="page-header page-header--compact">
         <div>
             <p class="eyebrow">تحلیل عملکرد</p>
             <h1>گزارش‌ها</h1>
@@ -12,18 +13,21 @@
         </div>
     </section>
 
-    <section class="panel filter-panel">
+    <section class="panel filter-panel compact-filter-panel report-filter-panel">
         <div class="panel-header">
             <h2>فیلتر گزارش</h2>
             <span class="status-pill">بازه انتخابی</span>
         </div>
-        <form method="get">
+        <form class="compact-filter-form report-filter-form" method="get" novalidate>
             {{ form.as_p }}
-            <button type="submit">نمایش گزارش</button>
+            <div class="filter-actions">
+                <button type="submit">نمایش گزارش</button>
+                <a class="button secondary" href="{% url 'parking:report_dashboard' %}">پاک کردن فیلترها</a>
+            </div>
         </form>
     </section>
 
-    <section class="panel">
+    <section class="panel compact-list-panel report-summary-panel">
         <div class="panel-header">
             <div>
                 <h2>خلاصه گزارش</h2>
@@ -72,13 +76,13 @@
         </div>
     </section>
 
-    <section class="dashboard-grid">
-        <article class="panel">
+    <section class="dashboard-grid report-dashboard-grid">
+        <article class="panel compact-list-panel">
             <div class="panel-header">
                 <h2>تفکیک خودرو و موتور</h2>
             </div>
-            <div class="table-scroll">
-                <table>
+            <div class="table-scroll report-table-scroll">
+                <table class="compact-table">
                     <thead>
                         <tr>
                             <th>نوع وسیله</th>
@@ -105,7 +109,7 @@
             </div>
         </article>
 
-        <article class="panel">
+        <article class="panel compact-list-panel">
             <div class="panel-header">
                 <h2>وضعیت اشغال فضا</h2>
             </div>
@@ -130,13 +134,13 @@
         </article>
     </section>
 
-    <section class="dashboard-grid">
-        <article class="panel">
+    <section class="dashboard-grid report-dashboard-grid">
+        <article class="panel compact-list-panel">
             <div class="panel-header">
                 <h2>تفکیک جایگاه‌ها</h2>
             </div>
-            <div class="table-scroll">
-                <table>
+            <div class="table-scroll report-table-scroll">
+                <table class="compact-table">
                     <thead>
                         <tr>
                             <th>نوع جایگاه</th>
@@ -163,12 +167,12 @@
             </div>
         </article>
 
-        <article class="panel">
+        <article class="panel compact-list-panel">
             <div class="panel-header">
                 <h2>روش پرداخت</h2>
             </div>
-            <div class="table-scroll">
-                <table>
+            <div class="table-scroll report-table-scroll report-payment-method-scroll">
+                <table class="compact-table">
                     <thead>
                         <tr>
                             <th>روش پرداخت</th>
@@ -194,44 +198,8 @@
         </article>
     </section>
 
-    <section class="panel">
-        <div class="panel-header">
-            <h2>سشن‌های بسته شده در بازه انتخابی</h2>
-            <span class="status-pill">خروج‌ها</span>
-        </div>
-        <div class="table-scroll">
-            <table>
-                <thead>
-                    <tr>
-                        <th>پلاک</th>
-                        <th>نوع وسیله</th>
-                        <th>پارکینگ</th>
-                        <th>جایگاه</th>
-                        <th>زمان ورود</th>
-                        <th>زمان خروج</th>
-                        <th>مدت توقف</th>
-                        <th>هزینه</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for session in closed_sessions %}
-                        <tr>
-                            <td>{{ session.vehicle.plate_number }}</td>
-                            <td>{{ session.vehicle.get_type_display }}</td>
-                            <td>{{ session.spot.parking_lot.name }}</td>
-                            <td>{{ session.spot.code }}</td>
-                            <td>{{ session.entry_time|jalali_gregorian }}</td>
-                            <td>{{ session.exit_time|jalali_gregorian }}</td>
-                            <td>{{ session.total_duration_minutes }} دقیقه</td>
-                            <td>{{ session.calculated_fee }}</td>
-                        </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="8">در این بازه هیچ سشن بسته شده‌ای وجود ندارد.</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <section class="panel compact-list-panel report-closed-panel" id="records-section" data-report-closed-panel aria-live="polite">
+        {% include 'parking/partials/report_closed_sessions_table.html' %}
     </section>
+</div>
 {% endblock %}

@@ -9,7 +9,7 @@
             <h1>فرم درخواست استفاده رایگان (نسخه آزمایشی)</h1>
             <p>اطلاعات مجموعه و حساب مالک را وارد کنید تا درخواست در صف بررسی مدیر سیستم قرار بگیرد.</p>
 
-            <form class="request-form" method="post">
+            <form class="request-form" method="post" novalidate>
                 {% csrf_token %}
 
                 {% if form.non_field_errors %}
@@ -17,45 +17,85 @@
                 {% endif %}
 
                 <div class="request-grid">
-                    <div class="field-block">
+                    <div class="field-block stable-field">
                         {{ form.name.label_tag }}
                         {{ form.name }}
-                        {{ form.name.errors }}
+                        <div class="field-feedback">
+                            {{ form.name.errors }}
+                            {% if not form.name.errors and form.name.help_text %}
+                                <span class="helptext">{{ form.name.help_text }}</span>
+                            {% endif %}
+                        </div>
                     </div>
-                    <div class="field-block">
+                    <div class="field-block stable-field">
                         {{ form.owner_name.label_tag }}
                         {{ form.owner_name }}
-                        {{ form.owner_name.errors }}
+                        <div class="field-feedback">
+                            {{ form.owner_name.errors }}
+                            {% if not form.owner_name.errors and form.owner_name.help_text %}
+                                <span class="helptext">{{ form.owner_name.help_text }}</span>
+                            {% endif %}
+                        </div>
                     </div>
-                    <div class="field-block">
+                    <div class="field-block stable-field">
                         {{ form.phone.label_tag }}
                         {{ form.phone }}
-                        {{ form.phone.errors }}
+                        <div class="field-feedback">
+                            {{ form.phone.errors }}
+                            {% if not form.phone.errors and form.phone.help_text %}
+                                <span class="helptext">{{ form.phone.help_text }}</span>
+                            {% endif %}
+                        </div>
                     </div>
-                    <div class="field-block">
+                    <div class="field-block stable-field">
                         {{ form.email.label_tag }}
                         {{ form.email }}
-                        {{ form.email.errors }}
+                        <div class="field-feedback">
+                            {{ form.email.errors }}
+                            {% if not form.email.errors and form.email.help_text %}
+                                <span class="helptext">{{ form.email.help_text }}</span>
+                            {% endif %}
+                        </div>
                     </div>
-                    <div class="field-block">
+                    <div class="field-block stable-field">
                         {{ form.username.label_tag }}
                         {{ form.username }}
-                        {{ form.username.errors }}
+                        <div class="field-feedback">
+                            {{ form.username.errors }}
+                            {% if not form.username.errors and form.username.help_text %}
+                                <span class="helptext">{{ form.username.help_text }}</span>
+                            {% endif %}
+                        </div>
                     </div>
-                    <div class="field-block">
+                    <div class="field-block stable-field">
                         {{ form.password.label_tag }}
                         {{ form.password }}
-                        {{ form.password.errors }}
+                        <div class="field-feedback">
+                            {{ form.password.errors }}
+                            {% if not form.password.errors and form.password.help_text %}
+                                <span class="helptext">{{ form.password.help_text }}</span>
+                            {% endif %}
+                        </div>
                     </div>
-                    <div class="field-block">
+                    <div class="field-block stable-field">
                         {{ form.password_confirm.label_tag }}
                         {{ form.password_confirm }}
-                        {{ form.password_confirm.errors }}
+                        <div class="field-feedback">
+                            {{ form.password_confirm.errors }}
+                            {% if not form.password_confirm.errors and form.password_confirm.help_text %}
+                                <span class="helptext">{{ form.password_confirm.help_text }}</span>
+                            {% endif %}
+                        </div>
                     </div>
-                    <div class="field-block field-wide">
+                    <div class="field-block stable-field field-wide request-address-field">
                         {{ form.address.label_tag }}
                         {{ form.address }}
-                        {{ form.address.errors }}
+                        <div class="field-feedback">
+                            {{ form.address.errors }}
+                            {% if not form.address.errors and form.address.help_text %}
+                                <span class="helptext">{{ form.address.help_text }}</span>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
 

@@ -3,7 +3,7 @@
 {% block title %}مدیریت تعرفه‌ها{% endblock %}
 
 {% block content %}
-    <section class="page-header">
+    <section class="page-header page-header--compact">
         <div>
             <p class="eyebrow">قیمت‌گذاری</p>
             <h1>مدیریت تعرفه‌ها</h1>
@@ -12,24 +12,39 @@
         <a class="button" href="{% url 'parking:tariff_create' %}">ثبت تعرفه جدید</a>
     </section>
 
-    <section class="panel filter-panel">
+    <section class="panel filter-panel compact-filter-panel">
         <div class="panel-header">
             <h2>فیلترها</h2>
-            <a class="button secondary" href="{% url 'parking:tariff_list' %}">پاک کردن فیلترها</a>
         </div>
-        <form method="get">
+        <form class="compact-filter-form" method="get" novalidate>
             {{ filter_form.as_p }}
-            <button type="submit">اعمال فیلتر</button>
+            <div class="filter-actions">
+                <button type="submit">اعمال فیلتر</button>
+                <a class="button secondary" href="{% url 'parking:tariff_list' %}">پاک کردن فیلترها</a>
+            </div>
         </form>
     </section>
 
-    <section class="panel" id="records-section">
+    <section class="panel compact-list-panel tariff-list-panel" id="records-section">
         <div class="panel-header">
-            <h2>تعرفه‌ها</h2>
-            <span class="status-pill">فعال برای هر نوع وسیله</span>
+            <div>
+                <h2>تعرفه‌ها</h2>
+                <p class="table-result-summary">
+                    {% if page_obj.paginator.count %}
+                        نمایش {{ page_obj.start_index }} تا {{ page_obj.end_index }} از {{ page_obj.paginator.count }} تعرفه
+                    {% else %}
+                        هیچ تعرفه‌ای برای نمایش وجود ندارد
+                    {% endif %}
+                </p>
+            </div>
+            {% if page_obj.has_other_pages %}
+                {% include 'parking/pagination.html' %}
+            {% else %}
+                <span class="status-pill">فعال برای هر نوع وسیله</span>
+            {% endif %}
         </div>
-        <div class="table-scroll">
-            <table>
+        <div class="table-scroll tariff-table-scroll">
+            <table class="compact-table tariff-table">
                 <thead>
                     <tr>
                         <th>نام تعرفه</th>
@@ -56,7 +71,15 @@
                                     <span class="status-pill danger">خیر</span>
                                 {% endif %}
                             </td>
-                            <td><a href="{% url 'parking:tariff_update' tariff.id %}">ویرایش</a></td>
+                            <td class="table-action-cell">
+                                <div class="table-actions">
+                                    <a href="{% url 'parking:tariff_update' tariff.id %}">ویرایش</a>
+                                    <form class="inline-delete-form" method="post" action="{% url 'parking:tariff_delete' tariff.id %}" onsubmit="return confirm('این تعرفه حذف شود؟');" novalidate>
+                                        {% csrf_token %}
+                                        <button class="link-button danger" type="submit">حذف</button>
+                                    </form>
+                                </div>
+                            </td>
                         </tr>
                     {% empty %}
                         <tr>
@@ -66,6 +89,5 @@
                 </tbody>
             </table>
         </div>
-        {% include 'parking/pagination.html' %}
     </section>
 {% endblock %}

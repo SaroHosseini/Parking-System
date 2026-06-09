@@ -4,7 +4,7 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-    <section class="page-header">
+    <section class="page-header page-header--compact entry-page-header">
         <div>
             <p class="eyebrow">ورود وسیله نقلیه</p>
             <h1>{{ title }}</h1>
@@ -13,34 +13,36 @@
         <a class="button secondary" href="{% url 'parking:parking_session_list' %}">بازگشت به سشن‌ها</a>
     </section>
 
-    <section class="panel entry-panel">
-        <form class="entry-form" method="post">
+    <section class="panel entry-panel entry-panel--compact">
+        <form class="entry-form" method="post" novalidate>
             {% csrf_token %}
 
             {% if form.non_field_errors %}
                 <div class="errorlist">{{ form.non_field_errors }}</div>
             {% endif %}
 
-            <div class="entry-grid">
-                <div class="field-block">
+            <div class="entry-grid entry-grid--compact">
+                <div class="field-block stable-field">
                     {{ form.plate_number.label_tag }}
                     {{ form.plate_number }}
-                    {{ form.plate_number.errors }}
-                    {% if form.plate_number.help_text %}
-                        <span class="helptext">{{ form.plate_number.help_text }}</span>
-                    {% endif %}
+                    <div class="field-feedback">
+                        {{ form.plate_number.errors }}
+                        {% if not form.plate_number.errors and form.plate_number.help_text %}
+                            <span class="helptext">{{ form.plate_number.help_text }}</span>
+                        {% endif %}
+                    </div>
                 </div>
 
-                <div class="field-block">
+                <div class="field-block stable-field">
                     {{ form.vehicle_type.label_tag }}
                     {{ form.vehicle_type }}
-                    {{ form.vehicle_type.errors }}
+                    <div class="field-feedback">{{ form.vehicle_type.errors }}</div>
                 </div>
 
-                <div class="field-block">
+                <div class="field-block stable-field">
                     {{ form.color.label_tag }}
                     {{ form.color }}
-                    {{ form.color.errors }}
+                    <div class="field-feedback">{{ form.color.errors }}</div>
                 </div>
             </div>
 
@@ -54,7 +56,7 @@
                     <button class="button secondary" type="button" data-spot-clear>پاک کردن انتخاب</button>
                 </div>
 
-                <input id="spot-search" type="search" placeholder="مثلا CNM_12 یا طبقه 1" data-spot-search>
+                <input id="spot-search" type="search" placeholder="مثلا CNM_F1_12، MNM_F2_5 یا طبقه 1" data-spot-search>
 
                 <div class="spot-picker__selected">
                     <span>انتخاب فعلی:</span>
@@ -69,7 +71,7 @@
                     <button class="button secondary" type="button" data-spot-next>بعدی</button>
                 </div>
 
-                {{ form.spot.errors }}
+                <div class="field-feedback spot-picker__feedback">{{ form.spot.errors }}</div>
             </div>
 
             <div class="action-row">

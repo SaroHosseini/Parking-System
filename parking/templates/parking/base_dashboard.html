@@ -10,8 +10,11 @@
     <link rel="icon" type="image/png" sizes="16x16" href="{% static 'parking/img/parkino-logo/favicon-16x16.png' %}">
     <link rel="apple-touch-icon" sizes="180x180" href="{% static 'parking/img/parkino-logo/apple-touch-icon.png' %}">
     <link rel="manifest" href="{% static 'parking/img/parkino-logo/site.webmanifest' %}">
-    <link rel="stylesheet" href="{% static 'parking/css/app.css' %}">
+    <link rel="stylesheet" href="{% static 'parking/css/app.css' %}?v=20260609-7">
     <script src="{% static 'parking/js/theme.js' %}" defer></script>
+    <script src="{% static 'parking/js/jalali-datepicker.js' %}?v=20260609-2" defer></script>
+    <script src="{% static 'parking/js/bug-report.js' %}" defer></script>
+    <script src="{% static 'parking/js/report-pagination.js' %}?v=20260609-1" defer></script>
 </head>
 <body>
     {% with current=request.resolver_match.url_name %}
@@ -44,7 +47,7 @@
                         <ul class="nav-list">
                             <li><a class="nav-link {% if current == 'parking_lot_list' or current == 'parking_lot_create' or current == 'parking_lot_update' %}is-active{% endif %}" href="{% url 'parking:parking_lot_list' %}">پارکینگ‌ها</a></li>
                             <li><a class="nav-link {% if current == 'parking_spot_list' or current == 'parking_spot_create' or current == 'parking_spot_update' or current == 'parking_spot_auto_generate' %}is-active{% endif %}" href="{% url 'parking:parking_spot_list' %}">جایگاه‌ها</a></li>
-                            <li><a class="nav-link {% if current == 'tariff_list' or current == 'tariff_create' or current == 'tariff_update' %}is-active{% endif %}" href="{% url 'parking:tariff_list' %}">تعرفه‌ها</a></li>
+                            <li><a class="nav-link {% if current == 'tariff_list' or current == 'tariff_create' or current == 'tariff_update' or current == 'tariff_delete' %}is-active{% endif %}" href="{% url 'parking:tariff_list' %}">تعرفه‌ها</a></li>
                         </ul>
                     </section>
 
@@ -77,6 +80,9 @@
                 </div>
 
                 <div class="topbar-actions">
+                    <button class="button secondary bug-report-button" type="button" data-bug-report-open>
+                        گزارش مشکل
+                    </button>
                     <button class="theme-toggle" type="button" data-theme-toggle>
                         <span class="theme-toggle__icon" aria-hidden="true"></span>
                         <span data-theme-label>حالت تاریک</span>
@@ -102,6 +108,41 @@
                 </div>
             </main>
         </div>
+    </div>
+
+    <div class="bug-report-backdrop" data-bug-report-modal hidden>
+        <section class="bug-report-modal" role="dialog" aria-modal="true" aria-labelledby="bug-report-title">
+            <div class="bug-report-modal__header">
+                <div>
+                    <p class="eyebrow">پشتیبانی</p>
+                    <h2 id="bug-report-title">گزارش مشکل</h2>
+                    <p>موضوع و توضیحات مشکل را ثبت کنید تا در پنل ادمین بررسی شود.</p>
+                </div>
+                <button class="button secondary bug-report-close" type="button" aria-label="بستن" data-bug-report-close>×</button>
+            </div>
+
+            <form class="bug-report-form" method="post" action="{% url 'parking:bug_report_create' %}" novalidate data-bug-report-form>
+                {% csrf_token %}
+                <div class="field-block stable-field">
+                    <label for="bug-report-subject">موضوع مشکل</label>
+                    <input id="bug-report-subject" name="subject" type="text" maxlength="120" placeholder="مثلا خطا در ثبت پرداخت" data-bug-report-field="subject">
+                    <div class="field-feedback" data-bug-report-error="subject"></div>
+                </div>
+
+                <div class="field-block stable-field bug-report-description-field">
+                    <label for="bug-report-description">توضیحات مشکل</label>
+                    <textarea id="bug-report-description" name="description" rows="5" placeholder="مشکل را کوتاه و دقیق توضیح دهید." data-bug-report-field="description"></textarea>
+                    <div class="field-feedback" data-bug-report-error="description"></div>
+                </div>
+
+                <div class="bug-report-message" data-bug-report-message aria-live="polite"></div>
+
+                <div class="action-row bug-report-actions">
+                    <button type="submit" data-bug-report-submit>ثبت گزارش</button>
+                    <button class="button secondary" type="button" data-bug-report-close>انصراف</button>
+                </div>
+            </form>
+        </section>
     </div>
     {% endwith %}
 </body>

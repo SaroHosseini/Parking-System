@@ -5,7 +5,7 @@
 {% block content %}
     <h1>{{ title }}</h1>
 
-    <form method="post">
+    <form class="stable-form" method="post" novalidate>
         {% csrf_token %}
 
         {{ form.as_p }}

@@ -4,7 +4,7 @@
 {% block title %}مدیریت رسیدها{% endblock %}
 
 {% block content %}
-    <section class="page-header">
+    <section class="page-header page-header--compact">
         <div>
             <p class="eyebrow">رسید و چاپ</p>
             <h1>مدیریت رسیدها</h1>
@@ -12,24 +12,39 @@
         </div>
     </section>
 
-    <section class="panel filter-panel">
+    <section class="panel filter-panel compact-filter-panel">
         <div class="panel-header">
             <h2>فیلترها</h2>
-            <a class="button secondary" href="{% url 'parking:receipt_list' %}">پاک کردن فیلترها</a>
         </div>
-        <form method="get">
+        <form class="compact-filter-form" method="get" novalidate>
             {{ filter_form.as_p }}
-            <button type="submit">اعمال فیلتر</button>
+            <div class="filter-actions">
+                <button type="submit">اعمال فیلتر</button>
+                <a class="button secondary" href="{% url 'parking:receipt_list' %}">پاک کردن فیلترها</a>
+            </div>
         </form>
     </section>
 
-    <section class="panel" id="records-section">
+    <section class="panel compact-list-panel" id="records-section">
         <div class="panel-header">
-            <h2>لیست رسیدها</h2>
-            <span class="status-pill">چاپ</span>
+            <div>
+                <h2>لیست رسیدها</h2>
+                <p class="table-result-summary">
+                    {% if page_obj.paginator.count %}
+                        نمایش {{ page_obj.start_index }} تا {{ page_obj.end_index }} از {{ page_obj.paginator.count }} رسید
+                    {% else %}
+                        هیچ رسیدی برای نمایش وجود ندارد
+                    {% endif %}
+                </p>
+            </div>
+            {% if page_obj.has_other_pages %}
+                {% include 'parking/pagination.html' %}
+            {% else %}
+                <span class="status-pill">چاپ</span>
+            {% endif %}
         </div>
         <div class="table-scroll">
-            <table>
+            <table class="compact-table">
                 <thead>
                     <tr>
                         <th>شماره رسید</th>
@@ -71,6 +86,5 @@
                 </tbody>
             </table>
         </div>
-        {% include 'parking/pagination.html' %}
     </section>
 {% endblock %}

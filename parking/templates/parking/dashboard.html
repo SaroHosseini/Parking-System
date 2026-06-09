@@ -30,7 +30,7 @@
             <span>مشاهده و چاپ رسید</span>
         </a>
         {% if is_owner_user %}
-            <a class="quick-action" href="{% url 'parking:report_dashboard' %}?start_date={{ monthly_report_start|date:'Y-m-d' }}&end_date={{ monthly_report_end|date:'Y-m-d' }}">
+            <a class="quick-action" href="{% url 'parking:report_dashboard' %}?start_date={{ monthly_report_start|jalali_date_value }}&end_date={{ monthly_report_end|jalali_date_value }}">
                 <strong>گزارش ماه اخیر</strong>
                 <span>درآمد، خروج و اشغال فضا</span>
             </a>
@@ -102,7 +102,7 @@
                     <div class="summary-card">
                         <span>پارکینگ‌ها</span>
                         <strong>{{ parking_lots_count }}</strong>
-                        <p>مجموعه‌های ثبت شده برای این مشتری</p>
+                        <p>مجموعه‌های ثبت شده</p>
                     </div>
                     <div class="summary-card">
                         <span>کاربران</span>
@@ -145,7 +145,7 @@
                 <h2>سشن‌های فعال</h2>
                 <a class="button secondary" href="{% url 'parking:parking_session_list' %}">همه سشن‌ها</a>
             </div>
-            <div class="table-scroll">
+            <div class="table-scroll dashboard-table-scroll">
                 <table>
                     <thead>
                         <tr>
@@ -183,7 +183,7 @@
                 <h2>پرداخت‌های در انتظار</h2>
                 <a class="button secondary" href="{% url 'parking:payment_list' %}">همه پرداخت‌ها</a>
             </div>
-            <div class="table-scroll">
+            <div class="table-scroll dashboard-table-scroll dashboard-pending-payment-scroll">
                 <table>
                     <thead>
                         <tr>

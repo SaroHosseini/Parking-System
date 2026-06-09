@@ -3,17 +3,73 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-    <h1>{{ title }}</h1>
+    <section class="page-header page-header--compact">
+        <div>
+            <p class="eyebrow">زیرساخت مجموعه</p>
+            <h1>{{ title }}</h1>
+            <p>نام، ظرفیت‌ها و تعداد طبقات پارکینگ را مشخص کنید.</p>
+        </div>
+        <a class="button secondary" href="{% url 'parking:parking_lot_list' %}">بازگشت به پارکینگ‌ها</a>
+    </section>
 
-    <form method="post">
-        {% csrf_token %}
+    <section class="panel form-panel parking-lot-form-panel">
+        <form class="stacked-form" method="post" novalidate>
+            {% csrf_token %}
 
-        {{ form.as_p }}
+            {% if form.non_field_errors %}
+                <div class="errorlist">{{ form.non_field_errors }}</div>
+            {% endif %}
 
-        <button type="submit">ذخیره</button>
-    </form>
+            <div class="form-grid form-grid--two parking-lot-form-grid">
+                <div class="field-block stable-field">
+                    {{ form.name.label_tag }}
+                    {{ form.name }}
+                    <div class="field-feedback">
+                        {{ form.name.errors }}
+                        {% if not form.name.errors %}
+                            <span class="helptext">حداکثر ۲۰ حرف.</span>
+                        {% endif %}
+                    </div>
+                </div>
 
-    <hr>
+                <div class="field-block stable-field">
+                    {{ form.floor_count.label_tag }}
+                    {{ form.floor_count }}
+                    <div class="field-feedback">
+                        {{ form.floor_count.errors }}
+                        {% if not form.floor_count.errors %}
+                            <span class="helptext">بین ۱ تا ۲۰ طبقه.</span>
+                        {% endif %}
+                    </div>
+                </div>
 
-    <a href="{% url 'parking:parking_lot_list' %}">بازگشت به لیست پارکینگ‌ها</a>
+                <div class="field-block stable-field">
+                    {{ form.car_capacity.label_tag }}
+                    {{ form.car_capacity }}
+                    <div class="field-feedback">
+                        {{ form.car_capacity.errors }}
+                        {% if not form.car_capacity.errors %}
+                            <span class="helptext">حداکثر ۵۰۰۰ جایگاه خودرو.</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="field-block stable-field">
+                    {{ form.motorcycle_capacity.label_tag }}
+                    {{ form.motorcycle_capacity }}
+                    <div class="field-feedback">
+                        {{ form.motorcycle_capacity.errors }}
+                        {% if not form.motorcycle_capacity.errors %}
+                            <span class="helptext">حداکثر ۱۰۰۰ جایگاه موتور.</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-row">
+                <button type="submit">ذخیره</button>
+                <a class="button secondary" href="{% url 'parking:parking_lot_list' %}">انصراف</a>
+            </div>
+        </form>
+    </section>
 {% endblock %}

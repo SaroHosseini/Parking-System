@@ -3,7 +3,7 @@
 {% block title %}مدیریت جایگاه‌های پارک{% endblock %}
 
 {% block content %}
-    <section class="page-header">
+    <section class="page-header page-header--compact spot-page-header">
         <div>
             <p class="eyebrow">نقشه ظرفیت</p>
             <h1>مدیریت جایگاه‌های پارک</h1>
@@ -12,77 +12,80 @@
         <a class="button" href="{% url 'parking:parking_spot_create' %}">ثبت جایگاه جدید</a>
     </section>
 
-    <section class="panel">
-        <div class="panel-header">
-            <h2>وضعیت ساخت جایگاه‌ها</h2>
-            <span class="status-pill warning">ظرفیت باقی‌مانده</span>
-        </div>
-        <div class="table-scroll">
-            <table>
-                <thead>
-                    <tr>
-                        <th>پارکینگ</th>
-                        <th>ظرفیت خودرو</th>
-                        <th>ساخته شده خودرو</th>
-                        <th>باقی‌مانده خودرو</th>
-                        <th>ظرفیت موتور</th>
-                        <th>ساخته شده موتور</th>
-                        <th>باقی‌مانده موتور</th>
-                        <th>عملیات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in capacity_rows %}
-                        <tr>
-                            <td>{{ row.parking_lot.name }}</td>
-                            <td>{{ row.car_capacity }}</td>
-                            <td>{{ row.car_spots_count }}</td>
-                            <td>
+    <div class="spot-tools-grid">
+        <section class="panel compact-list-panel spot-capacity-panel spot-capacity-panel--compact">
+            <div class="panel-header">
+                <h2>وضعیت ساخت جایگاه‌ها</h2>
+                <span class="status-pill warning">ظرفیت باقی‌مانده</span>
+            </div>
+            <div class="spot-capacity-grid">
+                {% for row in capacity_rows %}
+                    <article class="spot-capacity-card">
+                        <div class="spot-capacity-card__title">
+                            <strong>{{ row.parking_lot.name }}</strong>
+                            <a href="{% url 'parking:parking_spot_auto_generate' row.parking_lot.id %}">ساخت خودکار</a>
+                        </div>
+                        <div class="spot-capacity-metrics">
+                            <span>خودرو: {{ row.car_spots_count }} / {{ row.car_capacity }}</span>
+                            <span>
+                                باقی‌مانده:
                                 {% if row.remaining_car_spots < 0 %}
-                                    ظرفیت کمتر از جایگاه‌های ساخته شده است
+                                    خطای ظرفیت
                                 {% else %}
                                     {{ row.remaining_car_spots }}
                                 {% endif %}
-                            </td>
-                            <td>{{ row.motorcycle_capacity }}</td>
-                            <td>{{ row.motorcycle_spots_count }}</td>
-                            <td>
+                            </span>
+                            <span>موتور: {{ row.motorcycle_spots_count }} / {{ row.motorcycle_capacity }}</span>
+                            <span>
+                                باقی‌مانده:
                                 {% if row.remaining_motorcycle_spots < 0 %}
-                                    ظرفیت کمتر از جایگاه‌های ساخته شده است
+                                    خطای ظرفیت
                                 {% else %}
                                     {{ row.remaining_motorcycle_spots }}
                                 {% endif %}
-                            </td>
-                            <td><a href="{% url 'parking:parking_spot_auto_generate' row.parking_lot.id %}">ساخت خودکار</a></td>
-                        </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="8">هنوز پارکینگی ثبت نشده است.</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </section>
+                            </span>
+                        </div>
+                    </article>
+                {% empty %}
+                    <p class="table-result-summary">هنوز پارکینگی ثبت نشده است.</p>
+                {% endfor %}
+            </div>
+        </section>
 
-    <section class="panel filter-panel">
-        <div class="panel-header">
-            <h2>فیلترها</h2>
-            <a class="button secondary" href="{% url 'parking:parking_spot_list' %}">پاک کردن فیلترها</a>
-        </div>
-        <form method="get">
-            {{ filter_form.as_p }}
-            <button type="submit">اعمال فیلتر</button>
-        </form>
-    </section>
+        <section class="panel filter-panel compact-filter-panel spot-filter-panel">
+            <div class="panel-header">
+                <h2>فیلترها</h2>
+            </div>
+            <form class="compact-filter-form" method="get" novalidate>
+                {{ filter_form.as_p }}
+                <div class="filter-actions">
+                    <button type="submit">اعمال فیلتر</button>
+                    <a class="button secondary" href="{% url 'parking:parking_spot_list' %}">پاک کردن فیلترها</a>
+                </div>
+            </form>
+        </section>
+    </div>
 
-    <section class="panel" id="records-section">
+    <section class="panel compact-list-panel spot-list-panel" id="records-section">
         <div class="panel-header">
-            <h2>لیست جایگاه‌ها</h2>
-            <span class="status-pill">فعال</span>
+            <div>
+                <h2>لیست جایگاه‌ها</h2>
+                <p class="table-result-summary">
+                    {% if page_obj.paginator.count %}
+                        نمایش {{ page_obj.start_index }} تا {{ page_obj.end_index }} از {{ page_obj.paginator.count }} جایگاه
+                    {% else %}
+                        هیچ جایگاهی برای نمایش وجود ندارد
+                    {% endif %}
+                </p>
+            </div>
+            {% if page_obj.has_other_pages %}
+                {% include 'parking/pagination.html' %}
+            {% else %}
+                <span class="status-pill">فعال</span>
+            {% endif %}
         </div>
-        <div class="table-scroll">
-            <table>
+        <div class="table-scroll spot-table-scroll">
+            <table class="compact-table spot-table">
                 <thead>
                     <tr>
                         <th>پارکینگ</th>
@@ -117,6 +120,5 @@
                 </tbody>
             </table>
         </div>
-        {% include 'parking/pagination.html' %}
     </section>
 {% endblock %}

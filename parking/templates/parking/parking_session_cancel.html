@@ -21,7 +21,7 @@
         با لغو این سشن، جایگاه آزاد می‌شود و پرداخت یا رسیدی ساخته نمی‌شود.
     </p>
 
-    <form method="post">
+    <form method="post" novalidate>
         {% csrf_token %}
         <button type="submit">بله، لغو شود</button>
     </form>

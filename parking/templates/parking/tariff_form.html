@@ -3,17 +3,72 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-    <h1>{{ title }}</h1>
+    <section class="page-header">
+        <div>
+            <p class="eyebrow">قیمت‌گذاری</p>
+            <h1>{{ title }}</h1>
+        </div>
+        <a class="button secondary" href="{% url 'parking:tariff_list' %}">بازگشت به لیست تعرفه‌ها</a>
+    </section>
 
-    <form method="post">
-        {% csrf_token %}
+    <section class="panel form-panel">
+        <form class="stacked-form" method="post" novalidate>
+            {% csrf_token %}
 
-        {{ form.as_p }}
+            {% if form.non_field_errors %}
+                <div class="errorlist">{{ form.non_field_errors }}</div>
+            {% endif %}
 
-        <button type="submit">ذخیره</button>
-    </form>
+            <div class="form-grid form-grid--two tariff-form-grid">
+                <div class="field-block stable-field">
+                    {{ form.name.label_tag }}
+                    {{ form.name }}
+                    <div class="field-feedback">{{ form.name.errors }}</div>
+                </div>
 
-    <hr>
+                <div class="field-block stable-field">
+                    {{ form.vehicle_type.label_tag }}
+                    {{ form.vehicle_type }}
+                    <div class="field-feedback">{{ form.vehicle_type.errors }}</div>
+                </div>
 
-    <a href="{% url 'parking:tariff_list' %}">بازگشت به لیست تعرفه‌ها</a>
+                <div class="field-block stable-field">
+                    {{ form.first_hour_price.label_tag }}
+                    {{ form.first_hour_price }}
+                    <div class="field-feedback">{{ form.first_hour_price.errors }}</div>
+                </div>
+
+                <div class="field-block stable-field">
+                    {{ form.additional_hour_price.label_tag }}
+                    {{ form.additional_hour_price }}
+                    <div class="field-feedback">{{ form.additional_hour_price.errors }}</div>
+                </div>
+
+                <div class="field-block stable-field">
+                    {{ form.daily_price.label_tag }}
+                    {{ form.daily_price }}
+                    <div class="field-feedback">
+                        {{ form.daily_price.errors }}
+                        {% if not form.daily_price.errors and form.daily_price.help_text %}
+                            <span class="helptext">{{ form.daily_price.help_text }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="field-block checkbox-block stable-field">
+                    <span class="field-label-spacer">وضعیت</span>
+                    <label for="{{ form.is_active.id_for_label }}">
+                        {{ form.is_active }}
+                        <span>{{ form.is_active.label }}</span>
+                    </label>
+                    <div class="field-feedback">{{ form.is_active.errors }}</div>
+                </div>
+            </div>
+
+            <div class="action-row">
+                <button type="submit">ذخیره</button>
+                <a class="button secondary" href="{% url 'parking:tariff_list' %}">انصراف</a>
+            </div>
+        </form>
+    </section>
 {% endblock %}

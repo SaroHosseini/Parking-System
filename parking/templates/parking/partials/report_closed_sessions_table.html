@@ -1,0 +1,55 @@
+{% load date_filters %}
+
+<div class="panel-header report-closed-header">
+    <div>
+        <h2>آخرین خروج‌ها</h2>
+        <p class="table-result-summary">
+            {% if closed_sessions_total %}
+                نمایش {{ closed_sessions.start_index }} تا {{ closed_sessions.end_index }} از {{ closed_sessions_total }} خروج بازه انتخابی
+            {% else %}
+                خروجی در بازه انتخابی ثبت نشده است
+            {% endif %}
+        </p>
+    </div>
+    {% if closed_sessions_page.has_other_pages %}
+        {% with page_obj=closed_sessions_page query_string=closed_sessions_query_string %}
+            {% include 'parking/pagination.html' %}
+        {% endwith %}
+    {% else %}
+        <span class="status-pill">خروج‌ها</span>
+    {% endif %}
+</div>
+<div class="table-scroll report-table-scroll report-closed-table-scroll">
+    <table class="compact-table">
+        <thead>
+            <tr>
+                <th>پلاک</th>
+                <th>نوع وسیله</th>
+                <th>پارکینگ</th>
+                <th>جایگاه</th>
+                <th>زمان ورود</th>
+                <th>زمان خروج</th>
+                <th>مدت توقف</th>
+                <th>هزینه</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for session in closed_sessions %}
+                <tr>
+                    <td>{{ session.vehicle.plate_number }}</td>
+                    <td>{{ session.vehicle.get_type_display }}</td>
+                    <td>{{ session.spot.parking_lot.name }}</td>
+                    <td>{{ session.spot.code }}</td>
+                    <td>{{ session.entry_time|jalali_gregorian }}</td>
+                    <td>{{ session.exit_time|jalali_gregorian }}</td>
+                    <td>{{ session.total_duration_minutes }} دقیقه</td>
+                    <td>{{ session.calculated_fee }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="8">در این بازه هیچ سشن بسته شده‌ای وجود ندارد.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

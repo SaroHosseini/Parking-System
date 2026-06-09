@@ -33,3 +33,12 @@ def jalali_gregorian_date(value):
     gregorian_str = value.strftime("%Y/%m/%d")
 
     return f"{jalali_str} شمسی | {gregorian_str} میلادی"
+
+
+@register.filter
+def jalali_date_value(value):
+    if not value:
+        return ""
+
+    jalali_date = jdatetime.date.fromgregorian(date=value)
+    return jalali_date.strftime("%Y/%m/%d")

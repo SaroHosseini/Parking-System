@@ -15,7 +15,7 @@
         <li>زمان ورود: {{ session.entry_time|jalali_gregorian }}</li>
     </ul>
 
-    <form method="post">
+    <form method="post" novalidate>
         {% csrf_token %}
         <button type="submit">بله، ثبت خروج</button>
     </form>
