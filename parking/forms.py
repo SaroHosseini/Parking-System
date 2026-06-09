@@ -62,7 +62,7 @@ class JalaliDateField(forms.CharField):
     def __init__(self, *args, **kwargs):
         attrs = {
             'inputmode': 'numeric',
-            'placeholder': 'مثلا ۱۴۰۵/۰۳/۱۸',
+            'placeholder': '۱۴۰۵/۰۳/۱۸',
             'autocomplete': 'off',
             'dir': 'ltr',
             'class': 'jalali-date-input',
@@ -137,25 +137,27 @@ class CustomerRequestForm(forms.ModelForm):
         help_texts = {
             'name': PERSIAN_NAME_HELP_TEXT,
             'owner_name': PERSIAN_NAME_HELP_TEXT,
-            'phone': 'مثلا 09120000000',
+            'phone': '09120000000',
             'email': 'ایمیل فعال برای پیگیری درخواست.',
-            'address': 'آدرس کامل پارکینگ یا مجموعه.',
         }
         widgets = {
             'name': forms.TextInput(attrs={
                 'maxlength': '50',
-                'placeholder': 'مثلا پارکینگ آزادی',
+                'placeholder': 'پارکینگ آزادی',
             }),
             'owner_name': forms.TextInput(attrs={
                 'maxlength': '50',
-                'placeholder': 'مثلا محمد پسندیده',
+                'placeholder': 'محمد پسندیده',
             }),
             'phone': forms.TextInput(attrs={
                 'maxlength': '11',
                 'inputmode': 'numeric',
                 'placeholder': '09120000000',
             }),
-            'address': forms.Textarea(attrs={'rows': 4}),
+            'address': forms.Textarea(attrs={
+                'rows': 4,
+                'placeholder': 'تهران، خیابان آزادی، پلاک ۱۲',
+            }),
         }
         error_messages = {
             'name': {
@@ -310,7 +312,7 @@ class ParkingLotForm(forms.ModelForm):
         self.fields['name'].max_length = 20
         self.fields['name'].widget.attrs.update({
             'maxlength': '20',
-            'placeholder': 'مثلا نمکی',
+            'placeholder': 'نمکی',
         })
         self.fields['car_capacity'].min_value = 0
         self.fields['car_capacity'].max_value = 5000
@@ -935,7 +937,7 @@ class CustomerUserCreateForm(forms.Form):
         widget=forms.TextInput(attrs={
             'maxlength': '60',
             'autocomplete': 'username',
-            'placeholder': 'مثلا operator12',
+            'placeholder': 'operator12',
         }),
         error_messages=USERNAME_ERROR_MESSAGES,
     )
@@ -945,7 +947,7 @@ class CustomerUserCreateForm(forms.Form):
         max_length=100,
         required=False,
         help_text='نام نمایشی کاربر در پنل. این فیلد اختیاری است.',
-        widget=forms.TextInput(attrs={'placeholder': 'مثلا علی ناصری'})
+        widget=forms.TextInput(attrs={'placeholder': 'رایان حیدری'})
     )
 
     email = forms.EmailField(
@@ -1065,7 +1067,7 @@ class CustomerUserUpdateForm(forms.ModelForm):
         max_length=100,
         required=False,
         help_text='نام نمایشی کاربر در پنل. این فیلد اختیاری است.',
-        widget=forms.TextInput(attrs={'placeholder': 'مثلا علی ناصری'})
+        widget=forms.TextInput(attrs={'placeholder': 'علی ناصری'})
     )
 
     email = forms.EmailField(
@@ -1147,7 +1149,7 @@ class BugReportForm(forms.ModelForm):
         widgets = {
             'subject': forms.TextInput(attrs={
                 'maxlength': '120',
-                'placeholder': 'مثلا خطا در ثبت پرداخت',
+                'placeholder': 'خطا در ثبت پرداخت',
             }),
             'description': forms.Textarea(attrs={
                 'rows': '5',
@@ -1594,23 +1596,26 @@ class CustomerSettingsForm(forms.ModelForm):
             'owner_name': PERSIAN_NAME_HELP_TEXT,
             'phone': 'شماره تماس ۱۱ رقمی، مثل 09113284955.',
             'email': 'ایمیل فعال برای پیگیری حساب.',
-            'address': 'آدرس کامل پارکینگ یا مجموعه.',
+            'address': 'تهران، خیابان آزادی، پلاک ۱۲',
         }
         widgets = {
             'name': forms.TextInput(attrs={
                 'maxlength': '50',
-                'placeholder': 'مثلا پارکینگ آزادی',
+                'placeholder': 'پارکینگ آزادی',
             }),
             'owner_name': forms.TextInput(attrs={
                 'maxlength': '50',
-                'placeholder': 'مثلا محمد پسندیده',
+                'placeholder': 'محمد پسندیده',
             }),
             'phone': forms.TextInput(attrs={
                 'maxlength': '11',
                 'inputmode': 'numeric',
                 'placeholder': '09113284955',
             }),
-            'address': forms.Textarea(attrs={'rows': 3}),
+            'address': forms.Textarea(attrs={
+                'rows': 3,
+                'placeholder': 'تهران، خیابان آزادی، پلاک ۱۲',
+            }),
         }
         error_messages = {
             'name': {
