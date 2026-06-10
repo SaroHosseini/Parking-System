@@ -25,6 +25,8 @@ from .models import (
     Tariff,
     Receipt,
     BugReport,
+    Announcement,
+    AnnouncementView,
 )
 
 from .forms import (
@@ -201,6 +203,30 @@ def bug_report_create(request):
         'ok': True,
         'message': 'پیام گزارش مشکل ثبت شد. باتشکر.',
     })
+
+
+@require_POST
+def announcement_seen(request, pk):
+    if not request.user.is_authenticated:
+        return JsonResponse({
+            'ok': False,
+            'message': 'برای مشاهده اطلاعیه ابتدا وارد حساب کاربری شوید.',
+        }, status=403)
+
+    announcement = Announcement.objects.filter(pk=pk, is_active=True).first()
+
+    if announcement is None:
+        return JsonResponse({
+            'ok': False,
+            'message': 'این اطلاعیه فعال نیست.',
+        }, status=404)
+
+    AnnouncementView.objects.get_or_create(
+        announcement=announcement,
+        user=request.user,
+    )
+
+    return JsonResponse({'ok': True})
 
 
 def is_owner(user):
@@ -2005,6 +2031,8 @@ def available_spots_api(request):
         parking_lot__in=accessible_parking_lots,
         is_occupied=False,
         is_active=True,
+    ).exclude(
+        sessions__status=ParkingSession.SESSION_STATUS_OPEN
     ).select_related('parking_lot')
 
     if vehicle_type:
@@ -2056,6 +2084,9 @@ def available_spots_api(request):
                     parking_lot__in=accessible_parking_lots,
                     is_occupied=False,
                     is_active=True,
+                )
+                .exclude(
+                    sessions__status=ParkingSession.SESSION_STATUS_OPEN
                 )
                 .select_related('parking_lot')
                 .first()

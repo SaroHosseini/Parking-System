@@ -782,6 +782,8 @@ class ParkingSessionEntryForm(forms.Form):
                 parking_lot__customer=self.customer,
                 is_active=True,
                 is_occupied=False
+            ).exclude(
+                sessions__status=ParkingSession.SESSION_STATUS_OPEN
             ).select_related('parking_lot')
 
             if self.parking_lots is not None:
@@ -837,6 +839,15 @@ class ParkingSessionEntryForm(forms.Form):
                 self.add_error(
                     'spot',
                     'این جایگاه در حال حاضر اشغال است.'
+                )
+
+            if ParkingSession.objects.filter(
+                spot=spot,
+                status=ParkingSession.SESSION_STATUS_OPEN
+            ).exists():
+                self.add_error(
+                    'spot',
+                    'برای این جایگاه یک سشن باز وجود دارد.'
                 )
 
             if vehicle_type and spot.spot_type != vehicle_type:

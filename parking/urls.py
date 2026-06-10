@@ -25,6 +25,7 @@ urlpatterns = [
 
     path('dashboard/', views.dashboard, name='dashboard'),
     path('bug-reports/create/', views.bug_report_create, name='bug_report_create'),
+    path('announcements/<int:pk>/seen/', views.announcement_seen, name='announcement_seen'),
 
     path('parking-lots/', views.parking_lot_list, name='parking_lot_list'),
     path('parking-lots/add/', views.parking_lot_create, name='parking_lot_create'),

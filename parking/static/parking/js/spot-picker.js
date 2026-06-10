@@ -40,6 +40,14 @@
                 selectedLabel.textContent = data.selected_spot.text;
             }
 
+            if (
+                hiddenInput.value &&
+                !data.selected_spot &&
+                !data.spots.some((spot) => String(spot.id) === String(hiddenInput.value))
+            ) {
+                setSelected(null);
+            }
+
             if (!data.spots.length) {
                 const empty = document.createElement('div');
                 empty.className = 'spot-picker__empty';

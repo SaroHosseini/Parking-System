@@ -1921,6 +1921,85 @@ textarea:focus {
     justify-content: flex-start;
 }
 
+.announcement-open {
+    overflow: hidden;
+}
+
+.announcement-open .app-shell {
+    filter: blur(4px);
+}
+
+.announcement-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 85;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: rgba(8, 15, 16, 0.42);
+    backdrop-filter: blur(10px);
+}
+
+.announcement-backdrop[hidden] {
+    display: none;
+}
+
+.announcement-modal {
+    width: min(100%, 540px);
+    max-height: min(90vh, 560px);
+    overflow: auto;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.34);
+    padding: 1rem;
+}
+
+.announcement-form {
+    display: grid;
+    gap: 0.9rem;
+}
+
+.announcement-modal__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.announcement-modal__header h2,
+.announcement-modal__header p,
+.announcement-modal__body p {
+    margin: 0;
+}
+
+.announcement-modal__header h2 {
+    margin-top: 0.2rem;
+}
+
+.announcement-close {
+    width: 40px;
+    min-width: 40px;
+    padding-inline: 0;
+    font-size: 1.3rem;
+    line-height: 1;
+}
+
+.announcement-modal__body {
+    max-height: 300px;
+    overflow: auto;
+    color: var(--muted);
+    line-height: 2;
+    padding-inline-end: 0.2rem;
+}
+
+.announcement-actions {
+    justify-content: flex-start;
+}
+
 table {
     width: 100%;
     border: 0;

@@ -326,6 +326,70 @@ class BugReportAdmin(admin.ModelAdmin):
     updated_at_display.short_description = 'آخرین بروزرسانی'
 
 
+@admin.register(models.Announcement)
+class AnnouncementAdmin(admin.ModelAdmin):
+    list_display = [
+        'id',
+        'title',
+        'is_active',
+        'created_at_display',
+        'updated_at_display',
+        'seen_count',
+    ]
+    list_filter = ['is_active', 'created_at']
+    search_fields = ['title', 'description']
+    list_editable = ['is_active']
+    readonly_fields = [
+        'created_at',
+        'updated_at',
+        'created_at_display',
+        'updated_at_display',
+        'seen_count',
+    ]
+    fields = [
+        'title',
+        'description',
+        'is_active',
+        'seen_count',
+        'created_at_display',
+        'updated_at_display',
+    ]
+    list_per_page = 20
+
+    def created_at_display(self, obj):
+        return admin_dual_datetime(getattr(obj, 'created_at', None))
+
+    created_at_display.short_description = 'زمان ایجاد'
+
+    def updated_at_display(self, obj):
+        return admin_dual_datetime(getattr(obj, 'updated_at', None))
+
+    updated_at_display.short_description = 'آخرین بروزرسانی'
+
+    def seen_count(self, obj):
+        if not obj or not obj.pk:
+            return 0
+
+        return obj.views.count()
+
+    seen_count.short_description = 'تعداد مشاهده'
+
+
+@admin.register(models.AnnouncementView)
+class AnnouncementViewAdmin(admin.ModelAdmin):
+    list_display = ['id', 'announcement', 'user', 'seen_at_display']
+    list_filter = ['announcement', 'seen_at']
+    search_fields = ['announcement__title', 'user__username']
+    readonly_fields = ['announcement', 'user', 'seen_at', 'seen_at_display']
+    list_select_related = ['announcement', 'user']
+    list_per_page = 30
+
+    def seen_at_display(self, obj):
+        return admin_dual_datetime(getattr(obj, 'seen_at', None))
+
+    seen_at_display.short_description = 'زمان مشاهده'
+
+
 # History Models
 
 @admin.register(models.ParkingSessionHistory)

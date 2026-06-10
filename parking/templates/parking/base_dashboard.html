@@ -14,6 +14,7 @@
     <script src="{% static 'parking/js/theme.js' %}" defer></script>
     <script src="{% static 'parking/js/jalali-datepicker.js' %}?v=20260609-2" defer></script>
     <script src="{% static 'parking/js/bug-report.js' %}" defer></script>
+    <script src="{% static 'parking/js/announcement.js' %}" defer></script>
     <script src="{% static 'parking/js/report-pagination.js' %}?v=20260609-1" defer></script>
 </head>
 <body>
@@ -144,6 +145,31 @@
             </form>
         </section>
     </div>
+
+    {% if active_announcement %}
+        <div class="announcement-backdrop" data-announcement-modal hidden>
+            <section class="announcement-modal" role="dialog" aria-modal="true" aria-labelledby="announcement-title">
+                <form class="announcement-form" method="post" action="{% url 'parking:announcement_seen' active_announcement.id %}" data-announcement-form>
+                    {% csrf_token %}
+                    <div class="announcement-modal__header">
+                        <div>
+                            <p class="eyebrow">اطلاعیه</p>
+                            <h2 id="announcement-title">{{ active_announcement.title }}</h2>
+                        </div>
+                        <button class="button secondary announcement-close" type="button" aria-label="بستن" data-announcement-close>×</button>
+                    </div>
+
+                    <div class="announcement-modal__body">
+                        {{ active_announcement.description|linebreaks }}
+                    </div>
+
+                    <div class="action-row announcement-actions">
+                        <button type="button" data-announcement-close>متوجه شدم</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    {% endif %}
     {% endwith %}
 </body>
 </html>

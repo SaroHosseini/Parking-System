@@ -930,6 +930,52 @@ class BugReport(models.Model):
         return f'{self.subject} - {self.username}'
 
 
+class Announcement(models.Model):
+    title = models.CharField('عنوان اطلاعیه', max_length=120)
+    description = models.TextField('متن توضیحات')
+    is_active = models.BooleanField('فعال است؟', default=True)
+    created_at = models.DateTimeField('زمان ایجاد', auto_now_add=True)
+    updated_at = models.DateTimeField('آخرین بروزرسانی', auto_now=True)
+
+    class Meta:
+        verbose_name = 'اطلاعیه'
+        verbose_name_plural = 'اطلاعیه‌ها'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title
+
+
+class AnnouncementView(models.Model):
+    announcement = models.ForeignKey(
+        Announcement,
+        on_delete=models.CASCADE,
+        related_name='views',
+        verbose_name='اطلاعیه',
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='announcement_views',
+        verbose_name='کاربر',
+    )
+    seen_at = models.DateTimeField('زمان مشاهده', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'مشاهده اطلاعیه'
+        verbose_name_plural = 'مشاهده‌های اطلاعیه'
+        ordering = ['-seen_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['announcement', 'user'],
+                name='unique_announcement_view_per_user',
+            )
+        ]
+
+    def __str__(self):
+        return f'{self.announcement} - {self.user}'
+
+
 # History Models
 
 class ParkingSessionHistory(models.Model):
