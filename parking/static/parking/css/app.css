@@ -3010,3 +3010,69 @@ hr {
 .image-focus-motorcycle {
     object-position: center 77%;
 }
+
+.quick-action {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.35rem;
+    min-height: 92px;
+    padding: 0.9rem 1rem;
+    border: 1px solid color-mix(in srgb, var(--primary) 45%, var(--line));
+    border-radius: var(--radius);
+    background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+    color: #fff;
+    box-shadow: 0 12px 28px rgba(15, 118, 110, 0.22);
+    cursor: pointer;
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.18s ease,
+        background 0.18s ease,
+        border-color 0.18s ease;
+}
+
+.quick-action strong {
+    color: #fff;
+    font-weight: 900;
+}
+
+.quick-action span {
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 0.86rem;
+}
+
+.quick-action::after {
+    content: "←";
+    position: absolute;
+    left: 0.9rem;
+    top: 0.85rem;
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+    font-weight: 900;
+    transition: transform 0.18s ease, background 0.18s ease;
+}
+
+.quick-action:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, var(--primary-strong), var(--primary));
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 16px 34px rgba(15, 118, 110, 0.28);
+}
+
+.quick-action:hover::after {
+    transform: translateX(-3px);
+    background: rgba(255, 255, 255, 0.24);
+}
+
+.quick-action:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--primary) 28%, transparent);
+    outline-offset: 3px;
+}
