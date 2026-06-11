@@ -1082,7 +1082,7 @@ class CustomerUserUpdateForm(forms.ModelForm):
         max_length=100,
         required=False,
         help_text='نام نمایشی کاربر در پنل. این فیلد اختیاری است.',
-        widget=forms.TextInput(attrs={'placeholder': 'علی ناصری'})
+        widget=forms.TextInput(attrs={'placeholder': 'رایان حیدری'})
     )
 
     email = forms.EmailField(
