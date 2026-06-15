@@ -1,14 +1,14 @@
 {% extends 'parking/base_dashboard.html' %}
 {% load date_filters %}
 
-{% block title %}لغو سشن پارک{% endblock %}
+{% block title %}لغو خودروی فعال{% endblock %}
 
 {% block content %}
-    <h1>لغو سشن پارک</h1>
+    <h1>لغو خودروی فعال</h1>
 
     <p>پارکینگ: {{ customer.name }}</p>
 
-    <p>آیا مطمئن هستید که می‌خواهید این سشن را لغو کنید؟</p>
+    <p>آیا از لغو این خودروی فعال مطمئن هستید؟</p>
 
     <ul>
         <li>پلاک: {{ session.vehicle.plate_number }}</li>
@@ -18,7 +18,7 @@
     </ul>
 
     <p>
-        با لغو این سشن، جایگاه آزاد می‌شود و پرداخت یا رسیدی ساخته نمی‌شود.
+        با لغو این خودرو، جایگاه آزاد می‌شود و پرداخت یا رسیدی ساخته نمی‌شود.
     </p>
 
     <form method="post" novalidate>
@@ -28,5 +28,5 @@
 
     <hr>
 
-    <a href="{% url 'parking:parking_session_list' %}">انصراف و بازگشت</a>
+    <a class="button secondary" href="{% url 'parking:parking_session_list' %}">انصراف و بازگشت</a>
 {% endblock %}

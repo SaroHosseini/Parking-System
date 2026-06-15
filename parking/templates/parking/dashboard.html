@@ -11,18 +11,18 @@
             <p>{{ customer.name }}، کاربر {{ request.user.username }}، نقش {{ user_profile.get_role_display }}</p>
         </div>
         <div class="action-row">
-            <a class="button" href="{% url 'parking:parking_session_create' %}">ثبت ورود</a>
+            <a class="button" href="{% url 'parking:parking_session_create' %}">ثبت وسیله نقلیه</a>
             <a class="button secondary" href="{% url 'parking:payment_list' %}">پرداخت‌ها</a>
         </div>
     </section>
 
     <section class="quick-grid">
         <a class="quick-action" href="{% url 'parking:parking_session_create' %}">
-            <strong>ثبت ورود وسیله</strong>
+            <strong>ثبت وسیله نقلیه</strong>
             <span>پلاک، نوع وسیله و جایگاه آزاد</span>
         </a>
         <a class="quick-action" href="{% url 'parking:parking_session_list' %}">
-            <strong>سشن‌های فعال</strong>
+            <strong>خودروهای فعال</strong>
             <span>کنترل ورود، خروج و لغو</span>
         </a>
         <a class="quick-action" href="{% url 'parking:receipt_list' %}">
@@ -56,7 +56,7 @@
             <strong>{{ today_exits_count }}</strong>
         </article>
         <article class="stat-card">
-            <span>سشن فعال</span>
+            <span>خودروی فعال</span>
             <strong>{{ open_sessions_count }}</strong>
         </article>
         <article class="stat-card">
@@ -114,7 +114,7 @@
 
             <article class="panel">
                 <div class="panel-header">
-                    <h2>وضعیت سشن‌ها</h2>
+                    <h2>وضعیت خودروهای فعال</h2>
                     <span class="status-pill warning">امروز</span>
                 </div>
                 <div class="summary-grid">
@@ -142,8 +142,8 @@
     <section class="dashboard-grid">
         <article class="panel">
             <div class="panel-header">
-                <h2>سشن‌های فعال</h2>
-                <a class="button secondary" href="{% url 'parking:parking_session_list' %}">همه سشن‌ها</a>
+                <h2>خودروهای فعال</h2>
+                <a class="button secondary" href="{% url 'parking:parking_session_list' %}">همه خودروهای فعال</a>
             </div>
             <div class="table-scroll dashboard-table-scroll">
                 <table>
@@ -170,7 +170,7 @@
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="5">در حال حاضر هیچ سشن فعالی وجود ندارد.</td>
+                                <td colspan="5">در حال حاضر هیچ خودروی فعالی وجود ندارد.</td>
                             </tr>
                         {% endfor %}
                     </tbody>

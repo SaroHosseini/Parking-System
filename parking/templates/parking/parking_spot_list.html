@@ -9,62 +9,28 @@
             <h1>مدیریت جایگاه‌های پارک</h1>
             <p>{{ customer.name }}</p>
         </div>
-        <a class="button" href="{% url 'parking:parking_spot_create' %}">ثبت جایگاه جدید</a>
+        {% if can_manage_spots %}
+            <div class="action-row">
+                <a class="button" href="{% url 'parking:parking_spot_create' %}">ثبت جایگاه جدید</a>
+                {% if auto_generate_lot %}
+                    <a class="button spot-auto-header-button" href="{% url 'parking:parking_spot_auto_generate' auto_generate_lot.id %}">ساخت خودکار جایگاه‌ها</a>
+                {% endif %}
+            </div>
+        {% endif %}
     </section>
 
-    <div class="spot-tools-grid">
-        <section class="panel compact-list-panel spot-capacity-panel spot-capacity-panel--compact">
-            <div class="panel-header">
-                <h2>وضعیت ساخت جایگاه‌ها</h2>
-                <span class="status-pill warning">ظرفیت باقی‌مانده</span>
+    <section class="panel filter-panel compact-filter-panel spot-filter-panel">
+        <div class="panel-header">
+            <h2>فیلترها</h2>
+        </div>
+        <form class="compact-filter-form" method="get" novalidate>
+            {{ filter_form.as_p }}
+            <div class="filter-actions">
+                <button type="submit">اعمال فیلتر</button>
+                <a class="button secondary" href="{% url 'parking:parking_spot_list' %}">پاک کردن فیلترها</a>
             </div>
-            <div class="spot-capacity-grid">
-                {% for row in capacity_rows %}
-                    <article class="spot-capacity-card">
-                        <div class="spot-capacity-card__title">
-                            <strong>{{ row.parking_lot.name }}</strong>
-                            <a href="{% url 'parking:parking_spot_auto_generate' row.parking_lot.id %}">ساخت خودکار</a>
-                        </div>
-                        <div class="spot-capacity-metrics">
-                            <span>خودرو: {{ row.car_spots_count }} / {{ row.car_capacity }}</span>
-                            <span>
-                                باقی‌مانده:
-                                {% if row.remaining_car_spots < 0 %}
-                                    خطای ظرفیت
-                                {% else %}
-                                    {{ row.remaining_car_spots }}
-                                {% endif %}
-                            </span>
-                            <span>موتور: {{ row.motorcycle_spots_count }} / {{ row.motorcycle_capacity }}</span>
-                            <span>
-                                باقی‌مانده:
-                                {% if row.remaining_motorcycle_spots < 0 %}
-                                    خطای ظرفیت
-                                {% else %}
-                                    {{ row.remaining_motorcycle_spots }}
-                                {% endif %}
-                            </span>
-                        </div>
-                    </article>
-                {% empty %}
-                    <p class="table-result-summary">هنوز پارکینگی ثبت نشده است.</p>
-                {% endfor %}
-            </div>
-        </section>
-
-        <section class="panel filter-panel compact-filter-panel spot-filter-panel">
-            <div class="panel-header">
-                <h2>فیلترها</h2>
-            </div>
-            <form class="compact-filter-form" method="get" novalidate>
-                {{ filter_form.as_p }}
-                <div class="filter-actions">
-                    <button type="submit">اعمال فیلتر</button>
-                    <a class="button secondary" href="{% url 'parking:parking_spot_list' %}">پاک کردن فیلترها</a>
-                </div>
-            </form>
-        </section>
-    </div>
+        </form>
+    </section>
 
     <section class="panel compact-list-panel spot-list-panel" id="records-section">
         <div class="panel-header">
@@ -110,7 +76,13 @@
                                     <span class="status-pill">آزاد</span>
                                 {% endif %}
                             </td>
-                            <td><a href="{% url 'parking:parking_spot_update' spot.id %}">ویرایش</a></td>
+                            <td>
+                                {% if can_manage_spots %}
+                                    <a href="{% url 'parking:parking_spot_update' spot.id %}">ویرایش</a>
+                                {% else %}
+                                    <span class="muted-text">فقط مشاهده</span>
+                                {% endif %}
+                            </td>
                         </tr>
                     {% empty %}
                         <tr>

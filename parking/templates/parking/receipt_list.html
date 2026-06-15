@@ -1,5 +1,5 @@
 {% extends 'parking/base_dashboard.html' %}
-{% load date_filters %}
+{% load date_filters static %}
 
 {% block title %}مدیریت رسیدها{% endblock %}
 
@@ -17,7 +17,32 @@
             <h2>فیلترها</h2>
         </div>
         <form class="compact-filter-form" method="get" novalidate>
-            {{ filter_form.as_p }}
+            <p>
+                {{ filter_form.receipt_number.label_tag }}
+                {{ filter_form.receipt_number }}
+                {{ filter_form.receipt_number.errors }}
+            </p>
+            {% include 'parking/partials/plate_filter_builder.html' with field=filter_form.plate_number %}
+            <p>
+                {{ filter_form.parking_lot.label_tag }}
+                {{ filter_form.parking_lot }}
+                {{ filter_form.parking_lot.errors }}
+            </p>
+            <p>
+                {{ filter_form.payment_method.label_tag }}
+                {{ filter_form.payment_method }}
+                {{ filter_form.payment_method.errors }}
+            </p>
+            <p>
+                {{ filter_form.issue_from.label_tag }}
+                {{ filter_form.issue_from }}
+                {{ filter_form.issue_from.errors }}
+            </p>
+            <p>
+                {{ filter_form.issue_to.label_tag }}
+                {{ filter_form.issue_to }}
+                {{ filter_form.issue_to.errors }}
+            </p>
             <div class="filter-actions">
                 <button type="submit">اعمال فیلتر</button>
                 <a class="button secondary" href="{% url 'parking:receipt_list' %}">پاک کردن فیلترها</a>
@@ -87,4 +112,5 @@
             </table>
         </div>
     </section>
+    <script src="{% static 'parking/js/plate-input.js' %}" defer></script>
 {% endblock %}

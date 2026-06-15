@@ -106,8 +106,8 @@
             flex-wrap: wrap;
         }
 
-        a,
-        button {
+        .print-actions a,
+        .print-actions button {
             min-height: 42px;
             display: inline-flex;
             align-items: center;
@@ -121,17 +121,28 @@
             font-weight: 900;
             text-decoration: none;
             cursor: pointer;
+            transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
         }
 
-        button {
+        .print-actions button {
             border-color: var(--primary);
             background: var(--primary);
             color: #fff;
         }
 
-        button:hover,
-        a:hover {
+        .print-actions a {
+            background: color-mix(in srgb, var(--surface) 90%, transparent);
+        }
+
+        .print-actions button:hover {
+            background: var(--primary-strong);
             border-color: var(--primary-strong);
+        }
+
+        .print-actions a:hover {
+            background: var(--surface-2);
+            border-color: var(--primary-strong);
+            color: var(--text);
         }
 
         .receipt-shell {
@@ -324,10 +335,10 @@
                 <p>رسید شماره {{ receipt.receipt_number }} برای {{ customer.name }}</p>
             </div>
             <div class="print-actions">
-                <button type="button" onclick="window.print()">چاپ رسید</button>
-                <a href="{% url 'parking:receipt_detail' receipt.id %}">جزئیات رسید</a>
-                <a href="{% url 'parking:receipt_list' %}">لیست رسیدها</a>
-                <a href="{% url 'parking:dashboard' %}">داشبورد</a>
+                <button class="button" type="button" onclick="window.print()">چاپ رسید</button>
+                <a class="button secondary" href="{% url 'parking:receipt_detail' receipt.id %}">جزئیات رسید</a>
+                <a class="button secondary" href="{% url 'parking:receipt_list' %}">لیست رسیدها</a>
+                <a class="button secondary" href="{% url 'parking:dashboard' %}">داشبورد</a>
             </div>
         </header>
 

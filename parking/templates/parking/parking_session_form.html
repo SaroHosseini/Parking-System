@@ -10,7 +10,7 @@
             <h1>{{ title }}</h1>
             <p>پلاک، نوع وسیله و جایگاه آزاد را انتخاب کنید.</p>
         </div>
-        <a class="button secondary" href="{% url 'parking:parking_session_list' %}">بازگشت به سشن‌ها</a>
+        <a class="button secondary" href="{% url 'parking:parking_session_list' %}">بازگشت به خودروهای فعال</a>
     </section>
 
     <section class="panel entry-panel entry-panel--compact">
@@ -23,20 +23,72 @@
 
             <div class="entry-grid entry-grid--compact">
                 <div class="field-block stable-field">
-                    {{ form.plate_number.label_tag }}
+                    {{ form.vehicle_type.label_tag }}
+                    {{ form.vehicle_type }}
+                    <div class="field-feedback">{{ form.vehicle_type.errors }}</div>
+                </div>
+
+                <div class="field-block stable-field plate-field-block">
+                    <label>{{ form.plate_number.label }}</label>
                     {{ form.plate_number }}
+                    <div class="plate-builder" data-plate-builder data-hidden-input-id="{{ form.plate_number.id_for_label }}" data-vehicle-type-id="{{ form.vehicle_type.id_for_label }}">
+                        <div class="plate-builder__car" data-plate-car>
+                            <img class="plate-builder__badge" src="{% static 'parking/img/pelak.png' %}" alt="I.R. Iran">
+                            <input class="plate-builder__segment plate-builder__segment--first" type="text" inputmode="numeric" maxlength="2" autocomplete="off" placeholder="- -" aria-label="دو رقم اول پلاک" data-plate-car-part="first">
+                            <select class="plate-builder__segment plate-builder__segment--letter" aria-label="حرف پلاک" data-plate-car-part="letter">
+                                <option value="ا">الف</option>
+                                <option value="ب">ب</option>
+                                <option value="پ">پ</option>
+                                <option value="ت">ت</option>
+                                <option value="ث">ث</option>
+                                <option value="ج">ج</option>
+                                <option value="چ">چ</option>
+                                <option value="ح">ح</option>
+                                <option value="خ">خ</option>
+                                <option value="د">د</option>
+                                <option value="ذ">ذ</option>
+                                <option value="ر">ر</option>
+                                <option value="ز">ز</option>
+                                <option value="ژ">ژ</option>
+                                <option value="س">س</option>
+                                <option value="ش">ش</option>
+                                <option value="ص">ص</option>
+                                <option value="ض">ض</option>
+                                <option value="ط">ط</option>
+                                <option value="ظ">ظ</option>
+                                <option value="ع">ع</option>
+                                <option value="غ">غ</option>
+                                <option value="ف">ف</option>
+                                <option value="ق">ق</option>
+                                <option value="ک">ک</option>
+                                <option value="گ">گ</option>
+                                <option value="ل">ل</option>
+                                <option value="م">م</option>
+                                <option value="ن">ن</option>
+                                <option value="و">و</option>
+                                <option value="ه">ه</option>
+                                <option value="ی">ی</option>
+                                <option value="معلولین">معلولین</option>
+                                <option value="تشریفات">تشریفات</option>
+                                <option value="D">D</option>
+                                <option value="S">S</option>
+                            </select>
+                            <input class="plate-builder__segment plate-builder__segment--middle" type="text" inputmode="numeric" maxlength="3" autocomplete="off" placeholder="- - -" aria-label="سه رقم پلاک" data-plate-car-part="middle">
+                            <span class="plate-builder__dash" aria-hidden="true">-</span>
+                            <input class="plate-builder__segment plate-builder__segment--region" type="text" inputmode="numeric" maxlength="2" autocomplete="off" placeholder="- -" aria-label="دو رقم ایران" data-plate-car-part="region">
+                            <span class="plate-builder__iran-label" aria-hidden="true">ایران</span>
+                        </div>
+                        <div class="plate-builder__motorcycle" data-plate-motorcycle hidden>
+                            <img class="plate-builder__badge" src="{% static 'parking/img/pelak.png' %}" alt="I.R. Iran">
+                            <input type="text" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="- - - - - - - -" aria-label="پلاک هشت رقمی موتور" data-plate-motorcycle-input>
+                        </div>
+                    </div>
                     <div class="field-feedback">
                         {{ form.plate_number.errors }}
                         {% if not form.plate_number.errors and form.plate_number.help_text %}
                             <span class="helptext">{{ form.plate_number.help_text }}</span>
                         {% endif %}
                     </div>
-                </div>
-
-                <div class="field-block stable-field">
-                    {{ form.vehicle_type.label_tag }}
-                    {{ form.vehicle_type }}
-                    <div class="field-feedback">{{ form.vehicle_type.errors }}</div>
                 </div>
 
                 <div class="field-block stable-field">
@@ -75,11 +127,12 @@
             </div>
 
             <div class="action-row">
-                <button type="submit">ثبت ورود</button>
+                <button type="submit">ثبت وسیله نقلیه</button>
                 <a class="button secondary" href="{% url 'parking:parking_session_list' %}">انصراف</a>
             </div>
         </form>
     </section>
 
+    <script src="{% static 'parking/js/plate-input.js' %}" defer></script>
     <script src="{% static 'parking/js/spot-picker.js' %}" defer></script>
 {% endblock %}

@@ -9,22 +9,28 @@ from django.utils import timezone
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 
 
-PERSIAN_PLATE_LETTERS = "ابپتثجچحخدذرزسشصضطظعغفقکگلمنوهی"
+PERSIAN_PLATE_LETTERS = "ابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی"
+SPECIAL_PLATE_LETTERS = ("معلولین", "تشریفات", "D", "S")
+PLATE_LETTER_PATTERN = (
+    r'(?:[' + PERSIAN_PLATE_LETTERS + r']|'
+    + '|'.join(SPECIAL_PLATE_LETTERS)
+    + r')'
+)
 PERSIAN_NAME_LETTERS = "آابپتثجچحخدذرزژسشصضطظعغفقکكگلمنوهیيىۀةئؤء"
 
 
 car_plate_validator = RegexValidator(
-    regex=r'^[0-9]{2}[' + PERSIAN_PLATE_LETTERS + r'][0-9]{3}-[0-9]{2}$',
+    regex=r'^[0-9]{2}' + PLATE_LETTER_PATTERN + r'[0-9]{3}-[0-9]{2}$',
     message=(
         "فرمت پلاک خودرو نامعتبر است. نمونه صحیح: 12ب345-67 "
-        "(دو رقم، یک حرف فارسی، سه رقم، خط تیره، دو رقم)."
+        "(دو رقم، حرف پلاک، سه رقم، خط تیره، دو رقم)."
     ),
 )
 
 
 motorcycle_plate_validator = RegexValidator(
     regex=r'^[0-9]{8}$',
-    message="پلاک موتورسیکلت باید دقیقا ۸ رقم باشد.",
+    message="پلاک موتورسیکلت را دقیقاً ۸ رقم وارد کنید.",
 )
 
 
@@ -184,8 +190,8 @@ class Vehicle(models.Model):
 
     plate_number = models.CharField(
         "شماره پلاک",
-        max_length=15,
-        help_text="مثال: برای خودرو: 12ب345-67 ، برای موتور: 8 رقم",
+        max_length=25,
+        help_text="خودرو: 12ب345-67، موتور: 8 رقم",
     )
 
     type = models.CharField(
@@ -429,8 +435,8 @@ class ParkingSession(models.Model):
     )
 
     class Meta:
-        verbose_name = "سشن پارک"
-        verbose_name_plural = "سشن‌های پارک"
+        verbose_name = "خودروی فعال"
+        verbose_name_plural = "خودروهای فعال"
         ordering = ['-entry_time']
         constraints = [
             models.UniqueConstraint(
@@ -451,7 +457,7 @@ class ParkingSession(models.Model):
         if self.vehicle_id and self.spot_id:
             if self.vehicle.customer != self.spot.parking_lot.customer:
                 raise ValidationError(
-                    'وسیله نقلیه و جایگاه پارک باید مربوط به یک مشتری باشند.'
+                    'وسیله نقلیه و جایگاه پارک به یک مشتری متصل نیستند.'
                 )
 
             if self.vehicle.type != self.spot.spot_type:
@@ -461,7 +467,7 @@ class ParkingSession(models.Model):
 
             if self.status == self.SESSION_STATUS_OPEN and not self.spot.is_active:
                 raise ValidationError(
-                    'نمی‌توان برای جایگاه غیرفعال سشن باز ایجاد کرد.'
+                    'برای جایگاه غیرفعال، خودروی فعال ثبت نمی‌شود.'
                 )
 
             if self.status == self.SESSION_STATUS_OPEN:
@@ -472,7 +478,7 @@ class ParkingSession(models.Model):
 
                 if other_open_session_for_spot:
                     raise ValidationError(
-                        'برای این جایگاه یک سشن باز وجود دارد.'
+                        'این جایگاه در خودروهای فعال استفاده شده است.'
                     )
 
                 other_open_session_for_vehicle = ParkingSession.objects.filter(
@@ -482,7 +488,7 @@ class ParkingSession(models.Model):
 
                 if other_open_session_for_vehicle:
                     raise ValidationError(
-                        f"برای پلاک {self.vehicle.plate_number} یک سشن باز دیگر وجود دارد."
+                        f"پلاک {self.vehicle.plate_number} در خودروهای فعال ثبت شده است."
                     )
 
         if self.entry_time and self.exit_time and self.exit_time < self.entry_time:
@@ -658,7 +664,7 @@ class Payment(models.Model):
         ParkingSession,
         on_delete=models.CASCADE,
         related_name='payments',
-        verbose_name='سشن پارک',
+        verbose_name='خودروی فعال',
     )
 
     class Meta:
@@ -686,17 +692,17 @@ class Payment(models.Model):
 
         if session is None:
             raise ValidationError({
-                'session': 'پرداخت باید به یک سشن پارک متصل باشد.'
+                'session': 'پرداخت به خودروی فعال متصل نیست.'
             })
 
         if session.status != ParkingSession.SESSION_STATUS_CLOSED:
             raise ValidationError({
-                'session': 'پرداخت فقط برای سشن بسته‌شده قابل ثبت است.'
+                'session': 'پرداخت برای خودروی دارای خروج ثبت می‌شود.'
             })
 
         if session.calculated_fee is None:
             raise ValidationError({
-                'session': 'هزینه سشن هنوز محاسبه نشده است.'
+                'session': 'هزینه توقف هنوز محاسبه نشده است.'
             })
 
         if self.payment_status == self.PAYMENT_STATUS_CLOSED and not self.payment_method:
@@ -752,7 +758,7 @@ class Receipt(models.Model):
         ParkingSession,
         on_delete=models.SET_NULL,
         related_name='receipt',
-        verbose_name='سشن پارک',
+        verbose_name='خودروی فعال',
         null=True,
     )
 
@@ -778,7 +784,7 @@ class Receipt(models.Model):
         ordering = ['-issue_time']
 
     def __str__(self):
-        return f"رسید #{self.receipt_number} - سشن {self.session_id}"
+        return f"رسید #{self.receipt_number} - خودروی فعال {self.session_id}"
 
     def generate_receipt_number(self):
         local_time = timezone.localtime(timezone.now())
@@ -791,7 +797,7 @@ class Receipt(models.Model):
         if not session:
             lines = [
                 f"شماره رسید: {self.receipt_number}",
-                f"سشن: حذف شده",
+                f"خودروی فعال: حذف شده",
                 f"وضعیت پرداخت: {self.payment.get_payment_status_display() if self.payment else 'حذف شده'}",
                 f"مبلغ قابل پرداخت: {self.calculated_fee or 'نامشخص'} تومان",
                 f"روش پرداخت: {self.payment.get_payment_method_display() if self.payment else 'حذف شده'}",
@@ -979,7 +985,7 @@ class AnnouncementView(models.Model):
 # History Models
 
 class ParkingSessionHistory(models.Model):
-    original_id = models.IntegerField('شناسه اصلی سشن')
+    original_id = models.IntegerField('شناسه اصلی خودروی فعال')
 
     customer = models.ForeignKey(
         Customer,
@@ -1035,8 +1041,8 @@ class ParkingSessionHistory(models.Model):
     )
 
     class Meta:
-        verbose_name = 'تاریخچه سشن پارک'
-        verbose_name_plural = 'تاریخچه سشن‌های پارک'
+        verbose_name = 'تاریخچه خودروی فعال'
+        verbose_name_plural = 'تاریخچه خودروهای فعال'
 
     def __str__(self):
         return f'History of session {self.original_id} at {self.deleted_at}'
@@ -1074,7 +1080,7 @@ class PaymentHistory(models.Model):
         ParkingSession,
         on_delete=models.SET_NULL,
         related_name='payment_histories',
-        verbose_name='سشن پارک',
+        verbose_name='خودروی فعال',
         null=True,
         blank=True,
     )
@@ -1124,7 +1130,7 @@ class ReceiptHistory(models.Model):
         ParkingSession,
         on_delete=models.SET_NULL,
         related_name='receipt_histories',
-        verbose_name='سشن پارک',
+        verbose_name='خودروی فعال',
         null=True,
         blank=True,
     )

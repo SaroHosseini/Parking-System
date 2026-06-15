@@ -35,11 +35,11 @@
                 <strong>{{ existing_spots_count }}</strong>
             </div>
             <div class="summary-card">
-                <span>سشن باز</span>
+                <span>خودروی فعال</span>
                 <strong>{{ open_sessions_count }}</strong>
             </div>
             <div class="summary-card">
-                <span>سشن بسته‌شده</span>
+                <span>خروج ثبت‌شده</span>
                 <strong>{{ closed_sessions_count }}</strong>
             </div>
         </div>
@@ -47,13 +47,17 @@
 
     <section class="panel">
         {% if error_message %}
-            <p class="errorlist">{{ error_message }}</p>
-            <a class="button secondary" href="{% url 'parking:parking_spot_list' %}">بازگشت به مدیریت جایگاه‌ها</a>
+            <div class="blocked-action-panel">
+                <p class="errorlist">{{ error_message }}</p>
+                <div class="action-row">
+                    <a class="button secondary" href="{% url 'parking:parking_spot_list' %}">بازگشت به مدیریت جایگاه‌ها</a>
+                </div>
+            </div>
         {% else %}
             <div class="panel-header">
                 <div>
                     <h2>تعداد جایگاه هر طبقه</h2>
-                    <p>برای هر طبقه تعداد جایگاه خودرو و موتور را جدا وارد کنید. مجموع هر ستون نباید از ظرفیت همان نوع بیشتر شود.</p>
+                    <p>برای هر طبقه تعداد جایگاه خودرو و موتور را جدا وارد کنید. مجموع هر ستون از ظرفیت همان نوع بیشتر نشود.</p>
                 </div>
             </div>
 
@@ -64,8 +68,12 @@
             </div>
 
             {% if open_sessions_count > 0 %}
-                <p class="errorlist">برای این پارکینگ سشن باز وجود دارد؛ ابتدا خروج خودروهای فعال را ثبت کنید.</p>
-                <a class="button secondary" href="{% url 'parking:parking_spot_list' %}">بازگشت به مدیریت جایگاه‌ها</a>
+                <div class="blocked-action-panel">
+                    <p class="errorlist">برای این پارکینگ خودروی فعال وجود دارد؛ ابتدا خروج خودروهای فعال را ثبت کنید.</p>
+                    <div class="action-row">
+                        <a class="button secondary" href="{% url 'parking:parking_spot_list' %}">بازگشت به مدیریت جایگاه‌ها</a>
+                    </div>
+                </div>
             {% else %}
                 <form class="auto-generate-form stable-form" method="post" novalidate>
                     {% csrf_token %}
@@ -102,7 +110,7 @@
                     </div>
 
                     <div class="action-row">
-                        <button type="submit">غیرفعال‌سازی جایگاه‌های فعلی و ساخت جایگاه‌های جدید</button>
+                        <button type="submit">آپدیت جایگاه ها</button>
                         <a class="button secondary" href="{% url 'parking:parking_spot_list' %}">انصراف</a>
                     </div>
                 </form>

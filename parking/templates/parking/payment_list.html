@@ -1,5 +1,5 @@
 {% extends 'parking/base_dashboard.html' %}
-{% load date_filters %}
+{% load date_filters static %}
 
 {% block title %}مدیریت پرداخت‌ها{% endblock %}
 
@@ -17,7 +17,42 @@
             <h2>فیلترها</h2>
         </div>
         <form class="compact-filter-form" method="get" novalidate>
-            {{ filter_form.as_p }}
+            {% include 'parking/partials/plate_filter_builder.html' with field=filter_form.plate_number %}
+            <p>
+                {{ filter_form.parking_lot.label_tag }}
+                {{ filter_form.parking_lot }}
+                {{ filter_form.parking_lot.errors }}
+            </p>
+            <p>
+                {{ filter_form.payment_method.label_tag }}
+                {{ filter_form.payment_method }}
+                {{ filter_form.payment_method.errors }}
+            </p>
+            <p>
+                {{ filter_form.payment_status.label_tag }}
+                {{ filter_form.payment_status }}
+                {{ filter_form.payment_status.errors }}
+            </p>
+            <p>
+                {{ filter_form.payment_from.label_tag }}
+                {{ filter_form.payment_from }}
+                {{ filter_form.payment_from.errors }}
+            </p>
+            <p>
+                {{ filter_form.payment_to.label_tag }}
+                {{ filter_form.payment_to }}
+                {{ filter_form.payment_to.errors }}
+            </p>
+            <p>
+                {{ filter_form.min_amount.label_tag }}
+                {{ filter_form.min_amount }}
+                {{ filter_form.min_amount.errors }}
+            </p>
+            <p>
+                {{ filter_form.max_amount.label_tag }}
+                {{ filter_form.max_amount }}
+                {{ filter_form.max_amount.errors }}
+            </p>
             <div class="filter-actions">
                 <button type="submit">اعمال فیلتر</button>
                 <a class="button secondary" href="{% url 'parking:payment_list' %}">پاک کردن فیلترها</a>
@@ -98,4 +133,5 @@
             </table>
         </div>
     </section>
+    <script src="{% static 'parking/js/plate-input.js' %}" defer></script>
 {% endblock %}

@@ -1,21 +1,21 @@
 {% extends 'parking/base_dashboard.html' %}
 {% load date_filters %}
 
-{% block title %}جزئیات سشن پارک{% endblock %}
+{% block title %}جزئیات خودروی فعال{% endblock %}
 
 {% block content %}
     <section class="page-header">
         <div>
             <p class="eyebrow">ورود و خروج</p>
-            <h1>جزئیات سشن پارک</h1>
+            <h1>جزئیات خودروی فعال</h1>
             <p>{{ customer.name }}</p>
         </div>
         <div class="action-row">
             {% if session.status == 'open' %}
                 <a class="button" href="{% url 'parking:parking_session_close' session.id %}">ثبت خروج</a>
-                <a class="button secondary danger-action" href="{% url 'parking:parking_session_cancel' session.id %}">لغو سشن</a>
+                <a class="button secondary danger-action" href="{% url 'parking:parking_session_cancel' session.id %}">لغو خودرو</a>
             {% endif %}
-            <a class="button secondary" href="{% url 'parking:parking_session_list' %}">بازگشت به سشن‌ها</a>
+            <a class="button secondary" href="{% url 'parking:parking_session_list' %}">بازگشت به خودروهای فعال</a>
         </div>
     </section>
 
@@ -95,7 +95,7 @@
                 {% else %}
                     <div>
                         <dt>پرداخت</dt>
-                        <dd>هنوز پرداختی برای این سشن ثبت نشده است.</dd>
+                        <dd>هنوز پرداختی برای این خودرو ثبت نشده است.</dd>
                     </div>
                 {% endif %}
             </dl>
@@ -113,7 +113,7 @@
             {% if receipt %}
                 <p>رسید {{ receipt.receipt_number }} با مبلغ {{ receipt.calculated_fee }} صادر شده است.</p>
             {% else %}
-                <p>هنوز رسیدی برای این سشن ساخته نشده است.</p>
+                <p>هنوز رسیدی برای این خودرو ساخته نشده است.</p>
             {% endif %}
         </div>
         {% if receipt %}

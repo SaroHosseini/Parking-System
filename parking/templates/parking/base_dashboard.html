@@ -36,9 +36,12 @@
                     <p class="nav-group-title">عملیات</p>
                     <ul class="nav-list">
                         <li><a class="nav-link {% if current == 'dashboard' %}is-active{% endif %}" href="{% url 'parking:dashboard' %}">داشبورد</a></li>
-                        <li><a class="nav-link {% if current == 'parking_session_list' or current == 'parking_session_create' or current == 'parking_session_detail' %}is-active{% endif %}" href="{% url 'parking:parking_session_list' %}">سشن‌های پارک</a></li>
+                        <li><a class="nav-link {% if current == 'parking_session_list' or current == 'parking_session_create' or current == 'parking_session_detail' %}is-active{% endif %}" href="{% url 'parking:parking_session_list' %}">خودروهای فعال</a></li>
                         <li><a class="nav-link {% if current == 'payment_list' or current == 'payment_update' %}is-active{% endif %}" href="{% url 'parking:payment_list' %}">پرداخت‌ها</a></li>
                         <li><a class="nav-link {% if current == 'receipt_list' or current == 'receipt_detail' or current == 'receipt_print' %}is-active{% endif %}" href="{% url 'parking:receipt_list' %}">رسیدها</a></li>
+                        {% if request.user.customer_profile.role != 'owner' %}
+                            <li><a class="nav-link {% if current == 'parking_spot_list' %}is-active{% endif %}" href="{% url 'parking:parking_spot_list' %}">جایگاه‌ها</a></li>
+                        {% endif %}
                     </ul>
                 </section>
 
@@ -47,7 +50,7 @@
                         <p class="nav-group-title">زیرساخت</p>
                         <ul class="nav-list">
                             <li><a class="nav-link {% if current == 'parking_lot_list' or current == 'parking_lot_create' or current == 'parking_lot_update' %}is-active{% endif %}" href="{% url 'parking:parking_lot_list' %}">پارکینگ‌ها</a></li>
-                            <li><a class="nav-link {% if current == 'parking_spot_list' or current == 'parking_spot_create' or current == 'parking_spot_update' or current == 'parking_spot_auto_generate' %}is-active{% endif %}" href="{% url 'parking:parking_spot_list' %}">جایگاه‌ها</a></li>
+                            <li><a class="nav-link {% if current == 'parking_spot_list' or current == 'parking_spot_create' or current == 'parking_spot_update' or current == 'parking_spot_auto_generate' %}is-active{% endif %}" href="{% url 'parking:parking_spot_list' %}">مدیریت جایگاه‌ها</a></li>
                             <li><a class="nav-link {% if current == 'tariff_list' or current == 'tariff_create' or current == 'tariff_update' or current == 'tariff_delete' %}is-active{% endif %}" href="{% url 'parking:tariff_list' %}">تعرفه‌ها</a></li>
                         </ul>
                     </section>

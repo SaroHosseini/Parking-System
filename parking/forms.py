@@ -21,18 +21,68 @@ from .models import (
 
 PERSIAN_DATE_ERROR = 'تاریخ را به صورت شمسی و با فرمت ۱۴۰۵/۰۳/۱۸ وارد کنید.'
 USERNAME_PATTERN = r'^[A-Za-z0-9]+$'
-USERNAME_HELP_TEXT = 'نام کاربری باید فقط شامل حروف و اعداد انگلیسی و حداکثر ۶۰ کاراکتر باشد.'
+USERNAME_HELP_TEXT = 'فقط حروف و اعداد انگلیسی، حداکثر ۶۰ کاراکتر.'
 USERNAME_ERROR_MESSAGES = {
     'required': 'نام کاربری را وارد کنید.',
-    'invalid': 'نام کاربری فقط باید شامل حروف و اعداد انگلیسی باشد.',
+    'invalid': 'نام کاربری را فقط با حروف و اعداد انگلیسی وارد کنید.',
     'max_length': 'نام کاربری نمی‌تواند بیشتر از ۶۰ کاراکتر باشد.',
 }
 PERSIAN_NAME_PATTERN = r'^[آابپتثجچحخدذرزژسشصضطظعغفقکكگلمنوهیيىۀةئؤء\s‌]+$'
 PERSIAN_NAME_HELP_TEXT = 'فقط حروف فارسی، حداکثر ۵۰ کاراکتر.'
+VEHICLE_COLOR_CHOICES = [
+    ('', 'انتخاب رنگ'),
+    ('سفید', 'سفید'),
+    ('مشکی', 'مشکی'),
+    ('نقره‌ای', 'نقره‌ای'),
+    ('خاکستری', 'خاکستری'),
+    ('قرمز', 'قرمز'),
+    ('آبی', 'آبی'),
+    ('سبز', 'سبز'),
+    ('زرد', 'زرد'),
+    ('نارنجی', 'نارنجی'),
+    ('قهوه‌ای', 'قهوه‌ای'),
+    ('کرم', 'کرم'),
+    ('سایر', 'سایر'),
+]
 PERSIAN_DIGIT_TRANSLATION = str.maketrans(
     '۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩',
     '01234567890123456789',
 )
+
+
+forms.Field.default_error_messages.update({
+    'required': 'این فیلد را تکمیل کنید.',
+})
+forms.CharField.default_error_messages.update({
+    'required': 'این فیلد را تکمیل کنید.',
+    'max_length': 'طول متن از حد مجاز بیشتر است.',
+    'min_length': 'طول متن از حد مجاز کمتر است.',
+})
+forms.ChoiceField.default_error_messages.update({
+    'required': 'یک گزینه انتخاب کنید.',
+    'invalid_choice': 'گزینه انتخاب‌شده معتبر نیست.',
+})
+forms.ModelChoiceField.default_error_messages.update({
+    'required': 'یک گزینه انتخاب کنید.',
+    'invalid_choice': 'گزینه انتخاب‌شده معتبر نیست.',
+})
+forms.IntegerField.default_error_messages.update({
+    'required': 'این فیلد را تکمیل کنید.',
+    'invalid': 'عدد معتبر وارد کنید.',
+    'min_value': 'مقدار واردشده کمتر از حد مجاز است.',
+    'max_value': 'مقدار واردشده بیشتر از حد مجاز است.',
+})
+forms.DecimalField.default_error_messages.update({
+    'required': 'این مبلغ را وارد کنید.',
+    'invalid': 'مبلغ را به صورت عددی وارد کنید.',
+    'max_digits': 'تعداد رقم‌های مبلغ از حد مجاز بیشتر است.',
+    'max_decimal_places': 'تعداد رقم‌های اعشار از حد مجاز بیشتر است.',
+    'max_whole_digits': 'تعداد رقم‌های مبلغ از حد مجاز بیشتر است.',
+})
+forms.EmailField.default_error_messages.update({
+    'required': 'ایمیل را وارد کنید.',
+    'invalid': 'ایمیل معتبر وارد کنید.',
+})
 
 
 def normalize_digits(value):
@@ -49,7 +99,7 @@ def clean_persian_name(value, field_label):
         raise forms.ValidationError(f'{field_label} نمی‌تواند بیشتر از ۵۰ کاراکتر باشد.')
 
     if not re.fullmatch(PERSIAN_NAME_PATTERN, value):
-        raise forms.ValidationError(f'{field_label} فقط باید شامل حروف فارسی باشد.')
+        raise forms.ValidationError(f'{field_label} را فقط با حروف فارسی وارد کنید.')
 
     return value
 
@@ -110,10 +160,10 @@ class CustomerRequestForm(forms.ModelForm):
         label='رمز عبور',
         widget=forms.PasswordInput,
         min_length=8,
-        help_text='رمز عبور باید حداقل ۸ کاراکتر، یک حرف بزرگ انگلیسی و یک عدد داشته باشد.',
+        help_text='حداقل ۸ کاراکتر، یک حرف بزرگ انگلیسی و یک عدد.',
         error_messages={
             'required': 'رمز عبور را وارد کنید.',
-            'min_length': 'رمز عبور باید حداقل ۸ کاراکتر باشد.',
+            'min_length': 'رمز عبور حداقل ۸ کاراکتر دارد.',
         }
     )
 
@@ -222,15 +272,23 @@ class CustomerRequestForm(forms.ModelForm):
             raise forms.ValidationError('وارد کردن شماره تماس الزامی است.')
 
         if not phone.isdigit():
-            raise forms.ValidationError('شماره تماس فقط باید شامل عدد باشد.')
+            raise forms.ValidationError('شماره تماس را فقط با عدد وارد کنید.')
 
         if len(phone) != 11:
-            raise forms.ValidationError('شماره تماس باید ۱۱ رقم باشد.')
+            raise forms.ValidationError('شماره تماس را ۱۱ رقمی وارد کنید.')
 
         if Customer.objects.filter(phone=phone).exists():
             raise forms.ValidationError('این شماره تماس قبلاً ثبت شده است.')
 
         return phone
+
+    def clean_address(self):
+        address = (self.cleaned_data.get('address') or '').strip()
+
+        if not address:
+            raise forms.ValidationError('آدرس پارکینگ را وارد کنید.')
+
+        return address
 
     def clean_password(self):
         password = self.cleaned_data.get('password')
@@ -239,13 +297,13 @@ class CustomerRequestForm(forms.ModelForm):
             return password
 
         if len(password) < 8:
-            raise forms.ValidationError('رمز عبور باید حداقل ۸ کاراکتر باشد.')
+            raise forms.ValidationError('رمز عبور حداقل ۸ کاراکتر دارد.')
 
         if not re.search(r'[A-Z]', password):
-            raise forms.ValidationError('رمز عبور باید حداقل یک حرف بزرگ انگلیسی داشته باشد.')
+            raise forms.ValidationError('رمز عبور یک حرف بزرگ انگلیسی داشته باشد.')
 
         if not re.search(r'[0-9]', password):
-            raise forms.ValidationError('رمز عبور باید حداقل یک عدد داشته باشد.')
+            raise forms.ValidationError('رمز عبور یک عدد داشته باشد.')
 
         return password
 
@@ -256,7 +314,7 @@ class CustomerRequestForm(forms.ModelForm):
         password_confirm = cleaned_data.get('password_confirm')
 
         if password and password_confirm and password != password_confirm:
-            raise forms.ValidationError('رمز عبور و تکرار آن یکسان نیستند.')
+            self.add_error('password_confirm', 'رمز عبور و تکرار آن یکسان نیستند.')
 
         return cleaned_data
 
@@ -292,20 +350,20 @@ class ParkingLotForm(forms.ModelForm):
             },
             'car_capacity': {
                 'required': 'ظرفیت جایگاه خودرو را وارد کنید.',
-                'invalid': 'ظرفیت جایگاه خودرو باید عدد صحیح باشد.',
+                'invalid': 'ظرفیت جایگاه خودرو را عدد صحیح وارد کنید.',
                 'min_value': 'ظرفیت جایگاه خودرو نمی‌تواند منفی باشد.',
                 'max_value': 'ظرفیت جایگاه خودرو نمی‌تواند بیشتر از ۵۰۰۰ باشد.',
             },
             'motorcycle_capacity': {
                 'required': 'ظرفیت جایگاه موتور را وارد کنید.',
-                'invalid': 'ظرفیت جایگاه موتور باید عدد صحیح باشد.',
+                'invalid': 'ظرفیت جایگاه موتور را عدد صحیح وارد کنید.',
                 'min_value': 'ظرفیت جایگاه موتور نمی‌تواند منفی باشد.',
                 'max_value': 'ظرفیت جایگاه موتور نمی‌تواند بیشتر از ۱۰۰۰ باشد.',
             },
             'floor_count': {
                 'required': 'تعداد طبقات را وارد کنید.',
-                'invalid': 'تعداد طبقات باید عدد صحیح باشد.',
-                'min_value': 'تعداد طبقات باید حداقل ۱ باشد.',
+                'invalid': 'تعداد طبقات را عدد صحیح وارد کنید.',
+                'min_value': 'تعداد طبقات حداقل ۱ است.',
                 'max_value': 'تعداد طبقات نمی‌تواند بیشتر از ۲۰ باشد.',
             },
         }
@@ -378,7 +436,7 @@ class ParkingLotForm(forms.ModelForm):
             self.add_error('motorcycle_capacity', 'ظرفیت جایگاه موتور نمی‌تواند بیشتر از ۱۰۰۰ باشد.')
 
         if floor_count < 1:
-            self.add_error('floor_count', 'تعداد طبقات باید حداقل ۱ باشد.')
+            self.add_error('floor_count', 'تعداد طبقات حداقل ۱ است.')
         elif floor_count > 20:
             self.add_error('floor_count', 'تعداد طبقات نمی‌تواند بیشتر از ۲۰ باشد.')
 
@@ -488,7 +546,7 @@ class ParkingSpotAutoGenerateForm(forms.Form):
         motorcycle_total = sum(motorcycle_counts_by_floor.values())
 
         if car_total == 0 and motorcycle_total == 0:
-            raise forms.ValidationError('حداقل برای خودرو یا موتور باید یک جایگاه ساخته شود.')
+            raise forms.ValidationError('حداقل برای خودرو یا موتور یک جایگاه وارد کنید.')
 
         if car_total > self.parking_lot.car_capacity:
             raise forms.ValidationError(
@@ -743,8 +801,12 @@ class CustomerLoginForm(AuthenticationForm):
 class ParkingSessionEntryForm(forms.Form):
     plate_number = forms.CharField(
         label='شماره پلاک',
-        max_length=15,
-        help_text='برای خودرو: 12ب345-67 ، برای موتور: 8 رقم'
+        max_length=25,
+        widget=forms.HiddenInput(attrs={'data-plate-hidden': 'true'}),
+        error_messages={
+            'required': 'شماره پلاک را تکمیل کنید.',
+            'max_length': 'شماره پلاک طولانی است.',
+        },
     )
 
     vehicle_type = forms.ChoiceField(
@@ -752,10 +814,10 @@ class ParkingSessionEntryForm(forms.Form):
         choices=Vehicle.VEHICLE_TYPE_CHOICES
     )
 
-    color = forms.CharField(
+    color = forms.ChoiceField(
         label='رنگ',
-        max_length=30,
-        required=False
+        choices=VEHICLE_COLOR_CHOICES,
+        required=False,
     )
 
     spot = forms.ModelChoiceField(
@@ -778,13 +840,15 @@ class ParkingSessionEntryForm(forms.Form):
             vehicle_type = self.data.get('vehicle_type')
 
         if self.customer:
+            open_spot_ids = ParkingSession.objects.filter(
+                status=ParkingSession.SESSION_STATUS_OPEN
+            ).values('spot_id')
+
             spots = ParkingSpot.objects.filter(
                 parking_lot__customer=self.customer,
                 is_active=True,
                 is_occupied=False
-            ).exclude(
-                sessions__status=ParkingSession.SESSION_STATUS_OPEN
-            ).select_related('parking_lot')
+            ).exclude(pk__in=open_spot_ids).select_related('parking_lot')
 
             if self.parking_lots is not None:
                 spots = spots.filter(parking_lot__in=self.parking_lots)
@@ -847,7 +911,7 @@ class ParkingSessionEntryForm(forms.Form):
             ).exists():
                 self.add_error(
                     'spot',
-                    'برای این جایگاه یک سشن باز وجود دارد.'
+                    'این جایگاه در خودروهای فعال استفاده شده است.'
                 )
 
             if vehicle_type and spot.spot_type != vehicle_type:
@@ -886,7 +950,7 @@ class ParkingSessionEntryForm(forms.Form):
                 if open_session_exists:
                     self.add_error(
                         'plate_number',
-                        'برای این وسیله نقلیه یک سشن باز وجود دارد.'
+                        'این وسیله نقلیه در خودروهای فعال ثبت شده است.'
                     )
 
         return cleaned_data
@@ -968,7 +1032,7 @@ class CustomerUserCreateForm(forms.Form):
     email = forms.EmailField(
         label='ایمیل',
         required=False,
-        help_text='ایمیل کاربر اختیاری است، ولی اگر وارد شود باید یکتا باشد.',
+        help_text='ایمیل کاربر اختیاری است و در صورت ورود، یکتا باشد.',
         widget=forms.EmailInput(attrs={'placeholder': 'user@example.com'})
     )
 
@@ -976,10 +1040,10 @@ class CustomerUserCreateForm(forms.Form):
         label='رمز عبور',
         widget=forms.PasswordInput,
         min_length=8,
-        help_text='رمز عبور باید حداقل ۸ کاراکتر، یک حرف بزرگ انگلیسی و یک عدد داشته باشد.',
+        help_text='حداقل ۸ کاراکتر، یک حرف بزرگ انگلیسی و یک عدد.',
         error_messages={
             'required': 'رمز عبور را وارد کنید.',
-            'min_length': 'رمز عبور باید حداقل ۸ کاراکتر باشد.',
+            'min_length': 'رمز عبور حداقل ۸ کاراکتر دارد.',
         }
     )
 
@@ -1048,10 +1112,10 @@ class CustomerUserCreateForm(forms.Form):
             return password
 
         if not re.search(r'[A-Z]', password):
-            raise forms.ValidationError('رمز عبور باید حداقل یک حرف بزرگ انگلیسی داشته باشد.')
+            raise forms.ValidationError('رمز عبور یک حرف بزرگ انگلیسی داشته باشد.')
 
         if not re.search(r'[0-9]', password):
-            raise forms.ValidationError('رمز عبور باید حداقل یک عدد داشته باشد.')
+            raise forms.ValidationError('رمز عبور یک عدد داشته باشد.')
 
         return password
 
@@ -1062,7 +1126,7 @@ class CustomerUserCreateForm(forms.Form):
         password_confirm = cleaned_data.get('password_confirm')
 
         if password and password_confirm and password != password_confirm:
-            raise forms.ValidationError('رمز عبور و تکرار آن یکسان نیستند.')
+            self.add_error('password_confirm', 'رمز عبور و تکرار آن یکسان نیستند.')
 
         role = cleaned_data.get('role')
         parking_lot = cleaned_data.get('parking_lot')
@@ -1088,7 +1152,7 @@ class CustomerUserUpdateForm(forms.ModelForm):
     email = forms.EmailField(
         label='ایمیل',
         required=False,
-        help_text='ایمیل کاربر اختیاری است، ولی اگر وارد شود باید یکتا باشد.',
+        help_text='ایمیل کاربر اختیاری است و در صورت ورود، یکتا باشد.',
         widget=forms.EmailInput(attrs={'placeholder': 'user@example.com'})
     )
 
@@ -1196,7 +1260,7 @@ class BugReportForm(forms.ModelForm):
             raise forms.ValidationError('توضیحات مشکل را وارد کنید.')
 
         if len(description) < 10:
-            raise forms.ValidationError('توضیحات مشکل باید حداقل ۱۰ حرف باشد.')
+            raise forms.ValidationError('توضیحات مشکل حداقل ۱۰ حرف دارد.')
 
         return description
 
@@ -1312,7 +1376,7 @@ class ParkingSessionFilterForm(forms.Form):
     )
 
     status = forms.ChoiceField(
-        label='وضعیت سشن',
+        label='وضعیت خودرو',
         required=False,
         choices=[('', 'همه وضعیت‌ها')] + list(ParkingSession.STATUS_CHOICES)
     )
@@ -1489,10 +1553,10 @@ class CustomerUserPasswordForm(forms.Form):
         label='رمز عبور جدید',
         widget=forms.PasswordInput,
         min_length=8,
-        help_text='رمز عبور باید حداقل ۸ کاراکتر، یک حرف بزرگ انگلیسی و یک عدد داشته باشد.',
+        help_text='حداقل ۸ کاراکتر، یک حرف بزرگ انگلیسی و یک عدد.',
         error_messages={
             'required': 'رمز عبور جدید را وارد کنید.',
-            'min_length': 'رمز عبور باید حداقل ۸ کاراکتر باشد.',
+            'min_length': 'رمز عبور حداقل ۸ کاراکتر دارد.',
         }
     )
 
@@ -1510,10 +1574,10 @@ class CustomerUserPasswordForm(forms.Form):
             return password
 
         if not re.search(r'[A-Z]', password):
-            raise forms.ValidationError('رمز عبور باید حداقل یک حرف بزرگ انگلیسی داشته باشد.')
+            raise forms.ValidationError('رمز عبور یک حرف بزرگ انگلیسی داشته باشد.')
 
         if not re.search(r'[0-9]', password):
-            raise forms.ValidationError('رمز عبور باید حداقل یک عدد داشته باشد.')
+            raise forms.ValidationError('رمز عبور یک عدد داشته باشد.')
 
         return password
 
@@ -1524,7 +1588,7 @@ class CustomerUserPasswordForm(forms.Form):
         password_confirm = cleaned_data.get('password_confirm')
 
         if password and password_confirm and password != password_confirm:
-            raise forms.ValidationError('رمز عبور و تکرار آن یکسان نیستند.')
+            self.add_error('password_confirm', 'رمز عبور و تکرار آن یکسان نیستند.')
 
         return cleaned_data    
     
@@ -1540,10 +1604,10 @@ class AccountPasswordChangeForm(forms.Form):
         label='رمز عبور جدید',
         widget=forms.PasswordInput,
         min_length=8,
-        help_text='رمز عبور باید حداقل ۸ کاراکتر، یک حرف بزرگ انگلیسی و یک عدد داشته باشد.',
+        help_text='حداقل ۸ کاراکتر، یک حرف بزرگ انگلیسی و یک عدد.',
         error_messages={
             'required': 'رمز عبور جدید را وارد کنید.',
-            'min_length': 'رمز عبور باید حداقل ۸ کاراکتر باشد.',
+            'min_length': 'رمز عبور حداقل ۸ کاراکتر دارد.',
         }
     )
 
@@ -1576,10 +1640,10 @@ class AccountPasswordChangeForm(forms.Form):
             return new_password
 
         if not re.search(r'[A-Z]', new_password):
-            raise forms.ValidationError('رمز عبور باید حداقل یک حرف بزرگ انگلیسی داشته باشد.')
+            raise forms.ValidationError('رمز عبور یک حرف بزرگ انگلیسی داشته باشد.')
 
         if not re.search(r'[0-9]', new_password):
-            raise forms.ValidationError('رمز عبور باید حداقل یک عدد داشته باشد.')
+            raise forms.ValidationError('رمز عبور یک عدد داشته باشد.')
 
         return new_password
 
@@ -1590,7 +1654,7 @@ class AccountPasswordChangeForm(forms.Form):
         new_password_confirm = cleaned_data.get('new_password_confirm')
 
         if new_password and new_password_confirm and new_password != new_password_confirm:
-            raise forms.ValidationError('رمز عبور جدید و تکرار آن یکسان نیستند.')
+            self.add_error('new_password_confirm', 'رمز عبور جدید و تکرار آن یکسان نیستند.')
 
         return cleaned_data   
 
@@ -1666,10 +1730,10 @@ class CustomerSettingsForm(forms.ModelForm):
             raise forms.ValidationError('وارد کردن شماره تماس الزامی است.')
 
         if not phone.isdigit():
-            raise forms.ValidationError('شماره تماس فقط باید شامل عدد باشد.')
+            raise forms.ValidationError('شماره تماس را فقط با عدد وارد کنید.')
 
         if len(phone) != 11:
-            raise forms.ValidationError('شماره تماس باید ۱۱ رقم باشد.')
+            raise forms.ValidationError('شماره تماس را ۱۱ رقمی وارد کنید.')
 
         exists = Customer.objects.filter(
             phone=phone
@@ -1707,3 +1771,11 @@ class CustomerSettingsForm(forms.ModelForm):
             raise forms.ValidationError('این ایمیل قبلاً برای یک کاربر دیگر ثبت شده است.')
 
         return email
+
+    def clean_address(self):
+        address = (self.cleaned_data.get('address') or '').strip()
+
+        if not address:
+            raise forms.ValidationError('آدرس پارکینگ را وارد کنید.')
+
+        return address

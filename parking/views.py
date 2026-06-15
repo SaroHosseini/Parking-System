@@ -39,7 +39,6 @@ from .forms import (
     ReportFilterForm,
     CustomerUserCreateForm,
     CustomerUserUpdateForm,
-    ParkingLotFilterForm,
     ParkingSpotFilterForm,
     TariffFilterForm,
     ParkingSessionFilterForm,
@@ -611,34 +610,15 @@ def parking_lot_list(request):
     if not is_owner(request.user):
         return redirect('parking:dashboard')
 
-    filter_form = ParkingLotFilterForm(request.GET or None)
-
     parking_lots = ParkingLot.objects.filter(
         customer=customer
-    )
-
-    if filter_form.is_valid():
-        name = filter_form.cleaned_data.get('name')
-        min_capacity = filter_form.cleaned_data.get('min_capacity')
-        max_capacity = filter_form.cleaned_data.get('max_capacity')
-
-        if name:
-            parking_lots = parking_lots.filter(name__icontains=name)
-
-        if min_capacity is not None:
-            parking_lots = parking_lots.filter(total_capacity__gte=min_capacity)
-
-        if max_capacity is not None:
-            parking_lots = parking_lots.filter(total_capacity__lte=max_capacity)
-
-    parking_lots = parking_lots.order_by('name')
+    ).order_by('name')
 
     page_obj, query_string = paginate_queryset(request, parking_lots, per_page=10)
 
     return render(request, 'parking/parking_lot_list.html', {
         'parking_lots': page_obj,
         'customer': customer,
-        'filter_form': filter_form,
         'page_obj': page_obj,
         'query_string': query_string,
     })
@@ -717,16 +697,21 @@ def parking_spot_list(request):
     if customer is None:
         return redirect('parking:dashboard')
 
-    if not is_owner(request.user):
-        return redirect('parking:dashboard')
+    can_manage_spots = is_owner(request.user)
+    accessible_parking_lots = get_accessible_parking_lots(request.user, customer)
 
-    filter_form = ParkingSpotFilterForm(request.GET or None, customer=customer)
+    filter_form = ParkingSpotFilterForm(
+        request.GET or None,
+        customer=customer,
+        parking_lots=accessible_parking_lots,
+    )
 
     parking_spots = ParkingSpot.objects.select_related(
         'parking_lot',
         'parking_lot__customer',
     ).filter(
         parking_lot__customer=customer,
+        parking_lot__in=accessible_parking_lots,
         is_active=True,
     )
 
@@ -759,7 +744,8 @@ def parking_spot_list(request):
             parking_spots = parking_spots.filter(is_occupied=True)
 
     capacity_parking_lots = ParkingLot.objects.filter(
-        customer=customer
+        customer=customer,
+        pk__in=accessible_parking_lots.values('pk'),
     ).annotate(
         car_spots_count=Count(
             'spots',
@@ -782,6 +768,7 @@ def parking_spot_list(request):
             pk=selected_parking_lot.pk
         )
 
+    auto_generate_lot = capacity_parking_lots.first()
     capacity_rows = []
 
     for parking_lot in capacity_parking_lots:
@@ -809,6 +796,8 @@ def parking_spot_list(request):
         'capacity_rows': capacity_rows,
         'customer': customer,
         'filter_form': filter_form,
+        'can_manage_spots': can_manage_spots,
+        'auto_generate_lot': auto_generate_lot,
         'page_obj': page_obj,
         'query_string': query_string,
     })
@@ -1150,7 +1139,7 @@ def parking_session_create(request):
 
     return render(request, 'parking/parking_session_form.html', {
         'form': form,
-        'title': 'ثبت ورود خودرو',
+        'title': 'ثبت وسیله نقلیه',
     })
 
 
@@ -2026,14 +2015,16 @@ def available_spots_api(request):
 
     page_size = min(max(page_size, 1), 10)
 
+    open_spot_ids = ParkingSession.objects.filter(
+        status=ParkingSession.SESSION_STATUS_OPEN
+    ).values('spot_id')
+
     spots = ParkingSpot.objects.filter(
         parking_lot__customer=customer,
         parking_lot__in=accessible_parking_lots,
         is_occupied=False,
         is_active=True,
-    ).exclude(
-        sessions__status=ParkingSession.SESSION_STATUS_OPEN
-    ).select_related('parking_lot')
+    ).exclude(pk__in=open_spot_ids).select_related('parking_lot')
 
     if vehicle_type:
         spots = spots.filter(spot_type=vehicle_type)
@@ -2085,9 +2076,7 @@ def available_spots_api(request):
                     is_occupied=False,
                     is_active=True,
                 )
-                .exclude(
-                    sessions__status=ParkingSession.SESSION_STATUS_OPEN
-                )
+                .exclude(pk__in=open_spot_ids)
                 .select_related('parking_lot')
                 .first()
             )
@@ -2150,7 +2139,7 @@ def parking_spot_auto_generate(request, pk):
                 'open_sessions_count': open_sessions_count,
                 'closed_sessions_count': closed_sessions_count,
                 'form': form,
-                'error_message': 'برای این پارکینگ سشن باز وجود دارد؛ تا قبل از ثبت خروج همه خودروها نمی‌توان جایگاه‌ها را دوباره ساخت.',
+                'error_message': 'برای این پارکینگ خودروی فعال وجود دارد؛ ابتدا خروج خودروهای فعال را ثبت کنید.',
             })
 
         if not form.is_valid():
