@@ -97,7 +97,7 @@
                 <tbody>
                     {% for session in sessions %}
                         <tr>
-                            <td>{{ session.vehicle.plate_number }}</td>
+                            <td>{% include 'parking/partials/plate_display.html' with plate=session.vehicle.plate_number vehicle_type=session.vehicle.type %}</td>
                             <td>{{ session.vehicle.get_type_display }}</td>
                             <td>{{ session.spot.parking_lot.name }}</td>
                             <td>{{ session.spot.code }}</td>

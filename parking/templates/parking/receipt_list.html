@@ -86,7 +86,7 @@
                     {% for receipt in receipts %}
                         <tr>
                             <td>{{ receipt.receipt_number }}</td>
-                            <td>{{ receipt.session.vehicle.plate_number }}</td>
+                            <td>{% include 'parking/partials/plate_display.html' with plate=receipt.session.vehicle.plate_number vehicle_type=receipt.session.vehicle.type %}</td>
                             <td>{{ receipt.session.spot.parking_lot.name }}</td>
                             <td>{{ receipt.session.spot.code }}</td>
                             <td>{{ receipt.calculated_fee }}</td>

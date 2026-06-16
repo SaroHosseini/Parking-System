@@ -5,6 +5,7 @@ import jdatetime
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
+from django.db.models import Exists, OuterRef
 
 from .models import (
     Customer,
@@ -840,15 +841,21 @@ class ParkingSessionEntryForm(forms.Form):
             vehicle_type = self.data.get('vehicle_type')
 
         if self.customer:
-            open_spot_ids = ParkingSession.objects.filter(
-                status=ParkingSession.SESSION_STATUS_OPEN
-            ).values('spot_id')
+            open_session_for_same_spot_code = ParkingSession.objects.filter(
+                status=ParkingSession.SESSION_STATUS_OPEN,
+                spot__parking_lot=OuterRef('parking_lot'),
+                spot__code=OuterRef('code'),
+            )
 
             spots = ParkingSpot.objects.filter(
                 parking_lot__customer=self.customer,
                 is_active=True,
                 is_occupied=False
-            ).exclude(pk__in=open_spot_ids).select_related('parking_lot')
+            ).annotate(
+                has_open_session=Exists(open_session_for_same_spot_code)
+            ).filter(
+                has_open_session=False
+            ).select_related('parking_lot')
 
             if self.parking_lots is not None:
                 spots = spots.filter(parking_lot__in=self.parking_lots)
@@ -906,7 +913,8 @@ class ParkingSessionEntryForm(forms.Form):
                 )
 
             if ParkingSession.objects.filter(
-                spot=spot,
+                spot__parking_lot=spot.parking_lot,
+                spot__code=spot.code,
                 status=ParkingSession.SESSION_STATUS_OPEN
             ).exists():
                 self.add_error(

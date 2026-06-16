@@ -5,7 +5,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from django.db import transaction
 from django.contrib.auth.models import User
-from django.db.models import Sum, Avg, Count, Q
+from django.db.models import Sum, Avg, Count, Q, Exists, OuterRef
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.contrib.auth import update_session_auth_hash
@@ -2015,16 +2015,22 @@ def available_spots_api(request):
 
     page_size = min(max(page_size, 1), 10)
 
-    open_spot_ids = ParkingSession.objects.filter(
-        status=ParkingSession.SESSION_STATUS_OPEN
-    ).values('spot_id')
+    open_session_for_same_spot_code = ParkingSession.objects.filter(
+        status=ParkingSession.SESSION_STATUS_OPEN,
+        spot__parking_lot=OuterRef('parking_lot'),
+        spot__code=OuterRef('code'),
+    )
 
     spots = ParkingSpot.objects.filter(
         parking_lot__customer=customer,
         parking_lot__in=accessible_parking_lots,
         is_occupied=False,
         is_active=True,
-    ).exclude(pk__in=open_spot_ids).select_related('parking_lot')
+    ).annotate(
+        has_open_session=Exists(open_session_for_same_spot_code)
+    ).filter(
+        has_open_session=False
+    ).select_related('parking_lot')
 
     if vehicle_type:
         spots = spots.filter(spot_type=vehicle_type)
@@ -2076,7 +2082,10 @@ def available_spots_api(request):
                     is_occupied=False,
                     is_active=True,
                 )
-                .exclude(pk__in=open_spot_ids)
+                .annotate(
+                    has_open_session=Exists(open_session_for_same_spot_code)
+                )
+                .filter(has_open_session=False)
                 .select_related('parking_lot')
                 .first()
             )

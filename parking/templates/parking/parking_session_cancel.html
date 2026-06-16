@@ -11,7 +11,7 @@
     <p>آیا از لغو این خودروی فعال مطمئن هستید؟</p>
 
     <ul>
-        <li>پلاک: {{ session.vehicle.plate_number }}</li>
+        <li>پلاک: {% include 'parking/partials/plate_display.html' with plate=session.vehicle.plate_number vehicle_type=session.vehicle.type %}</li>
         <li>پارکینگ: {{ session.spot.parking_lot.name }}</li>
         <li>جایگاه: {{ session.spot.code }}</li>
         <li>زمان ورود: {{ session.entry_time|jalali_gregorian }}</li>

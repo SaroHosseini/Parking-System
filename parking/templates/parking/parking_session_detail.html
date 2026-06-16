@@ -22,7 +22,7 @@
     <section class="receipt-detail-grid">
         <div class="panel receipt-card receipt-card--highlight">
             <span>پلاک</span>
-            <strong>{{ session.vehicle.plate_number }}</strong>
+            <strong>{% include 'parking/partials/plate_display.html' with plate=session.vehicle.plate_number vehicle_type=session.vehicle.type %}</strong>
             <small>{{ session.vehicle.get_type_display }}</small>
         </div>
 

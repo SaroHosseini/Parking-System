@@ -1,0 +1,21 @@
+{% load static date_filters %}
+{% with parts=plate|plate_parts:vehicle_type %}
+    {% if parts.kind == 'car' %}
+        <span class="plate-display plate-display--car" title="{{ parts.raw }}" dir="ltr">
+            <img class="plate-display__badge" src="{% static 'parking/img/pelak.png' %}" alt="I.R. Iran">
+            <span class="plate-display__segment">{{ parts.first }}</span>
+            <span class="plate-display__segment plate-display__letter">{{ parts.letter }}</span>
+            <span class="plate-display__segment plate-display__middle">{{ parts.middle }}</span>
+            <span class="plate-display__dash">-</span>
+            <span class="plate-display__segment">{{ parts.region }}</span>
+            <span class="plate-display__iran">ایران</span>
+        </span>
+    {% elif parts.kind == 'motorcycle' %}
+        <span class="plate-display plate-display--motorcycle" title="{{ parts.raw }}" dir="ltr">
+            <img class="plate-display__badge" src="{% static 'parking/img/pelak.png' %}" alt="I.R. Iran">
+            <span class="plate-display__segment plate-display__motor-number">{{ parts.number }}</span>
+        </span>
+    {% else %}
+        <span class="plate-display plate-display--text">{{ parts.raw }}</span>
+    {% endif %}
+{% endwith %}

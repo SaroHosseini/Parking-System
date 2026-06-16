@@ -1104,7 +1104,7 @@ input[type="submit"]:disabled {
     justify-content: space-between;
     position: relative;
     min-height: 92px;
-    padding: 0.95rem 0.95rem 0.85rem 3.1rem;
+    padding: 0.95rem 0.95rem 0.85rem 3.45rem;
     border: 1px solid color-mix(in srgb, var(--primary) 80%, var(--line));
     border-radius: var(--radius);
     background: var(--primary);
@@ -1113,21 +1113,20 @@ input[type="submit"]:disabled {
 }
 
 .quick-action::before {
-    content: "←";
+    content: none;
+}
+
+.quick-action__icon {
     position: absolute;
-    top: 0.75rem;
-    left: 0.75rem;
-    width: 26px;
-    height: 26px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
+    top: 0.68rem;
+    left: 0.7rem;
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+    object-position: center;
+    padding: 0.1rem;
+    border-radius: 10px;
     background: color-mix(in srgb, #fff 18%, transparent);
-    color: #fff;
-    font-size: 1rem;
-    line-height: 1;
-    font-weight: 900;
 }
 
 .quick-action:hover {
@@ -1619,6 +1618,104 @@ form:not(.logout-form) {
     font-weight: 900;
     writing-mode: vertical-rl;
     transform: rotate(180deg);
+}
+
+.plate-display {
+    display: inline-grid;
+    direction: ltr;
+    vertical-align: middle;
+    align-items: center;
+    max-width: 100%;
+    color: var(--text);
+    line-height: 1;
+}
+
+.plate-display--car {
+    grid-template-columns: 14px minmax(18px, auto) minmax(25px, auto) minmax(36px, auto) 5px minmax(18px, auto) 14px;
+    gap: 0.08rem;
+    min-width: 118px;
+    min-height: 28px;
+    padding: 0.1rem;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--surface) 88%, #fff);
+}
+
+.plate-display--motorcycle {
+    grid-template-columns: 14px minmax(70px, auto);
+    gap: 0.08rem;
+    min-width: 92px;
+    min-height: 28px;
+    padding: 0.1rem;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--surface) 88%, #fff);
+}
+
+.plate-display__badge {
+    width: 13px;
+    height: 24px;
+    border-radius: 4px;
+    object-fit: cover;
+    transform: scale(1.22);
+    transform-origin: center;
+}
+
+.plate-display__segment,
+.plate-display__iran {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 23px;
+    padding: 0.08rem 0.18rem;
+    border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+    border-radius: 5px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.72rem;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.plate-display__letter {
+    min-width: 28px;
+}
+
+.plate-display__middle {
+    min-width: 38px;
+}
+
+.plate-display__motor-number {
+    min-width: 70px;
+    letter-spacing: 0;
+}
+
+.plate-display__dash {
+    color: var(--muted);
+    font-size: 0.74rem;
+    font-weight: 900;
+}
+
+.plate-display__iran {
+    width: 14px;
+    min-width: 14px;
+    padding: 0.05rem 0;
+    overflow: hidden;
+    font-size: 0.28rem;
+    line-height: 0.9;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+}
+
+.plate-display--text {
+    min-height: 28px;
+    padding: 0.2rem 0.45rem;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--surface);
+    font-size: 0.82rem;
+    font-weight: 800;
+    white-space: nowrap;
 }
 
 .plate-filter-field {

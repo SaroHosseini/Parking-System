@@ -1,5 +1,5 @@
 {% extends 'parking/base_dashboard.html' %}
-{% load date_filters %}
+{% load date_filters static %}
 
 {% block title %}داشبورد مدیریت پارکینگ{% endblock %}
 
@@ -18,30 +18,30 @@
 
     <section class="quick-grid">
         <a class="quick-action" href="{% url 'parking:parking_session_create' %}">
+            <img class="quick-action__icon" src="{% static 'parking/img/quick-vehicle-entry.png' %}" alt="">
             <strong>ثبت وسیله نقلیه</strong>
             <span>پلاک، نوع وسیله و جایگاه آزاد</span>
         </a>
         <a class="quick-action" href="{% url 'parking:parking_session_list' %}">
+            <img class="quick-action__icon" src="{% static 'parking/img/quick-active-vehicles.png' %}" alt="">
             <strong>خودروهای فعال</strong>
             <span>کنترل ورود، خروج و لغو</span>
         </a>
         <a class="quick-action" href="{% url 'parking:receipt_list' %}">
+            <img class="quick-action__icon" src="{% static 'parking/img/quick-receipts.png' %}" alt="">
             <strong>رسیدها</strong>
             <span>مشاهده و چاپ رسید</span>
         </a>
         {% if is_owner_user %}
             <a class="quick-action" href="{% url 'parking:report_dashboard' %}?start_date={{ monthly_report_start|jalali_date_value }}&end_date={{ monthly_report_end|jalali_date_value }}">
+                <img class="quick-action__icon" src="{% static 'parking/img/quick-report.png' %}" alt="">
                 <strong>گزارش ماه اخیر</strong>
                 <span>درآمد، خروج و اشغال فضا</span>
             </a>
             <a class="quick-action" href="{% url 'parking:customer_user_create' %}">
+                <img class="quick-action__icon" src="{% static 'parking/img/quick-user.png' %}" alt="">
                 <strong>کاربر جدید</strong>
                 <span>تعریف اپراتور یا مالک</span>
-            </a>
-        {% else %}
-            <a class="quick-action" href="{% url 'parking:account_change_password' %}">
-                <strong>حساب من</strong>
-                <span>تغییر رمز عبور</span>
             </a>
         {% endif %}
     </section>
@@ -159,7 +159,7 @@
                     <tbody>
                         {% for session in active_sessions %}
                             <tr>
-                                <td>{{ session.vehicle.plate_number }}</td>
+                                <td>{% include 'parking/partials/plate_display.html' with plate=session.vehicle.plate_number vehicle_type=session.vehicle.type %}</td>
                                 <td>{{ session.spot.parking_lot.name }}</td>
                                 <td>{{ session.spot.code }}</td>
                                 <td>{{ session.entry_time|jalali_gregorian }}</td>
@@ -195,7 +195,7 @@
                     <tbody>
                         {% for payment in open_payments %}
                             <tr>
-                                <td>{{ payment.session.vehicle.plate_number }}</td>
+                                <td>{% include 'parking/partials/plate_display.html' with plate=payment.session.vehicle.plate_number vehicle_type=payment.session.vehicle.type %}</td>
                                 <td>{{ payment.amount }}</td>
                                 <td><a href="{% url 'parking:payment_update' payment.id %}">ثبت روش پرداخت</a></td>
                             </tr>

@@ -95,7 +95,7 @@
                 <tbody>
                     {% for payment in payments %}
                         <tr>
-                            <td>{{ payment.session.vehicle.plate_number }}</td>
+                            <td>{% include 'parking/partials/plate_display.html' with plate=payment.session.vehicle.plate_number vehicle_type=payment.session.vehicle.type %}</td>
                             <td>{{ payment.session.spot.parking_lot.name }}</td>
                             <td>{{ payment.session.spot.code }}</td>
                             <td>{{ payment.amount }}</td>

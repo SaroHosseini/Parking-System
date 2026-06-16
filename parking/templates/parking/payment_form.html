@@ -5,7 +5,7 @@
 {% block content %}
     <h1>ثبت پرداخت</h1>
 
-    <p>پلاک: {{ payment.session.vehicle.plate_number }}</p>
+    <p>پلاک: {% include 'parking/partials/plate_display.html' with plate=payment.session.vehicle.plate_number vehicle_type=payment.session.vehicle.type %}</p>
     <p>مبلغ: {{ payment.amount }}</p>
 
     <form class="stable-form" method="post" novalidate>

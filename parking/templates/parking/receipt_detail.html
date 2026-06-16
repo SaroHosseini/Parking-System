@@ -31,7 +31,7 @@
 
         <div class="panel receipt-card">
             <span>پلاک</span>
-            <strong>{{ receipt.session.vehicle.plate_number }}</strong>
+            <strong>{% include 'parking/partials/plate_display.html' with plate=receipt.session.vehicle.plate_number vehicle_type=receipt.session.vehicle.type %}</strong>
             <small>{{ receipt.session.vehicle.get_type_display }}</small>
         </div>
 

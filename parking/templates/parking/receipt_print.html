@@ -216,6 +216,98 @@
             overflow-wrap: anywhere;
         }
 
+        .plate-display {
+            display: inline-grid;
+            direction: ltr;
+            vertical-align: middle;
+            align-items: center;
+            color: var(--receipt-text);
+            line-height: 1;
+        }
+
+        .plate-display--car {
+            grid-template-columns: 13px minmax(17px, auto) minmax(24px, auto) minmax(34px, auto) 5px minmax(17px, auto) 13px;
+            gap: 0.06rem;
+            min-width: 112px;
+            min-height: 26px;
+            padding: 0.08rem;
+            border: 1px solid var(--receipt-line);
+            border-radius: 6px;
+            background: #fff;
+        }
+
+        .plate-display--motorcycle {
+            grid-template-columns: 13px minmax(66px, auto);
+            gap: 0.06rem;
+            min-width: 88px;
+            min-height: 26px;
+            padding: 0.08rem;
+            border: 1px solid var(--receipt-line);
+            border-radius: 6px;
+            background: #fff;
+        }
+
+        .plate-display__badge {
+            width: 12px;
+            height: 22px;
+            border-radius: 3px;
+            object-fit: cover;
+            transform: scale(1.22);
+            transform-origin: center;
+        }
+
+        .plate-display__segment,
+        .plate-display__iran {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 21px;
+            padding: 0.06rem 0.14rem;
+            border: 1px solid var(--receipt-line);
+            border-radius: 4px;
+            color: var(--receipt-text);
+            background: #fff;
+            font-size: 0.65rem;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+
+        .plate-display__middle {
+            min-width: 34px;
+        }
+
+        .plate-display__motor-number {
+            min-width: 66px;
+        }
+
+        .plate-display__dash {
+            color: var(--receipt-muted);
+            font-size: 0.68rem;
+            font-weight: 900;
+        }
+
+        .plate-display__iran {
+            width: 13px;
+            min-width: 13px;
+            padding: 0;
+            overflow: hidden;
+            font-size: 4px !important;
+            line-height: 0.9;
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+        }
+
+        .plate-display--text {
+            min-height: 26px;
+            padding: 0.18rem 0.4rem;
+            border: 1px solid var(--receipt-line);
+            border-radius: 6px;
+            background: #fff;
+            font-size: 0.72rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
         .receipt-total {
             margin-top: 0.35rem;
             padding: 0.8rem;
@@ -357,7 +449,7 @@
                     </div>
                     <div class="receipt-row">
                         <span>پلاک</span>
-                        <strong>{{ receipt.session.vehicle.plate_number }}</strong>
+                        <strong>{% include 'parking/partials/plate_display.html' with plate=receipt.session.vehicle.plate_number vehicle_type=receipt.session.vehicle.type %}</strong>
                     </div>
                     <div class="receipt-row">
                         <span>نوع وسیله</span>
