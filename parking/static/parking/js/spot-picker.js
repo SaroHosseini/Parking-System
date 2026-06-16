@@ -95,11 +95,12 @@
                 page: String(page),
                 page_size: '10',
                 selected_id: hiddenInput.value || '',
+                _: String(Date.now()),
             });
 
             list.innerHTML = '<div class="spot-picker__empty">در حال دریافت جایگاه‌ها...</div>';
 
-            fetch(`${apiUrl}?${params.toString()}`)
+            fetch(`${apiUrl}?${params.toString()}`, { cache: 'no-store' })
                 .then((response) => response.json())
                 .then(renderSpots)
                 .catch(() => {

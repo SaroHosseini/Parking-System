@@ -12,6 +12,7 @@ from django.contrib.auth import update_session_auth_hash
 from datetime import timedelta
 from django.urls import reverse
 from django.http import HttpResponse, JsonResponse
+from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 
 from .models import (
@@ -1989,14 +1990,22 @@ def customer_settings(request):
         'customer': customer,
     })
 
+@never_cache
 def available_spots_api(request):
+    def no_cache_json(payload):
+        response = JsonResponse(payload)
+        response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        return response
+
     if not request.user.is_authenticated:
-        return JsonResponse({'spots': []})
+        return no_cache_json({'spots': []})
 
     customer = get_user_customer(request.user)
 
     if customer is None:
-        return JsonResponse({'spots': []})
+        return no_cache_json({'spots': []})
 
     accessible_parking_lots = get_accessible_parking_lots(request.user, customer)
     vehicle_type = request.GET.get('vehicle_type')
@@ -2093,7 +2102,7 @@ def available_spots_api(request):
             if selected and (not vehicle_type or selected.spot_type == vehicle_type):
                 selected_spot = serialize_spot(selected)
 
-    return JsonResponse({
+    return no_cache_json({
         'spots': data,
         'selected_spot': selected_spot,
         'page': page,
