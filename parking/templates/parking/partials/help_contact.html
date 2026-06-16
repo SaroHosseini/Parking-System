@@ -1,0 +1,23 @@
+<section class="panel help-contact-panel">
+    <div>
+        <p class="eyebrow">پشتیبانی</p>
+        <h2>مشکل خود را پیدا نکردید؟ با ما تماس بگیرید</h2>
+        <p>اگر پاسخ مورد نظر در راهنما نبود، از مسیرهای زیر پیام بدهید یا همان‌جا گزارش مشکل ثبت کنید.</p>
+    </div>
+
+    <div class="help-contact-actions">
+        <a class="contact-card" href="tel:+98{{ help_contact.phone|slice:'1:' }}">
+            <span>شماره تماس</span>
+            <strong>{{ help_contact.phone }}</strong>
+        </a>
+        <a class="contact-card" href="{{ help_contact.telegram_url }}" target="_blank" rel="noopener">
+            <span>تلگرام</span>
+            <strong>{{ help_contact.telegram }}</strong>
+        </a>
+        <a class="contact-card" href="mailto:{{ help_contact.email }}">
+            <span>ایمیل</span>
+            <strong>{{ help_contact.email }}</strong>
+        </a>
+        <button class="button" type="button" data-bug-report-open>ثبت گزارش مشکل</button>
+    </div>
+</section>

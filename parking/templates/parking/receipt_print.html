@@ -424,7 +424,7 @@
         <header class="print-toolbar">
             <div>
                 <h1>چاپ رسید</h1>
-                <p>رسید شماره {{ receipt.receipt_number }} برای {{ customer.name }}</p>
+                <p>رسید شماره {{ receipt.receipt_number }} برای {{ receipt.session.spot.parking_lot.name }}</p>
             </div>
             <div class="print-actions">
                 <button class="button" type="button" onclick="window.print()">چاپ رسید</button>
@@ -445,7 +445,7 @@
                 <div class="receipt-body">
                     <div class="receipt-row">
                         <span>پارکینگ</span>
-                        <strong>{{ customer.name }}</strong>
+                        <strong>{{ receipt.session.spot.parking_lot.name }}</strong>
                     </div>
                     <div class="receipt-row">
                         <span>پلاک</span>

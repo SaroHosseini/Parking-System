@@ -35,6 +35,7 @@
                 <thead>
                     <tr>
                         <th>نام پارکینگ</th>
+                        <th>آدرس</th>
                         <th>طبقات</th>
                         <th>ظرفیت خودرو</th>
                         <th>ظرفیت موتور</th>
@@ -46,6 +47,7 @@
                     {% for parking_lot in parking_lots %}
                         <tr>
                             <td>{{ parking_lot.name }}</td>
+                            <td>{{ parking_lot.address|default:"-" }}</td>
                             <td>{{ parking_lot.floor_count }}</td>
                             <td>{{ parking_lot.car_capacity }}</td>
                             <td>{{ parking_lot.motorcycle_capacity }}</td>
@@ -54,7 +56,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="6">هنوز پارکینگی ثبت نشده است.</td>
+                            <td colspan="7">هنوز پارکینگی ثبت نشده است.</td>
                         </tr>
                     {% endfor %}
                 </tbody>

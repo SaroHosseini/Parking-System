@@ -7,7 +7,13 @@
         <div>
             <p class="eyebrow">قیمت‌گذاری</p>
             <h1>مدیریت تعرفه‌ها</h1>
-            <p>{{ customer.name }}</p>
+            <p>
+                {% if current_tariff_parking_lot %}
+                    تعرفه‌های پارکینگ {{ current_tariff_parking_lot.name }}
+                {% else %}
+                    {{ customer.name }}
+                {% endif %}
+            </p>
         </div>
         <a class="button" href="{% url 'parking:tariff_create' %}">ثبت تعرفه جدید</a>
     </section>

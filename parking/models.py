@@ -22,8 +22,8 @@ PERSIAN_NAME_LETTERS = "آابپتثجچحخدذرزژسشصضطظعغفقکكگ
 car_plate_validator = RegexValidator(
     regex=r'^[0-9]{2}' + PLATE_LETTER_PATTERN + r'[0-9]{3}-[0-9]{2}$',
     message=(
-        "فرمت پلاک خودرو نامعتبر است. نمونه صحیح: 12ب345-67 "
-        "(دو رقم، حرف پلاک، سه رقم، خط تیره، دو رقم)."
+        "پلاک وارد شده معتبر نیست."
+
     ),
 )
 
@@ -244,6 +244,7 @@ class ParkingLot(models.Model):
     )
 
     name = models.CharField("نام پارکینگ", max_length=20)
+    address = models.TextField("آدرس پارکینگ", blank=True)
 
     car_capacity = models.PositiveIntegerField(
         "ظرفیت جایگاه خودرو",
@@ -335,6 +336,14 @@ class Tariff(models.Model):
         related_name='tariffs',
         verbose_name='مشتری',
     )
+    parking_lot = models.ForeignKey(
+        ParkingLot,
+        on_delete=models.CASCADE,
+        related_name='tariffs',
+        verbose_name='پارکینگ',
+        null=True,
+        blank=True,
+    )
 
     name = models.CharField("نام تعرفه", max_length=100)
 
@@ -346,23 +355,23 @@ class Tariff(models.Model):
     )
 
     first_hour_price = models.DecimalField(
-        "هزینه ساعت اول",
+        "هزینه ساعت اول (تومان)",
         max_digits=10,
         decimal_places=2,
     )
 
     additional_hour_price = models.DecimalField(
-        "هزینه هر ساعت بعدی",
+        "هزینه هر ساعت بعدی (تومان)",
         max_digits=10,
         decimal_places=2,
     )
 
     daily_price = models.DecimalField(
-        "هزینه شبانه‌روزی",
+        "هزینه شبانه‌روزی (تومان)",
         max_digits=10,
         decimal_places=2,
         default=Decimal("0.00"),
-        help_text="هزینه توقف کامل ۲۴ ساعته",
+        help_text="هزینه توقف کامل ۲۴ ساعته (تومان)",
     )
 
     is_active = models.BooleanField("فعال", default=True)
@@ -370,17 +379,18 @@ class Tariff(models.Model):
     class Meta:
         verbose_name = "تعرفه"
         verbose_name_plural = "تعرفه‌ها"
-        ordering = ['customer', 'vehicle_type', 'name']
+        ordering = ['customer', 'parking_lot', 'vehicle_type', 'name']
         constraints = [
             models.UniqueConstraint(
-                fields=['customer', 'vehicle_type'],
+                fields=['parking_lot', 'vehicle_type'],
                 condition=Q(is_active=True),
-                name='unique_active_tariff_per_customer_vehicle_type'
+                name='unique_active_tariff_per_lot_vehicle_type'
             )
         ]
 
     def __str__(self):
-        return f"{self.customer.name} - {self.name} - {self.get_vehicle_type_display()}"
+        parking_lot_name = self.parking_lot.name if self.parking_lot_id else self.customer.name
+        return f"{parking_lot_name} - {self.name} - {self.get_vehicle_type_display()}"
 
 
 class ParkingSession(models.Model):
@@ -512,6 +522,7 @@ class ParkingSession(models.Model):
     def get_applicable_tariff(self):
         return Tariff.objects.filter(
             customer=self.vehicle.customer,
+            parking_lot=self.spot.parking_lot,
             vehicle_type=self.vehicle.type,
             is_active=True,
         ).first()

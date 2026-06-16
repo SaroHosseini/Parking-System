@@ -5,7 +5,7 @@ import jdatetime
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
-from django.db.models import Exists, OuterRef
+from django.db.models import Exists, OuterRef, Q
 
 from .models import (
     Customer,
@@ -179,7 +179,7 @@ class CustomerRequestForm(forms.ModelForm):
         fields = ['name', 'owner_name', 'phone', 'email', 'address']
 
         labels = {
-            'name': 'نام پارکینگ / مجموعه',
+            'name': 'نام مجموعه',
             'owner_name': 'نام مالک یا مدیر',
             'phone': 'شماره تماس',
             'email': 'ایمیل',
@@ -216,8 +216,8 @@ class CustomerRequestForm(forms.ModelForm):
         }
         error_messages = {
             'name': {
-                'required': 'نام پارکینگ را وارد کنید.',
-                'max_length': 'نام پارکینگ نمی‌تواند بیشتر از ۵۰ کاراکتر باشد.',
+                'required': 'نام مجموعه را وارد کنید.',
+                'max_length': 'نام مجموعه نمی‌تواند بیشتر از ۵۰ کاراکتر باشد.',
             },
             'owner_name': {
                 'required': 'نام مالک یا مدیر را وارد کنید.',
@@ -236,7 +236,7 @@ class CustomerRequestForm(forms.ModelForm):
         }
 
     def clean_name(self):
-        return clean_persian_name(self.cleaned_data.get('name'), 'نام پارکینگ')
+        return clean_persian_name(self.cleaned_data.get('name'), 'نام مجموعه')
 
     def clean_owner_name(self):
         return clean_persian_name(self.cleaned_data.get('owner_name'), 'نام مالک یا مدیر')
@@ -335,10 +335,11 @@ class VehicleForm(forms.ModelForm):
 class ParkingLotForm(forms.ModelForm):
     class Meta:
         model = ParkingLot
-        fields = ['name', 'car_capacity', 'motorcycle_capacity', 'floor_count']
+        fields = ['name', 'address', 'car_capacity', 'motorcycle_capacity', 'floor_count']
 
         labels = {
             'name': 'نام پارکینگ',
+            'address': 'آدرس پارکینگ',
             'car_capacity': 'ظرفیت جایگاه خودرو',
             'motorcycle_capacity': 'ظرفیت جایگاه موتور',
             'floor_count': 'تعداد طبقات',
@@ -348,6 +349,9 @@ class ParkingLotForm(forms.ModelForm):
             'name': {
                 'required': 'نام پارکینگ را وارد کنید.',
                 'max_length': 'نام پارکینگ نمی‌تواند بیشتر از ۲۰ حرف باشد.',
+            },
+            'address': {
+                'required': 'آدرس پارکینگ را وارد کنید.',
             },
             'car_capacity': {
                 'required': 'ظرفیت جایگاه خودرو را وارد کنید.',
@@ -375,7 +379,12 @@ class ParkingLotForm(forms.ModelForm):
         self.fields['name'].max_length = 20
         self.fields['name'].widget.attrs.update({
             'maxlength': '20',
-            'placeholder': 'نمکی',
+            'placeholder': 'آبیدر',
+        })
+        self.fields['address'].required = True
+        self.fields['address'].widget.attrs.update({
+            'rows': '2',
+            'placeholder': 'تهران، خیابان آزادی، پلاک ۱۲',
         })
         self.fields['car_capacity'].min_value = 0
         self.fields['car_capacity'].max_value = 5000
@@ -418,6 +427,14 @@ class ParkingLotForm(forms.ModelForm):
                 raise forms.ValidationError('پارکینگی با این نام قبلاً ثبت شده است.')
 
         return name
+
+    def clean_address(self):
+        address = (self.cleaned_data.get('address') or '').strip()
+
+        if not address:
+            raise forms.ValidationError('آدرس پارکینگ را وارد کنید.')
+
+        return address
 
     def clean(self):
         cleaned_data = super().clean()
@@ -580,9 +597,12 @@ class ParkingSpotForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.customer = kwargs.pop('customer', None)
+        parking_lots = kwargs.pop('parking_lots', None)
         super().__init__(*args, **kwargs)
 
-        if self.customer:
+        if parking_lots is not None:
+            self.fields['parking_lot'].queryset = parking_lots.order_by('name')
+        elif self.customer:
             self.fields['parking_lot'].queryset = ParkingLot.objects.filter(
                 customer=self.customer
             ).order_by('name')
@@ -653,7 +673,7 @@ class TariffForm(forms.ModelForm):
     }
 
     first_hour_price = forms.DecimalField(
-        label='هزینه ساعت اول',
+        label='هزینه ساعت اول (تومان)',
         max_digits=10,
         decimal_places=2,
         min_value=0,
@@ -661,7 +681,7 @@ class TariffForm(forms.ModelForm):
     )
 
     additional_hour_price = forms.DecimalField(
-        label='هزینه هر ساعت بعدی',
+        label='هزینه هر ساعت بعدی (تومان)',
         max_digits=10,
         decimal_places=2,
         min_value=0,
@@ -669,7 +689,7 @@ class TariffForm(forms.ModelForm):
     )
 
     daily_price = forms.DecimalField(
-        label='هزینه شبانه‌روزی',
+        label='هزینه شبانه‌روزی (تومان)',
         max_digits=10,
         decimal_places=2,
         min_value=0,
@@ -696,6 +716,7 @@ class TariffForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.customer = kwargs.pop('customer', None)
+        self.parking_lot = kwargs.pop('parking_lot', None)
         super().__init__(*args, **kwargs)
 
     def clean(self):
@@ -707,6 +728,7 @@ class TariffForm(forms.ModelForm):
         if self.customer and vehicle_type and is_active:
             duplicate_active_tariff = Tariff.objects.filter(
                 customer=self.customer,
+                parking_lot=self.parking_lot,
                 vehicle_type=vehicle_type,
                 is_active=True,
             )
@@ -841,18 +863,23 @@ class ParkingSessionEntryForm(forms.Form):
             vehicle_type = self.data.get('vehicle_type')
 
         if self.customer:
-            open_session_for_same_spot_code = ParkingSession.objects.filter(
+            open_session_for_same_spot = ParkingSession.objects.filter(
+                Q(spot_id=OuterRef('pk')) |
+                Q(
+                    spot__parking_lot=OuterRef('parking_lot'),
+                    spot__code=OuterRef('code'),
+                ),
                 status=ParkingSession.SESSION_STATUS_OPEN,
-                spot__parking_lot=OuterRef('parking_lot'),
-                spot__code=OuterRef('code'),
             )
 
             spots = ParkingSpot.objects.filter(
                 parking_lot__customer=self.customer,
                 is_active=True,
                 is_occupied=False
+            ).exclude(
+                sessions__status=ParkingSession.SESSION_STATUS_OPEN,
             ).annotate(
-                has_open_session=Exists(open_session_for_same_spot_code)
+                has_open_session=Exists(open_session_for_same_spot)
             ).filter(
                 has_open_session=False
             ).select_related('parking_lot')
@@ -881,13 +908,18 @@ class ParkingSessionEntryForm(forms.Form):
         spot = cleaned_data.get('spot')
 
         if self.customer and vehicle_type:
-            active_tariff_exists = Tariff.objects.filter(
+            active_tariffs = Tariff.objects.filter(
                 customer=self.customer,
                 vehicle_type=vehicle_type,
                 is_active=True
-            ).exists()
+            )
 
-            if not active_tariff_exists:
+            if spot:
+                active_tariffs = active_tariffs.filter(parking_lot=spot.parking_lot)
+            elif self.parking_lots is not None:
+                active_tariffs = active_tariffs.filter(parking_lot__in=self.parking_lots)
+
+            if not active_tariffs.exists():
                 self.add_error(
                     'vehicle_type',
                     'برای این نوع وسیله نقلیه تعرفه فعال ثبت نشده است.'
@@ -1087,9 +1119,12 @@ class CustomerUserCreateForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         self.customer = kwargs.pop('customer', None)
+        parking_lots = kwargs.pop('parking_lots', None)
         super().__init__(*args, **kwargs)
 
-        if self.customer:
+        if parking_lots is not None:
+            self.fields['parking_lot'].queryset = parking_lots.order_by('name')
+        elif self.customer:
             self.fields['parking_lot'].queryset = ParkingLot.objects.filter(
                 customer=self.customer
             ).order_by('name')
@@ -1182,11 +1217,14 @@ class CustomerUserUpdateForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user_instance = kwargs.pop('user_instance', None)
         self.customer = kwargs.pop('customer', None)
+        parking_lots = kwargs.pop('parking_lots', None)
         super().__init__(*args, **kwargs)
 
         self.fields['parking_lot'].required = False
 
-        if self.customer:
+        if parking_lots is not None:
+            self.fields['parking_lot'].queryset = parking_lots.order_by('name')
+        elif self.customer:
             self.fields['parking_lot'].queryset = ParkingLot.objects.filter(
                 customer=self.customer
             ).order_by('name')
@@ -1669,21 +1707,19 @@ class AccountPasswordChangeForm(forms.Form):
 class CustomerSettingsForm(forms.ModelForm):
     class Meta:
         model = Customer
-        fields = ['name', 'owner_name', 'phone', 'email', 'address']
+        fields = ['name', 'owner_name', 'phone', 'email']
 
         labels = {
             'name': 'نام پارکینگ / مجموعه',
             'owner_name': 'نام مالک یا مدیر',
             'phone': 'شماره تماس',
             'email': 'ایمیل',
-            'address': 'آدرس پارکینگ',
         }
         help_texts = {
             'name': PERSIAN_NAME_HELP_TEXT,
             'owner_name': PERSIAN_NAME_HELP_TEXT,
-            'phone': 'شماره تماس ۱۱ رقمی، مثل 09113284955.',
+            'phone': 'شماره تماس ۱۱ رقمی، 09123456789',
             'email': 'ایمیل فعال برای پیگیری حساب.',
-            'address': 'تهران، خیابان آزادی، پلاک ۱۲',
         }
         widgets = {
             'name': forms.TextInput(attrs={
@@ -1698,10 +1734,6 @@ class CustomerSettingsForm(forms.ModelForm):
                 'maxlength': '11',
                 'inputmode': 'numeric',
                 'placeholder': '09113284955',
-            }),
-            'address': forms.Textarea(attrs={
-                'rows': 3,
-                'placeholder': 'تهران، خیابان آزادی، پلاک ۱۲',
             }),
         }
         error_messages = {
@@ -1719,9 +1751,6 @@ class CustomerSettingsForm(forms.ModelForm):
             },
             'phone': {
                 'required': 'شماره تماس را وارد کنید.',
-            },
-            'address': {
-                'required': 'آدرس پارکینگ را وارد کنید.',
             },
         }
 
@@ -1779,11 +1808,3 @@ class CustomerSettingsForm(forms.ModelForm):
             raise forms.ValidationError('این ایمیل قبلاً برای یک کاربر دیگر ثبت شده است.')
 
         return email
-
-    def clean_address(self):
-        address = (self.cleaned_data.get('address') or '').strip()
-
-        if not address:
-            raise forms.ValidationError('آدرس پارکینگ را وارد کنید.')
-
-        return address

@@ -1,12 +1,12 @@
 {% extends 'parking/base_dashboard.html' %}
 
-{% block title %}تنظیمات پارکینگ{% endblock %}
+{% block title %}اطلاعات کاربری{% endblock %}
 
 {% block content %}
     <section class="page-header settings-header">
         <div>
-            <p class="eyebrow">مشخصات مجموعه</p>
-            <h1>تنظیمات پارکینگ</h1>
+            <p class="eyebrow">حساب و مجموعه</p>
+            <h1>اطلاعات کاربری</h1>
             <p>{{ customer.name }}</p>
         </div>
         <a class="button secondary" href="{% url 'parking:dashboard' %}">بازگشت به داشبورد</a>
@@ -38,6 +38,7 @@
                         {% endif %}
                     </div>
                 </div>
+
                 <div class="field-block stable-field">
                     {{ form.owner_name.label_tag }}
                     {{ form.owner_name }}
@@ -48,6 +49,7 @@
                         {% endif %}
                     </div>
                 </div>
+
                 <div class="field-block stable-field">
                     {{ form.phone.label_tag }}
                     {{ form.phone }}
@@ -58,6 +60,7 @@
                         {% endif %}
                     </div>
                 </div>
+
                 <div class="field-block stable-field">
                     {{ form.email.label_tag }}
                     {{ form.email }}
@@ -65,16 +68,6 @@
                         {{ form.email.errors }}
                         {% if not form.email.errors and form.email.help_text %}
                             <span class="helptext">{{ form.email.help_text }}</span>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="field-block stable-field field-wide settings-address-field">
-                    {{ form.address.label_tag }}
-                    {{ form.address }}
-                    <div class="field-feedback">
-                        {{ form.address.errors }}
-                        {% if not form.address.errors and form.address.help_text %}
-                            <span class="helptext">{{ form.address.help_text }}</span>
                         {% endif %}
                     </div>
                 </div>

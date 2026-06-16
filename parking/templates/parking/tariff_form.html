@@ -7,6 +7,9 @@
         <div>
             <p class="eyebrow">قیمت‌گذاری</p>
             <h1>{{ title }}</h1>
+            {% if current_tariff_parking_lot %}
+                <p>پارکینگ {{ current_tariff_parking_lot.name }}</p>
+            {% endif %}
         </div>
         <a class="button secondary" href="{% url 'parking:tariff_list' %}">بازگشت به لیست تعرفه‌ها</a>
     </section>

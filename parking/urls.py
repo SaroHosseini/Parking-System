@@ -24,8 +24,11 @@ urlpatterns = [
     ), name='logout'),
 
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('help/', views.help_faq, name='help_faq'),
+    path('help/<slug:slug>/', views.help_section, name='help_section'),
     path('bug-reports/create/', views.bug_report_create, name='bug_report_create'),
     path('announcements/<int:pk>/seen/', views.announcement_seen, name='announcement_seen'),
+    path('parking-lot/select/', views.current_parking_lot_select, name='current_parking_lot_select'),
 
     path('parking-lots/', views.parking_lot_list, name='parking_lot_list'),
     path('parking-lots/add/', views.parking_lot_create, name='parking_lot_create'),

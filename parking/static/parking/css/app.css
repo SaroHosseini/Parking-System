@@ -967,6 +967,13 @@ input[type="submit"]:disabled {
     flex-wrap: wrap;
 }
 
+.topbar-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+}
+
 .bug-report-button {
     min-height: 42px;
 }
@@ -975,10 +982,12 @@ input[type="submit"]:disabled {
     display: flex;
     align-items: center;
     gap: 0.45rem;
-    padding: 0.55rem 0.85rem;
+    min-height: 48px;
+    padding: 0.48rem 0.72rem;
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background: var(--surface);
+    box-shadow: 0 10px 30px rgba(23, 21, 17, 0.05);
 }
 
 .user-chip strong,
@@ -990,6 +999,63 @@ input[type="submit"]:disabled {
 .user-chip span {
     color: var(--muted);
     font-size: 0.85rem;
+}
+
+.parking-switcher,
+.current-parking-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    padding: 0.48rem 0.72rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: 0 10px 30px rgba(23, 21, 17, 0.05);
+}
+
+.parking-switcher {
+    margin: 0;
+}
+
+.parking-switcher label,
+.current-parking-chip span {
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.parking-switcher select {
+    min-height: 34px;
+    min-width: 132px;
+    max-width: 180px;
+    padding: 0.22rem 0.55rem;
+    border-radius: calc(var(--radius) - 2px);
+    font-size: 0.9rem;
+    font-weight: 900;
+    background: var(--surface-strong);
+}
+
+:root:not([data-theme="dark"]) .parking-switcher,
+:root:not([data-theme="dark"]) .current-parking-chip,
+:root:not([data-theme="dark"]) .user-chip {
+    border-color: color-mix(in srgb, var(--primary) 18%, var(--line));
+    background:
+        linear-gradient(135deg,
+            color-mix(in srgb, var(--primary) 8%, var(--surface)),
+            color-mix(in srgb, var(--accent) 7%, var(--surface-2)));
+}
+
+:root:not([data-theme="dark"]) .parking-switcher select {
+    border-color: color-mix(in srgb, var(--primary) 20%, var(--line));
+    background: color-mix(in srgb, var(--primary) 6%, #fff);
+}
+
+.current-parking-chip strong {
+    color: var(--text);
+    font-size: 0.85rem;
+    white-space: nowrap;
 }
 
 .logout-form {
@@ -1446,6 +1512,23 @@ form:not(.logout-form) {
 
 .parking-lot-form-grid {
     align-items: start;
+}
+
+.parking-lot-form-grid .field-wide {
+    grid-column: 1 / -1;
+}
+
+.parking-lot-form-grid .field-wide.stable-field {
+    grid-template-rows: 1.35rem minmax(112px, auto) minmax(2.6rem, auto);
+}
+
+.parking-lot-form-panel textarea {
+    min-height: 112px;
+    resize: vertical;
+}
+
+.parking-lot-form-panel .action-row {
+    margin-top: 0.9rem;
 }
 
 .stable-field {
@@ -2432,6 +2515,55 @@ td .link-button {
     gap: 0.75rem;
 }
 
+.detail-grid {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.detail-grid--compact {
+    grid-template-columns: repeat(4, minmax(130px, 1fr));
+}
+
+.detail-grid--two {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 0.55fr);
+}
+
+.detail-card {
+    display: grid;
+    gap: 0.25rem;
+    min-height: 90px;
+    padding: 0.8rem 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface-strong);
+}
+
+.detail-card span {
+    color: var(--muted);
+    font-weight: 800;
+}
+
+.detail-card strong {
+    color: var(--text);
+    font-size: 1.08rem;
+    overflow-wrap: anywhere;
+}
+
+.close-session-panel {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.close-session-panel__alert {
+    margin: 0;
+}
+
+.mini-panel {
+    display: grid;
+    gap: 0.75rem;
+    align-content: start;
+}
+
 .receipt-main-grid {
     display: grid;
     grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.65fr);
@@ -3118,6 +3250,208 @@ hr {
     color: #111;
 }
 
+.help-button {
+    min-height: 42px;
+}
+
+.help-layout,
+.help-detail-layout {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.help-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 0.42fr);
+    align-items: start;
+}
+
+.help-detail-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 0.36fr);
+    align-items: stretch;
+}
+
+.faq-list,
+.help-section-links,
+.help-steps,
+.help-tips ul {
+    display: grid;
+    gap: 0.65rem;
+}
+
+.faq-item {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface-strong);
+}
+
+.faq-item summary {
+    cursor: pointer;
+    padding: 0.85rem 1rem;
+    color: var(--text);
+    font-weight: 900;
+}
+
+.faq-item p {
+    margin: 0;
+    padding: 0 1rem 0.9rem;
+    color: var(--muted);
+    line-height: 1.9;
+}
+
+.help-section-links a {
+    display: grid;
+    gap: 0.18rem;
+    min-height: 62px;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface-strong);
+    color: var(--text);
+}
+
+.help-section-links a:hover,
+.help-section-links a.is-active {
+    border-color: color-mix(in srgb, var(--primary) 42%, var(--line));
+    background: color-mix(in srgb, var(--primary) 9%, var(--surface));
+}
+
+.help-section-links span {
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 800;
+}
+
+.help-section-links strong {
+    font-size: 0.98rem;
+}
+
+.help-section-links--compact {
+    max-height: calc((62px * 4) + (0.65rem * 3) + 0.3rem);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-left: 0.25rem;
+    scrollbar-gutter: stable;
+    align-content: start;
+}
+
+.help-side-stack {
+    display: grid;
+    gap: 0.75rem;
+    align-content: stretch;
+    height: 100%;
+}
+
+.help-side-panel {
+    height: 100%;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    align-content: start;
+}
+
+.help-steps {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: help-step;
+}
+
+.help-steps li {
+    position: relative;
+    min-height: 52px;
+    padding: 0.82rem 3.4rem 0.82rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface-strong);
+    color: var(--text);
+    line-height: 1.8;
+}
+
+.help-steps li::before {
+    counter-increment: help-step;
+    content: counter(help-step);
+    position: absolute;
+    top: 0.78rem;
+    right: 0.85rem;
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius);
+    background: var(--primary);
+    color: #fff;
+    font-weight: 900;
+}
+
+.help-tips {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+}
+
+.help-tips h3 {
+    margin: 0 0 0.75rem;
+    font-size: 1.05rem;
+}
+
+.help-tips ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.help-tips li {
+    padding: 0.7rem 0.85rem;
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+    color: var(--muted);
+    background: color-mix(in srgb, var(--surface-2) 60%, transparent);
+}
+
+.help-contact-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(360px, 0.7fr);
+    gap: 1rem;
+    align-items: center;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--primary) 10%, var(--surface)), var(--surface));
+}
+
+.help-detail-panel .help-contact-panel {
+    margin-top: 1rem;
+    grid-template-columns: minmax(0, 1fr) minmax(420px, 0.75fr);
+}
+
+.help-contact-panel .eyebrow,
+.bug-report-modal .eyebrow {
+    color: var(--primary);
+}
+
+.help-contact-panel h2,
+.help-contact-panel p {
+    margin: 0;
+}
+
+.help-contact-panel h2 {
+    margin-top: 0.25rem;
+    font-size: 1.25rem;
+}
+
+.help-contact-panel p:not(.eyebrow) {
+    margin-top: 0.65rem;
+    color: var(--muted);
+}
+
+.help-contact-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+}
+
+.help-contact-actions .button {
+    width: 100%;
+}
+
+
 @keyframes heroReveal {
     from {
         opacity: 0;
@@ -3220,7 +3554,11 @@ hr {
     .product-strip,
     .image-mosaic,
     .contact-panel,
-    .contact-cards {
+    .contact-cards,
+    .help-layout,
+    .help-detail-layout,
+    .help-contact-panel,
+    .help-contact-actions {
         grid-template-columns: 1fr;
     }
 

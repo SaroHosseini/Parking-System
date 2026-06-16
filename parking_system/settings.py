@@ -94,6 +94,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'parking.context_processors.active_announcement',
+                'parking.context_processors.parking_scope',
             ],
         },
     },

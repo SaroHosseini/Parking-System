@@ -3,11 +3,12 @@
 <div class="plate-filter-field">
     <label for="{{ field.id_for_label }}">{{ field.label }}</label>
     {{ field.as_hidden }}
-    <div class="plate-builder plate-builder--filter" data-plate-builder data-hidden-input-id="{{ field.id_for_label }}">
+    <div class="plate-builder plate-builder--filter" data-plate-builder data-plate-filter="true" data-hidden-input-id="{{ field.id_for_label }}"{% if vehicle_type_field %} data-vehicle-type-id="{{ vehicle_type_field.id_for_label }}"{% endif %}>
         <div class="plate-builder__car" data-plate-car>
             <img class="plate-builder__badge" src="{% static 'parking/img/pelak.png' %}" alt="I.R. Iran">
             <input class="plate-builder__segment plate-builder__segment--first" type="text" inputmode="numeric" maxlength="2" autocomplete="off" placeholder="- -" aria-label="دو رقم اول پلاک" data-plate-car-part="first">
             <select class="plate-builder__segment plate-builder__segment--letter" aria-label="حرف پلاک" data-plate-car-part="letter">
+                <option value="">همه حروف</option>
                 <option value="ا">الف</option>
                 <option value="ب">ب</option>
                 <option value="پ">پ</option>

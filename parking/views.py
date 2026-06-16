@@ -1,17 +1,20 @@
 import random
 import re
+from urllib.parse import urlparse
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from django.db import transaction
+from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db.models import Sum, Avg, Count, Q, Exists, OuterRef
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.contrib.auth import update_session_auth_hash
 from datetime import timedelta
-from django.urls import reverse
-from django.http import HttpResponse, JsonResponse
+from django.urls import Resolver404, resolve, reverse
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.http import Http404, HttpResponse, JsonResponse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 
@@ -229,6 +232,50 @@ def announcement_seen(request, pk):
     return JsonResponse({'ok': True})
 
 
+@require_POST
+def current_parking_lot_select(request):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None or not is_owner(request.user):
+        return redirect('parking:dashboard')
+
+    parking_lot_id = request.POST.get('parking_lot')
+    selected_parking_lot = ParkingLot.objects.filter(
+        customer=customer,
+        pk=parking_lot_id,
+    ).first()
+
+    if selected_parking_lot:
+        request.session[CURRENT_PARKING_LOT_SESSION_KEY] = selected_parking_lot.pk
+
+    next_url = request.POST.get('next') or reverse('parking:dashboard')
+
+    if not url_has_allowed_host_and_scheme(
+        next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        next_url = reverse('parking:dashboard')
+
+    if selected_parking_lot:
+        try:
+            resolved_next = resolve(urlparse(next_url).path)
+        except Resolver404:
+            resolved_next = None
+
+        if resolved_next and resolved_next.namespace == 'parking':
+            if resolved_next.url_name == 'parking_spot_auto_generate':
+                next_url = reverse(
+                    'parking:parking_spot_auto_generate',
+                    kwargs={'pk': selected_parking_lot.pk},
+                )
+
+    return redirect(next_url)
+
+
 def is_owner(user):
     profile = get_user_profile(user)
 
@@ -253,7 +300,36 @@ def is_operator(user):
     return profile.role == CustomerUser.ROLE_OPERATOR
 
 
-def get_accessible_parking_lots(user, customer):
+CURRENT_PARKING_LOT_SESSION_KEY = 'current_parking_lot_id'
+
+
+def get_current_owner_parking_lot(user, customer, request=None):
+    profile = get_user_profile(user)
+
+    if not profile or profile.role != CustomerUser.ROLE_OWNER:
+        return None
+
+    parking_lots = ParkingLot.objects.filter(customer=customer).order_by('name')
+
+    if request is None:
+        return parking_lots.first()
+
+    selected_id = request.session.get(CURRENT_PARKING_LOT_SESSION_KEY)
+    selected_parking_lot = None
+
+    if selected_id:
+        selected_parking_lot = parking_lots.filter(pk=selected_id).first()
+
+    if selected_parking_lot is None:
+        selected_parking_lot = parking_lots.first()
+
+        if selected_parking_lot:
+            request.session[CURRENT_PARKING_LOT_SESSION_KEY] = selected_parking_lot.pk
+
+    return selected_parking_lot
+
+
+def get_accessible_parking_lots(user, customer, request=None):
     parking_lots = ParkingLot.objects.filter(customer=customer)
     profile = get_user_profile(user)
 
@@ -263,11 +339,19 @@ def get_accessible_parking_lots(user, customer):
 
         return parking_lots.none()
 
+    if profile and profile.role == CustomerUser.ROLE_OWNER and request is not None:
+        current_parking_lot = get_current_owner_parking_lot(user, customer, request)
+
+        if current_parking_lot:
+            return parking_lots.filter(pk=current_parking_lot.pk)
+
+        return parking_lots.none()
+
     return parking_lots
 
 
-def scope_to_accessible_parking_lots(queryset, user, customer, lookup):
-    accessible_parking_lots = get_accessible_parking_lots(user, customer)
+def scope_to_accessible_parking_lots(queryset, user, customer, lookup, request=None):
+    accessible_parking_lots = get_accessible_parking_lots(user, customer, request)
     return queryset.filter(**{f'{lookup}__in': accessible_parking_lots})
 
 
@@ -284,6 +368,37 @@ def paginate_queryset(request, queryset, per_page=10):
         query_params.pop('partial')
 
     return page_obj, query_params.urlencode()
+
+
+def parse_plate_filter_tokens(value):
+    value = (value or '').strip()
+
+    if not value:
+        return []
+
+    if not value.startswith('plate-filter:'):
+        return [value]
+
+    tokens = []
+
+    for pair in value.removeprefix('plate-filter:').split(';'):
+        if '=' not in pair:
+            continue
+
+        key, token = pair.split('=', 1)
+        token = token.strip()
+
+        if key in {'first', 'letter', 'middle', 'region', 'motor'} and token:
+            tokens.append(token)
+
+    return tokens
+
+
+def apply_plate_filter(queryset, value, lookup):
+    for token in parse_plate_filter_tokens(value):
+        queryset = queryset.filter(**{f'{lookup}__icontains': token})
+
+    return queryset
 
 PERSIAN_TO_LATIN = {
     'آ': 'A', 'ا': 'A', 'ب': 'B', 'پ': 'P', 'ت': 'T', 'ث': 'S',
@@ -335,6 +450,266 @@ def parking_spot_sort_key(spot):
     )
 
 
+HELP_CONTACT = {
+    'phone': '09113284955',
+    'email': 'parkino.shop@gmail.com',
+    'telegram': '@ParkinoShop',
+    'telegram_url': 'https://t.me/ParkinoShop',
+}
+
+
+HELP_FAQS = [
+    {
+        'question': 'برای شروع کار با پارکینو از کجا شروع کنم؟',
+        'answer': 'ابتدا پارکینگ، ظرفیت‌ها و جایگاه‌ها را تکمیل کنید، سپس تعرفه فعال هر نوع وسیله را بسازید و بعد اپراتورها را به پارکینگ مربوط وصل کنید.',
+    },
+    {
+        'question': 'چرا هنگام ثبت وسیله نقلیه بعضی جایگاه‌ها نمایش داده نمی‌شوند؟',
+        'answer': 'فقط جایگاه‌های فعال، آزاد و هماهنگ با نوع وسیله نمایش داده می‌شوند. جایگاهی که خودروی فعال دارد از انتخاب حذف می‌شود.',
+    },
+    {
+        'question': 'اپراتور چه بخش‌هایی را می‌بیند؟',
+        'answer': 'اپراتور فقط اطلاعات پارکینگ مجاز خودش را می‌بیند و می‌تواند ورود، خروج، پرداخت، رسید و مشاهده جایگاه‌ها را انجام دهد.',
+    },
+    {
+        'question': 'اگر رمز مالک یا اپراتور فراموش شد چه کار کنم؟',
+        'answer': 'مالک می‌تواند رمز اپراتورها را از بخش کاربران تغییر دهد. برای مالک، امکان تغییر رمز از مدیریت سیستم فراهم شده است.',
+    },
+    {
+        'question': 'گزارش مشکل چه کاربردی دارد؟',
+        'answer': 'از دکمه گزارش مشکل در بالای پنل، موضوع و توضیح را ثبت کنید تا همراه با نام کاربری، نقش و شماره تماس در مدیریت سیستم بررسی شود.',
+    },
+]
+
+
+HELP_SECTIONS = [
+    {
+        'slug': 'dashboard',
+        'title': 'داشبورد',
+        'eyebrow': 'مرکز کنترل',
+        'summary': 'داشبورد خلاصه وضعیت روزانه پارکینگ، ظرفیت، خودروهای فعال، پرداخت‌های در انتظار و مسیرهای سریع را نشان می‌دهد.',
+        'steps': [
+            'برای عملیات روزانه از دکمه‌های سریع بالای داشبورد استفاده کنید.',
+            'کارت‌های آمار، وضعیت امروز پارکینگ را بدون ورود به صفحات جدا نشان می‌دهند.',
+            'لیست‌های پایین داشبورد برای بررسی سریع خودروهای فعال و پرداخت‌های در انتظار هستند.',
+        ],
+        'tips': [
+            'اگر اپراتور هستید، فقط آمار پارکینگ مجاز خودتان را می‌بینید.',
+            'برای بررسی جزئیات، از لینک‌های داخل هر کارت یا جدول استفاده کنید.',
+        ],
+    },
+    {
+        'slug': 'vehicle-entry',
+        'title': 'ثبت وسیله نقلیه',
+        'eyebrow': 'ورود و خروج',
+        'summary': 'در این بخش پلاک، نوع وسیله، رنگ و جایگاه آزاد انتخاب می‌شود و یک خودروی فعال ساخته می‌شود.',
+        'steps': [
+            'پلاک را با فرم پلاک ایرانی وارد کنید.',
+            'نوع وسیله و رنگ را انتخاب کنید تا جایگاه‌های مرتبط نمایش داده شوند.',
+            'در بخش انتخاب جایگاه، جستجو کنید و فقط از بین جایگاه‌های آزاد انتخاب کنید.',
+            'پس از ثبت، خودرو در لیست خودروهای فعال نمایش داده می‌شود.',
+        ],
+        'tips': [
+            'جایگاهی که خودروی فعال دارد از ابتدا در لیست انتخاب نمایش داده نمی‌شود.',
+            'برای موتور و سواری، جایگاه‌ها جداگانه فیلتر می‌شوند.',
+        ],
+    },
+    {
+        'slug': 'active-vehicles',
+        'title': 'خودروهای فعال',
+        'eyebrow': 'کنترل روزانه',
+        'summary': 'این صفحه خودروهایی را نشان می‌دهد که هنوز خروج آن‌ها ثبت نشده یا وضعیت عملیاتی دارند.',
+        'steps': [
+            'از فیلترها برای پیدا کردن پلاک، نوع وسیله، وضعیت یا بازه ورود و خروج استفاده کنید.',
+            'برای پایان توقف از ثبت خروج استفاده کنید.',
+            'برای مشاهده اطلاعات کامل هر رکورد، وارد جزئیات شوید.',
+            'اگر ورود اشتباه ثبت شده، در صورت نیاز از لغو استفاده کنید.',
+        ],
+        'tips': [
+            'ثبت خروج، هزینه توقف را محاسبه و مسیر پرداخت و رسید را آماده می‌کند.',
+            'فیلترهای تاریخ بر اساس تاریخ شمسی کار می‌کنند.',
+        ],
+    },
+    {
+        'slug': 'payments',
+        'title': 'پرداخت‌ها',
+        'eyebrow': 'مالی',
+        'summary': 'در پرداخت‌ها وضعیت پرداخت هر خروج، روش پرداخت، مبلغ و ارتباط با رسید مدیریت می‌شود.',
+        'steps': [
+            'پرداخت‌های در انتظار را بررسی کنید.',
+            'روش پرداخت را انتخاب و وضعیت را ثبت کنید.',
+            'بعد از پرداخت موفق، رسید مربوط قابل مشاهده و چاپ است.',
+        ],
+        'tips': [
+            'برای جستجوی دقیق‌تر از فیلتر پلاک، پارکینگ، روش پرداخت و بازه تاریخ استفاده کنید.',
+            'اگر پرداختی اشتباه ثبت شد، جزئیات پرداخت را بررسی و اصلاح کنید.',
+        ],
+    },
+    {
+        'slug': 'receipts',
+        'title': 'رسیدها',
+        'eyebrow': 'چاپ و بایگانی',
+        'summary': 'رسیدها سند نهایی پرداخت و خروج هستند و اطلاعات پلاک، زمان‌ها، مبلغ و روش پرداخت را نمایش می‌دهند.',
+        'steps': [
+            'رسید مورد نظر را با شماره رسید، پلاک یا تاریخ پیدا کنید.',
+            'جزئیات رسید را باز کنید.',
+            'برای چاپ، وارد صفحه چاپ رسید شوید؛ خود رسید همیشه روشن و مناسب چاپ است.',
+        ],
+        'tips': [
+            'در حالت چاپ، دکمه‌ها حذف می‌شوند و فقط رسید چاپ می‌شود.',
+        ],
+    },
+    {
+        'slug': 'parking-lots',
+        'title': 'پارکینگ‌ها',
+        'eyebrow': 'زیرساخت',
+        'summary': 'در این بخش پارکینگ‌ها، ظرفیت خودرو و موتور و تعداد طبقات مدیریت می‌شوند.',
+        'owner_only': True,
+        'steps': [
+            'نام پارکینگ، ظرفیت خودرو، ظرفیت موتور و تعداد طبقات را ثبت کنید.',
+            'بعد از ساخت پارکینگ، جایگاه‌ها را دستی یا خودکار بسازید.',
+            'برای اپراتورها، پارکینگ مجاز را از بخش کاربران مشخص کنید.',
+        ],
+        'tips': [
+            'ظرفیت‌ها باید با تعداد جایگاه‌های فعال هماهنگ باشند.',
+            'کاهش ظرفیت زیر تعداد جایگاه‌های فعال پذیرفته نمی‌شود.',
+        ],
+    },
+    {
+        'slug': 'parking-spots',
+        'title': 'جایگاه‌ها',
+        'eyebrow': 'نقشه ظرفیت',
+        'summary': 'جایگاه‌ها محل‌های قابل انتخاب برای ورود وسیله هستند و به تفکیک پارکینگ، طبقه و نوع وسیله مدیریت می‌شوند.',
+        'steps': [
+            'برای ساخت سریع، از ساخت خودکار جایگاه‌ها استفاده کنید.',
+            'برای اصلاح موردی، جایگاه را از جدول ویرایش کنید.',
+            'جایگاه غیرفعال در انتخاب ثبت وسیله نقلیه نمایش داده نمی‌شود.',
+        ],
+        'tips': [
+            'اپراتور فقط امکان مشاهده جایگاه‌ها را دارد و تغییرات زیرساختی مخصوص مالک است.',
+            'کد جایگاه‌ها بهتر است کوتاه، یکتا و قابل جستجو باشد.',
+        ],
+    },
+    {
+        'slug': 'tariffs',
+        'title': 'تعرفه‌ها',
+        'eyebrow': 'قیمت‌گذاری',
+        'summary': 'تعرفه‌ها هزینه ساعت اول، ساعت‌های بعدی و توقف شبانه‌روزی هر نوع وسیله را مشخص می‌کنند.',
+        'owner_only': True,
+        'steps': [
+            'برای هر نوع وسیله یک تعرفه فعال نگه دارید.',
+            'مبلغ‌ها را با رقم معتبر وارد کنید.',
+            'اگر تعرفه‌ای دیگر استفاده نمی‌شود، آن را غیرفعال یا حذف کنید.',
+        ],
+        'tips': [
+            'تعرفه فعال روی محاسبه هزینه خروج اثر مستقیم دارد.',
+        ],
+    },
+    {
+        'slug': 'reports',
+        'title': 'گزارش‌ها',
+        'eyebrow': 'تحلیل عملکرد',
+        'summary': 'گزارش‌ها وضعیت ورود و خروج، درآمد، پرداخت‌ها، اشغال فضا و تفکیک خودرو و موتور را در بازه انتخابی نشان می‌دهند.',
+        'owner_only': True,
+        'steps': [
+            'بازه تاریخ شمسی را انتخاب کنید.',
+            'در صورت نیاز، پارکینگ یا نوع وسیله را محدود کنید.',
+            'خلاصه آمار، روش‌های پرداخت و آخرین خروج‌ها را بررسی کنید.',
+        ],
+        'tips': [
+            'صفحه‌بندی آخرین خروج‌ها فقط همان جدول را به‌روزرسانی می‌کند.',
+        ],
+    },
+    {
+        'slug': 'users',
+        'title': 'کاربران و نقش‌ها',
+        'eyebrow': 'کنترل دسترسی',
+        'summary': 'در این بخش مالک‌ها و اپراتورها ساخته و مدیریت می‌شوند و برای اپراتور پارکینگ مجاز تعیین می‌شود.',
+        'owner_only': True,
+        'steps': [
+            'برای اپراتور جدید، نام کاربری، ایمیل، نقش و پارکینگ مجاز را وارد کنید.',
+            'در صورت فراموشی رمز، از تغییر رمز همان کاربر استفاده کنید.',
+            'کاربر غیرفعال امکان استفاده از پنل را ندارد.',
+        ],
+        'tips': [
+            'نام کاربری با حروف و اعداد انگلیسی ثبت می‌شود.',
+            'اپراتور بدون پارکینگ مجاز به داده عملیاتی دسترسی ندارد.',
+        ],
+    },
+    {
+        'slug': 'settings',
+        'title': 'اطلاعات کاربری',
+        'eyebrow': 'حساب و مجموعه',
+        'summary': 'در اطلاعات کاربری، نام مجموعه، نام مالک، شماره تماس و ایمیل حساب مالک تکمیل می‌شود.',
+        'owner_only': True,
+        'steps': [
+            'نام مجموعه و نام مالک یا مدیر را با حروف فارسی وارد کنید.',
+            'شماره تماس و ایمیل فعال را برای پیگیری حساب ثبت کنید.',
+            'پس از ذخیره موفق، اطلاعات نمایشی پنل و رسیدها به‌روز می‌شود.',
+        ],
+        'tips': [
+            'آدرس هر پارکینگ از بخش پارکینگ‌ها مدیریت می‌شود.',
+            'اگر فرم خطا داشته باشد، اطلاعات حساب تا ذخیره موفق تغییر نمی‌کند.',
+        ],
+    },
+]
+
+
+def get_visible_help_sections(user):
+    owner_user = is_owner(user)
+    return [
+        section
+        for section in HELP_SECTIONS
+        if owner_user or not section.get('owner_only')
+    ]
+
+
+def help_faq(request):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    if request.user.is_superuser or request.user.is_staff:
+        return redirect('parking:home')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:customer_request')
+
+    return render(request, 'parking/help_faq.html', {
+        'customer': customer,
+        'faqs': HELP_FAQS,
+        'help_sections': get_visible_help_sections(request.user),
+        'help_contact': HELP_CONTACT,
+    })
+
+
+def help_section(request, slug):
+    if not request.user.is_authenticated:
+        return redirect('parking:login')
+
+    if request.user.is_superuser or request.user.is_staff:
+        return redirect('parking:home')
+
+    customer = get_user_customer(request.user)
+
+    if customer is None:
+        return redirect('parking:customer_request')
+
+    sections = get_visible_help_sections(request.user)
+    section = next((item for item in sections if item['slug'] == slug), None)
+
+    if section is None:
+        raise Http404('Help section not found')
+
+    return render(request, 'parking/help_section.html', {
+        'customer': customer,
+        'section': section,
+        'help_sections': sections,
+        'help_contact': HELP_CONTACT,
+    })
+
+
 def home(request):
     if request.user.is_authenticated and get_user_customer(request.user):
         return redirect('parking:dashboard')
@@ -370,7 +745,7 @@ def dashboard(request):
     if customer is None:
         return redirect('parking:customer_request')
 
-    accessible_parking_lots = get_accessible_parking_lots(request.user, customer)
+    accessible_parking_lots = get_accessible_parking_lots(request.user, customer, request)
     today = timezone.localdate()
 
     spots = ParkingSpot.objects.select_related(
@@ -612,7 +987,7 @@ def parking_lot_list(request):
         return redirect('parking:dashboard')
 
     parking_lots = ParkingLot.objects.filter(
-        customer=customer
+        customer=customer,
     ).order_by('name')
 
     page_obj, query_string = paginate_queryset(request, parking_lots, per_page=10)
@@ -644,6 +1019,7 @@ def parking_lot_create(request):
             parking_lot = form.save(commit=False)
             parking_lot.customer = customer
             parking_lot.save()
+            request.session[CURRENT_PARKING_LOT_SESSION_KEY] = parking_lot.pk
 
             return redirect('parking:parking_lot_list')
 
@@ -699,7 +1075,7 @@ def parking_spot_list(request):
         return redirect('parking:dashboard')
 
     can_manage_spots = is_owner(request.user)
-    accessible_parking_lots = get_accessible_parking_lots(request.user, customer)
+    accessible_parking_lots = get_accessible_parking_lots(request.user, customer, request)
 
     filter_form = ParkingSpotFilterForm(
         request.GET or None,
@@ -816,14 +1192,23 @@ def parking_spot_create(request):
         return redirect('parking:dashboard')
 
     if request.method == 'POST':
-        form = ParkingSpotForm(request.POST, customer=customer)
+        accessible_parking_lots = get_accessible_parking_lots(request.user, customer, request)
+        form = ParkingSpotForm(
+            request.POST,
+            customer=customer,
+            parking_lots=accessible_parking_lots,
+        )
 
         if form.is_valid():
             form.save()
             return redirect('parking:parking_spot_list')
 
     else:
-        form = ParkingSpotForm(customer=customer)
+        accessible_parking_lots = get_accessible_parking_lots(request.user, customer, request)
+        form = ParkingSpotForm(
+            customer=customer,
+            parking_lots=accessible_parking_lots,
+        )
 
     return render(request, 'parking/parking_spot_form.html', {
         'form': form,
@@ -843,10 +1228,13 @@ def parking_spot_update(request, pk):
     if not is_owner(request.user):
         return redirect('parking:dashboard')
 
+    accessible_parking_lots = get_accessible_parking_lots(request.user, customer, request)
+
     parking_spot = get_object_or_404(
         ParkingSpot,
         pk=pk,
         parking_lot__customer=customer,
+        parking_lot__in=accessible_parking_lots,
     )
 
     if request.method == 'POST':
@@ -854,6 +1242,7 @@ def parking_spot_update(request, pk):
             request.POST,
             instance=parking_spot,
             customer=customer,
+            parking_lots=accessible_parking_lots,
         )
 
         if form.is_valid():
@@ -864,6 +1253,7 @@ def parking_spot_update(request, pk):
         form = ParkingSpotForm(
             instance=parking_spot,
             customer=customer,
+            parking_lots=accessible_parking_lots,
         )
 
     return render(request, 'parking/parking_spot_form.html', {
@@ -884,10 +1274,20 @@ def tariff_list(request):
     if not is_owner(request.user):
         return redirect('parking:dashboard')
 
+    current_parking_lot = get_current_owner_parking_lot(
+        request.user,
+        customer,
+        request,
+    )
+
+    if current_parking_lot is None:
+        return redirect('parking:parking_lot_list')
+
     filter_form = TariffFilterForm(request.GET or None)
 
     tariffs = Tariff.objects.filter(
-        customer=customer
+        customer=customer,
+        parking_lot=current_parking_lot,
     )
 
     if filter_form.is_valid():
@@ -914,6 +1314,7 @@ def tariff_list(request):
     return render(request, 'parking/tariff_list.html', {
         'tariffs': page_obj,
         'customer': customer,
+        'current_tariff_parking_lot': current_parking_lot,
         'filter_form': filter_form,
         'page_obj': page_obj,
         'query_string': query_string,
@@ -932,22 +1333,40 @@ def tariff_create(request):
     if not is_owner(request.user):
         return redirect('parking:dashboard')
 
+    current_parking_lot = get_current_owner_parking_lot(
+        request.user,
+        customer,
+        request,
+    )
+
+    if current_parking_lot is None:
+        return redirect('parking:parking_lot_list')
+
     if request.method == 'POST':
-        form = TariffForm(request.POST, customer=customer)
+        form = TariffForm(
+            request.POST,
+            customer=customer,
+            parking_lot=current_parking_lot,
+        )
 
         if form.is_valid():
             tariff = form.save(commit=False)
             tariff.customer = customer
+            tariff.parking_lot = current_parking_lot
             tariff.save()
 
             return redirect('parking:tariff_list')
 
     else:
-        form = TariffForm(customer=customer)
+        form = TariffForm(
+            customer=customer,
+            parking_lot=current_parking_lot,
+        )
 
     return render(request, 'parking/tariff_form.html', {
         'form': form,
         'title': 'ثبت تعرفه جدید',
+        'current_tariff_parking_lot': current_parking_lot,
     })
 
 
@@ -963,10 +1382,20 @@ def tariff_update(request, pk):
     if not is_owner(request.user):
         return redirect('parking:dashboard')
 
+    current_parking_lot = get_current_owner_parking_lot(
+        request.user,
+        customer,
+        request,
+    )
+
+    if current_parking_lot is None:
+        return redirect('parking:parking_lot_list')
+
     tariff = get_object_or_404(
         Tariff,
         pk=pk,
         customer=customer,
+        parking_lot=current_parking_lot,
     )
 
     if request.method == 'POST':
@@ -974,6 +1403,7 @@ def tariff_update(request, pk):
             request.POST,
             instance=tariff,
             customer=customer,
+            parking_lot=current_parking_lot,
         )
 
         if form.is_valid():
@@ -984,11 +1414,13 @@ def tariff_update(request, pk):
         form = TariffForm(
             instance=tariff,
             customer=customer,
+            parking_lot=current_parking_lot,
         )
 
     return render(request, 'parking/tariff_form.html', {
         'form': form,
         'title': 'ویرایش تعرفه',
+        'current_tariff_parking_lot': current_parking_lot,
     })
 
 
@@ -1004,10 +1436,20 @@ def tariff_delete(request, pk):
     if not is_owner(request.user):
         return redirect('parking:dashboard')
 
+    current_parking_lot = get_current_owner_parking_lot(
+        request.user,
+        customer,
+        request,
+    )
+
+    if current_parking_lot is None:
+        return redirect('parking:parking_lot_list')
+
     tariff = get_object_or_404(
         Tariff,
         pk=pk,
         customer=customer,
+        parking_lot=current_parking_lot,
     )
 
     if request.method == 'POST':
@@ -1016,6 +1458,7 @@ def tariff_delete(request, pk):
     return redirect('parking:tariff_list')
 
 
+@never_cache
 def parking_session_list(request):
     if not request.user.is_authenticated:
         return redirect('parking:login')
@@ -1025,7 +1468,7 @@ def parking_session_list(request):
     if customer is None:
         return redirect('parking:dashboard')
 
-    accessible_parking_lots = get_accessible_parking_lots(request.user, customer)
+    accessible_parking_lots = get_accessible_parking_lots(request.user, customer, request)
     filter_form = ParkingSessionFilterForm(
         request.GET or None,
         customer=customer,
@@ -1052,7 +1495,7 @@ def parking_session_list(request):
         exit_to = filter_form.cleaned_data.get('exit_to')
 
         if plate_number:
-            sessions = sessions.filter(vehicle__plate_number__icontains=plate_number)
+            sessions = apply_plate_filter(sessions, plate_number, 'vehicle__plate_number')
 
 
         if vehicle_type:
@@ -1089,6 +1532,7 @@ def parking_session_list(request):
     })
 
 
+@never_cache
 def parking_session_create(request):
     if not request.user.is_authenticated:
         return redirect('parking:login')
@@ -1098,7 +1542,7 @@ def parking_session_create(request):
     if customer is None:
         return redirect('parking:dashboard')
 
-    accessible_parking_lots = get_accessible_parking_lots(request.user, customer)
+    accessible_parking_lots = get_accessible_parking_lots(request.user, customer, request)
 
     if request.method == 'POST':
         form = ParkingSessionEntryForm(
@@ -1144,6 +1588,7 @@ def parking_session_create(request):
     })
 
 
+@never_cache
 def parking_session_close(request, pk):
     if not request.user.is_authenticated:
         return redirect('parking:login')
@@ -1153,17 +1598,42 @@ def parking_session_close(request, pk):
     if customer is None:
         return redirect('parking:dashboard')
 
-    accessible_parking_lots = get_accessible_parking_lots(request.user, customer)
+    accessible_parking_lots = get_accessible_parking_lots(request.user, customer, request)
 
     session = get_object_or_404(
         ParkingSession,
         pk=pk,
         vehicle__customer=customer,
         spot__parking_lot__in=accessible_parking_lots,
-        status=ParkingSession.SESSION_STATUS_OPEN,
     )
 
+    if session.status != ParkingSession.SESSION_STATUS_OPEN:
+        messages.info(request, 'خروج این خودرو قبلا ثبت شده است.')
+        return redirect('parking:parking_session_detail', pk=session.id)
+
+    tariff = session.get_applicable_tariff()
+    tariff_missing = tariff is None
+
+    preview_exit_time = timezone.now()
+    original_exit_time = session.exit_time
+    original_duration = session.total_duration_minutes
+    session.exit_time = preview_exit_time
+    preview_duration = session.calculate_duration()
+    session.total_duration_minutes = preview_duration
+    preview_fee = session.calculate_fee()
+    session.exit_time = original_exit_time
+    session.total_duration_minutes = original_duration
+
     if request.method == 'POST':
+        if tariff_missing:
+            return render(request, 'parking/parking_session_close.html', {
+                'session': session,
+                'preview_exit_time': preview_exit_time,
+                'preview_duration': preview_duration,
+                'preview_fee': preview_fee,
+                'tariff_missing': tariff_missing,
+            })
+
         session.exit_time = timezone.now()
         session.save()
 
@@ -1179,6 +1649,10 @@ def parking_session_close(request, pk):
 
     return render(request, 'parking/parking_session_close.html', {
         'session': session,
+        'preview_exit_time': preview_exit_time,
+        'preview_duration': preview_duration,
+        'preview_fee': preview_fee,
+        'tariff_missing': tariff_missing,
     })
 
 def parking_session_cancel(request, pk):
@@ -1190,7 +1664,7 @@ def parking_session_cancel(request, pk):
     if customer is None:
         return redirect('parking:dashboard')
 
-    accessible_parking_lots = get_accessible_parking_lots(request.user, customer)
+    accessible_parking_lots = get_accessible_parking_lots(request.user, customer, request)
 
     session = get_object_or_404(
         ParkingSession.objects.select_related(
@@ -1218,6 +1692,7 @@ def parking_session_cancel(request, pk):
         'customer': customer,
     })
 
+@never_cache
 def parking_session_detail(request, pk):
     if not request.user.is_authenticated:
         return redirect('parking:login')
@@ -1227,7 +1702,7 @@ def parking_session_detail(request, pk):
     if customer is None:
         return redirect('parking:dashboard')
 
-    accessible_parking_lots = get_accessible_parking_lots(request.user, customer)
+    accessible_parking_lots = get_accessible_parking_lots(request.user, customer, request)
 
     session = get_object_or_404(
         ParkingSession.objects.select_related(
@@ -1255,6 +1730,7 @@ def parking_session_detail(request, pk):
         'customer': customer,
     })
 
+@never_cache
 def payment_list(request):
     if not request.user.is_authenticated:
         return redirect('parking:login')
@@ -1264,7 +1740,7 @@ def payment_list(request):
     if customer is None:
         return redirect('parking:dashboard')
 
-    accessible_parking_lots = get_accessible_parking_lots(request.user, customer)
+    accessible_parking_lots = get_accessible_parking_lots(request.user, customer, request)
     filter_form = PaymentFilterForm(
         request.GET or None,
         customer=customer,
@@ -1292,7 +1768,7 @@ def payment_list(request):
         max_amount = filter_form.cleaned_data.get('max_amount')
 
         if plate_number:
-            payments = payments.filter(session__vehicle__plate_number__icontains=plate_number)
+            payments = apply_plate_filter(payments, plate_number, 'session__vehicle__plate_number')
 
         if parking_lot:
             payments = payments.filter(session__spot__parking_lot=parking_lot)
@@ -1337,7 +1813,7 @@ def payment_update(request, pk):
     if customer is None:
         return redirect('parking:dashboard')
 
-    accessible_parking_lots = get_accessible_parking_lots(request.user, customer)
+    accessible_parking_lots = get_accessible_parking_lots(request.user, customer, request)
 
     payment = get_object_or_404(
         Payment,
@@ -1372,6 +1848,7 @@ def payment_update(request, pk):
         'payment': payment,
     })
 
+@never_cache
 def receipt_list(request):
     if not request.user.is_authenticated:
         return redirect('parking:login')
@@ -1381,7 +1858,7 @@ def receipt_list(request):
     if customer is None:
         return redirect('parking:dashboard')
 
-    accessible_parking_lots = get_accessible_parking_lots(request.user, customer)
+    accessible_parking_lots = get_accessible_parking_lots(request.user, customer, request)
     filter_form = ReceiptFilterForm(
         request.GET or None,
         customer=customer,
@@ -1411,7 +1888,7 @@ def receipt_list(request):
             receipts = receipts.filter(receipt_number__icontains=receipt_number)
 
         if plate_number:
-            receipts = receipts.filter(session__vehicle__plate_number__icontains=plate_number)
+            receipts = apply_plate_filter(receipts, plate_number, 'session__vehicle__plate_number')
 
 
         if parking_lot:
@@ -1448,7 +1925,7 @@ def receipt_detail(request, pk):
     if customer is None:
         return redirect('parking:dashboard')
 
-    accessible_parking_lots = get_accessible_parking_lots(request.user, customer)
+    accessible_parking_lots = get_accessible_parking_lots(request.user, customer, request)
 
     receipt = get_object_or_404(
         Receipt.objects.select_related(
@@ -1477,7 +1954,7 @@ def receipt_print(request, pk):
     if customer is None:
         return redirect('parking:dashboard')
 
-    accessible_parking_lots = get_accessible_parking_lots(request.user, customer)
+    accessible_parking_lots = get_accessible_parking_lots(request.user, customer, request)
 
     receipt = get_object_or_404(
         Receipt.objects.select_related(
@@ -1500,6 +1977,7 @@ def receipt_print(request, pk):
         'auto_print': auto_print,
     })
 
+@never_cache
 def report_dashboard(request):
     if not request.user.is_authenticated:
         return redirect('parking:login')
@@ -1514,7 +1992,13 @@ def report_dashboard(request):
 
     today = timezone.localdate()
 
-    form = ReportFilterForm(request.GET or None, customer=customer)
+    accessible_parking_lots = get_accessible_parking_lots(request.user, customer, request)
+
+    form = ReportFilterForm(
+        request.GET or None,
+        customer=customer,
+        parking_lots=accessible_parking_lots,
+    )
 
     start_date = today
     end_date = today
@@ -1534,6 +2018,7 @@ def report_dashboard(request):
     ).filter(
         vehicle__customer=customer
     )
+    sessions = sessions.filter(spot__parking_lot__in=accessible_parking_lots)
 
     payments = Payment.objects.select_related(
         'session',
@@ -1543,12 +2028,14 @@ def report_dashboard(request):
     ).filter(
         session__vehicle__customer=customer
     )
+    payments = payments.filter(session__spot__parking_lot__in=accessible_parking_lots)
 
     spots = ParkingSpot.objects.select_related(
         'parking_lot',
         'parking_lot__customer',
     ).filter(
         parking_lot__customer=customer,
+        parking_lot__in=accessible_parking_lots,
         is_active=True,
     )
 
@@ -1745,6 +2232,7 @@ def customer_user_list(request):
     if not is_owner(request.user):
         return redirect('parking:dashboard')
 
+    accessible_parking_lots = get_accessible_parking_lots(request.user, customer, request)
     filter_form = CustomerUserFilterForm(request.GET or None)
 
     users = CustomerUser.objects.select_related(
@@ -1753,6 +2241,9 @@ def customer_user_list(request):
         'parking_lot',
     ).filter(
         customer=customer
+    ).filter(
+        Q(role=CustomerUser.ROLE_OWNER) |
+        Q(parking_lot__in=accessible_parking_lots)
     )
 
     if filter_form.is_valid():
@@ -1809,7 +2300,12 @@ def customer_user_create(request):
         return redirect('parking:dashboard')
 
     if request.method == 'POST':
-        form = CustomerUserCreateForm(request.POST, customer=customer)
+        accessible_parking_lots = get_accessible_parking_lots(request.user, customer, request)
+        form = CustomerUserCreateForm(
+            request.POST,
+            customer=customer,
+            parking_lots=accessible_parking_lots,
+        )
 
         if form.is_valid():
             user = User.objects.create_user(
@@ -1833,7 +2329,11 @@ def customer_user_create(request):
             return redirect('parking:customer_user_list')
 
     else:
-        form = CustomerUserCreateForm(customer=customer)
+        accessible_parking_lots = get_accessible_parking_lots(request.user, customer, request)
+        form = CustomerUserCreateForm(
+            customer=customer,
+            parking_lots=accessible_parking_lots,
+        )
 
     return render(request, 'parking/customer_user_form.html', {
         'form': form,
@@ -1853,8 +2353,13 @@ def customer_user_update(request, pk):
     if not is_owner(request.user):
         return redirect('parking:dashboard')
 
+    accessible_parking_lots = get_accessible_parking_lots(request.user, customer, request)
+
     customer_user = get_object_or_404(
-        CustomerUser.objects.select_related('user', 'customer', 'parking_lot'),
+        CustomerUser.objects.select_related('user', 'customer', 'parking_lot').filter(
+            Q(role=CustomerUser.ROLE_OWNER) |
+            Q(parking_lot__in=accessible_parking_lots)
+        ),
         pk=pk,
         customer=customer,
     )
@@ -1868,6 +2373,7 @@ def customer_user_update(request, pk):
             instance=customer_user,
             user_instance=customer_user.user,
             customer=customer,
+            parking_lots=accessible_parking_lots,
         )
 
         if form.is_valid():
@@ -1886,6 +2392,7 @@ def customer_user_update(request, pk):
             instance=customer_user,
             user_instance=customer_user.user,
             customer=customer,
+            parking_lots=accessible_parking_lots,
         )
 
     return render(request, 'parking/customer_user_form.html', {
@@ -1906,8 +2413,13 @@ def customer_user_change_password(request, pk):
     if not is_owner(request.user):
         return redirect('parking:dashboard')
 
+    accessible_parking_lots = get_accessible_parking_lots(request.user, customer, request)
+
     customer_user = get_object_or_404(
-        CustomerUser.objects.select_related('user', 'customer'),
+        CustomerUser.objects.select_related('user', 'customer', 'parking_lot').filter(
+            Q(role=CustomerUser.ROLE_OWNER) |
+            Q(parking_lot__in=accessible_parking_lots)
+        ),
         pk=pk,
         customer=customer,
     )
@@ -1974,7 +2486,10 @@ def customer_settings(request):
         return redirect('parking:dashboard')
 
     if request.method == 'POST':
-        form = CustomerSettingsForm(request.POST, instance=customer)
+        form = CustomerSettingsForm(
+            request.POST,
+            instance=customer,
+        )
 
         if form.is_valid():
             form.save()
@@ -1983,7 +2498,9 @@ def customer_settings(request):
         customer = Customer.objects.get(pk=customer.pk)
 
     else:
-        form = CustomerSettingsForm(instance=customer)
+        form = CustomerSettingsForm(
+            instance=customer,
+        )
 
     return render(request, 'parking/customer_settings.html', {
         'form': form,
@@ -2007,7 +2524,7 @@ def available_spots_api(request):
     if customer is None:
         return no_cache_json({'spots': []})
 
-    accessible_parking_lots = get_accessible_parking_lots(request.user, customer)
+    accessible_parking_lots = get_accessible_parking_lots(request.user, customer, request)
     vehicle_type = request.GET.get('vehicle_type')
     query = (request.GET.get('q') or '').strip()
     selected_id = request.GET.get('selected_id')
@@ -2024,10 +2541,13 @@ def available_spots_api(request):
 
     page_size = min(max(page_size, 1), 10)
 
-    open_session_for_same_spot_code = ParkingSession.objects.filter(
+    open_session_for_same_spot = ParkingSession.objects.filter(
+        Q(spot_id=OuterRef('pk')) |
+        Q(
+            spot__parking_lot=OuterRef('parking_lot'),
+            spot__code=OuterRef('code'),
+        ),
         status=ParkingSession.SESSION_STATUS_OPEN,
-        spot__parking_lot=OuterRef('parking_lot'),
-        spot__code=OuterRef('code'),
     )
 
     spots = ParkingSpot.objects.filter(
@@ -2035,8 +2555,10 @@ def available_spots_api(request):
         parking_lot__in=accessible_parking_lots,
         is_occupied=False,
         is_active=True,
+    ).exclude(
+        sessions__status=ParkingSession.SESSION_STATUS_OPEN,
     ).annotate(
-        has_open_session=Exists(open_session_for_same_spot_code)
+        has_open_session=Exists(open_session_for_same_spot)
     ).filter(
         has_open_session=False
     ).select_related('parking_lot')
@@ -2092,7 +2614,7 @@ def available_spots_api(request):
                     is_active=True,
                 )
                 .annotate(
-                    has_open_session=Exists(open_session_for_same_spot_code)
+                    has_open_session=Exists(open_session_for_same_spot)
                 )
                 .filter(has_open_session=False)
                 .select_related('parking_lot')
@@ -2124,10 +2646,13 @@ def parking_spot_auto_generate(request, pk):
     if not is_owner(request.user):
         return redirect('parking:dashboard')
 
+    accessible_parking_lots = get_accessible_parking_lots(request.user, customer, request)
+
     parking_lot = get_object_or_404(
         ParkingLot,
         pk=pk,
         customer=customer,
+        pk__in=accessible_parking_lots.values('pk'),
     )
 
     existing_spots_count = ParkingSpot.objects.filter(

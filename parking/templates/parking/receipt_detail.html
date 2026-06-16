@@ -8,7 +8,7 @@
         <div>
             <p class="eyebrow">رسید و چاپ</p>
             <h1>جزئیات رسید</h1>
-            <p>{{ customer.name }}</p>
+            <p>{{ receipt.session.spot.parking_lot.name }}</p>
         </div>
         <div class="action-row">
             <a class="button" href="{% url 'parking:receipt_print' receipt.id %}">چاپ رسید</a>

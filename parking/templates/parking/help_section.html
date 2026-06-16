@@ -1,0 +1,69 @@
+{% extends 'parking/base_dashboard.html' %}
+
+{% block title %}راهنمای {{ section.title }}{% endblock %}
+
+{% block content %}
+    <section class="page-header page-header--compact">
+        <div>
+            <p class="eyebrow">{{ section.eyebrow }}</p>
+            <h1>راهنمای {{ section.title }}</h1>
+            <p>{{ section.summary }}</p>
+        </div>
+        <div class="action-row">
+            <a class="button secondary" href="{% url 'parking:help_faq' %}">بازگشت به سوالات متداول</a>
+        </div>
+    </section>
+
+    <section class="help-detail-layout" id="help-content">
+        <article class="panel help-detail-panel">
+            <div class="panel-header">
+                <h2>مراحل پیشنهادی</h2>
+                <span class="status-pill">گام به گام</span>
+            </div>
+
+            <ol class="help-steps">
+                {% for step in section.steps %}
+                    <li>{{ step }}</li>
+                {% endfor %}
+            </ol>
+
+            {% if section.tips %}
+                <div class="help-tips">
+                    <h3>نکات مهم</h3>
+                    <ul>
+                        {% for tip in section.tips %}
+                            <li>{{ tip }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+        </article>
+
+        <aside class="help-side-stack">
+            <section class="panel help-side-panel">
+                <div class="panel-header">
+                    <h2>بخش‌های دیگر</h2>
+                </div>
+
+                <div class="help-section-links help-section-links--compact">
+                    {% for item in help_sections %}
+                        <a class="{% if item.slug == section.slug %}is-active{% endif %}" href="{% url 'parking:help_section' item.slug %}#help-content">
+                            <span>{{ item.eyebrow }}</span>
+                            <strong>{{ item.title }}</strong>
+                        </a>
+                    {% endfor %}
+                </div>
+            </section>
+        </aside>
+    </section>
+    {% include 'parking/partials/help_contact.html' %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const activeHelpLink = document.querySelector('.help-section-links--compact a.is-active');
+            if (activeHelpLink) {
+                activeHelpLink.scrollIntoView({ block: 'nearest' });
+            }
+        });
+    </script>
+{% endblock %}

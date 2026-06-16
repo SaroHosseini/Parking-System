@@ -17,7 +17,7 @@
             <h2>فیلترها</h2>
         </div>
         <form class="compact-filter-form session-filter-form" method="get" novalidate>
-            {% include 'parking/partials/plate_filter_builder.html' with field=filter_form.plate_number %}
+            {% include 'parking/partials/plate_filter_builder.html' with field=filter_form.plate_number vehicle_type_field=filter_form.vehicle_type %}
             <div class="field-block">
                 {{ filter_form.vehicle_type.label_tag }}
                 {{ filter_form.vehicle_type }}
@@ -131,5 +131,5 @@
             </table>
         </div>
     </section>
-    <script src="{% static 'parking/js/plate-input.js' %}" defer></script>
+    <script src="{% static 'parking/js/plate-input.js' %}?v=20260616-1" defer></script>
 {% endblock %}

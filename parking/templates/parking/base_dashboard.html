@@ -10,7 +10,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="{% static 'parking/img/parkino-logo/favicon-16x16.png' %}">
     <link rel="apple-touch-icon" sizes="180x180" href="{% static 'parking/img/parkino-logo/apple-touch-icon.png' %}">
     <link rel="manifest" href="{% static 'parking/img/parkino-logo/site.webmanifest' %}">
-    <link rel="stylesheet" href="{% static 'parking/css/app.css' %}?v=20260609-7">
+    <link rel="stylesheet" href="{% static 'parking/css/app.css' %}?v=20260616-1">
     <script src="{% static 'parking/js/theme.js' %}" defer></script>
     <script src="{% static 'parking/js/jalali-datepicker.js' %}?v=20260609-2" defer></script>
     <script src="{% static 'parking/js/bug-report.js' %}" defer></script>
@@ -60,7 +60,7 @@
                         <ul class="nav-list">
                             <li><a class="nav-link {% if current == 'report_dashboard' %}is-active{% endif %}" href="{% url 'parking:report_dashboard' %}">گزارش‌ها</a></li>
                             <li><a class="nav-link {% if current == 'customer_user_list' or current == 'customer_user_create' or current == 'customer_user_update' %}is-active{% endif %}" href="{% url 'parking:customer_user_list' %}">کاربران و نقش‌ها</a></li>
-                            <li><a class="nav-link {% if current == 'customer_settings' %}is-active{% endif %}" href="{% url 'parking:customer_settings' %}">تنظیمات پارکینگ</a></li>
+                            <li><a class="nav-link {% if current == 'customer_settings' %}is-active{% endif %}" href="{% url 'parking:customer_settings' %}">اطلاعات کاربری</a></li>
                         </ul>
                     </section>
                 {% endif %}
@@ -76,14 +76,39 @@
 
         <div class="app-workspace">
             <header class="topbar">
-                <div class="user-chip">
-                    <span>
-                        <strong>{{ request.user.username }}</strong>
-                        <span>{% if request.user.customer_profile %}{{ request.user.customer_profile.get_role_display }}{% else %}کاربر{% endif %}</span>
-                    </span>
+                <div class="topbar-meta">
+                    <div class="user-chip">
+                        <span>
+                            <strong>{{ request.user.username }}</strong>
+                            <span>{% if request.user.customer_profile %}{{ request.user.customer_profile.get_role_display }}{% else %}کاربر{% endif %}</span>
+                        </span>
+                    </div>
+
+                    {% if can_switch_parking_lot %}
+                        <form class="parking-switcher" method="post" action="{% url 'parking:current_parking_lot_select' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                            <label for="topbar-parking-lot">پارکینگ فعلی</label>
+                            <select id="topbar-parking-lot" name="parking_lot" onchange="this.form.submit()">
+                                {% for parking_lot in topbar_parking_lots %}
+                                    <option value="{{ parking_lot.id }}" {% if current_parking_lot and parking_lot.id == current_parking_lot.id %}selected{% endif %}>
+                                        {{ parking_lot.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                    {% elif current_parking_lot %}
+                        <div class="current-parking-chip">
+                            <span>پارکینگ</span>
+                            <strong>{{ current_parking_lot.name }}</strong>
+                        </div>
+                    {% endif %}
                 </div>
 
                 <div class="topbar-actions">
+                    <a class="button secondary help-button" href="{% url 'parking:help_faq' %}">
+                        راهنما
+                    </a>
                     <button class="button secondary bug-report-button" type="button" data-bug-report-open>
                         گزارش مشکل
                     </button>
@@ -120,7 +145,7 @@
                 <div>
                     <p class="eyebrow">پشتیبانی</p>
                     <h2 id="bug-report-title">گزارش مشکل</h2>
-                    <p>موضوع و توضیحات مشکل را ثبت کنید تا در پنل ادمین بررسی شود.</p>
+                    <p>موضوع و توضیحات مشکل را ثبت کنید تا در مدیریت سیستم بررسی شود.</p>
                 </div>
                 <button class="button secondary bug-report-close" type="button" aria-label="بستن" data-bug-report-close>×</button>
             </div>

@@ -4,23 +4,69 @@
 {% block title %}ثبت خروج خودرو{% endblock %}
 
 {% block content %}
-    <h1>ثبت خروج خودرو</h1>
+    <section class="page-header page-header--compact">
+        <div>
+            <p class="eyebrow">ورود و خروج</p>
+            <h1>ثبت خروج خودرو</h1>
+            <p>پیش از تایید، زمان خروج و مبلغ محاسبه‌شده را بررسی کنید.</p>
+        </div>
+        <a class="button secondary" href="{% url 'parking:parking_session_list' %}">بازگشت به خودروهای فعال</a>
+    </section>
 
-    <p>آیا از ثبت خروج این خودرو مطمئن هستید؟</p>
+    <section class="panel close-session-panel">
+        {% if tariff_missing %}
+            <div class="errorlist close-session-panel__alert">
+                برای پارکینگ {{ session.spot.parking_lot.name }} و نوع وسیله {{ session.vehicle.get_type_display }} تعرفه فعالی تعریف نشده است. ابتدا تعرفه را ثبت کنید.
+            </div>
+        {% endif %}
 
-    <ul>
-        <li>پلاک: {% include 'parking/partials/plate_display.html' with plate=session.vehicle.plate_number vehicle_type=session.vehicle.type %}</li>
-        <li>پارکینگ: {{ session.spot.parking_lot.name }}</li>
-        <li>جایگاه: {{ session.spot.code }}</li>
-        <li>زمان ورود: {{ session.entry_time|jalali_gregorian }}</li>
-    </ul>
+        <div class="detail-grid detail-grid--compact">
+            <article class="detail-card">
+                <span>پلاک</span>
+                <strong>{% include 'parking/partials/plate_display.html' with plate=session.vehicle.plate_number vehicle_type=session.vehicle.type %}</strong>
+            </article>
+            <article class="detail-card">
+                <span>پارکینگ</span>
+                <strong>{{ session.spot.parking_lot.name }}</strong>
+            </article>
+            <article class="detail-card">
+                <span>جایگاه</span>
+                <strong>{{ session.spot.code }}</strong>
+            </article>
+            <article class="detail-card">
+                <span>مبلغ خروج</span>
+                <strong>{{ preview_fee|floatformat:2 }}</strong>
+            </article>
+        </div>
 
-    <form method="post" novalidate>
-        {% csrf_token %}
-        <button type="submit">بله، ثبت خروج</button>
-    </form>
+        <div class="detail-grid detail-grid--two">
+            <article class="panel mini-panel">
+                <h2>زمان و توقف</h2>
+                <dl class="detail-list">
+                    <div>
+                        <dt>زمان ورود</dt>
+                        <dd>{{ session.entry_time|jalali_gregorian }}</dd>
+                    </div>
+                    <div>
+                        <dt>زمان خروج</dt>
+                        <dd>{{ preview_exit_time|jalali_gregorian }}</dd>
+                    </div>
+                    <div>
+                        <dt>مدت توقف</dt>
+                        <dd>{{ preview_duration|default:"-" }} دقیقه</dd>
+                    </div>
+                </dl>
+            </article>
 
-    <hr>
-
-    <a class="button secondary" href="{% url 'parking:parking_session_list' %}">انصراف و بازگشت</a>
+            <article class="panel mini-panel">
+                <h2>تایید خروج</h2>
+                <p>آیا از ثبت خروج این خودرو مطمئن هستید؟</p>
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    <button type="submit" {% if tariff_missing %}disabled{% endif %}>بله، ثبت خروج</button>
+                </form>
+                <a class="button secondary" href="{% url 'parking:parking_session_list' %}">انصراف و بازگشت</a>
+            </article>
+        </div>
+    </section>
 {% endblock %}

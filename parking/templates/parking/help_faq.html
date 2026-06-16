@@ -1,0 +1,54 @@
+{% extends 'parking/base_dashboard.html' %}
+
+{% block title %}راهنمای پارکینو{% endblock %}
+
+{% block content %}
+    <section class="page-header page-header--compact">
+        <div>
+            <p class="eyebrow">مرکز راهنما</p>
+            <h1>سوالات متداول</h1>
+            <p>پاسخ‌های کوتاه برای کارهای رایج پنل و لینک راهنمای کامل هر بخش.</p>
+        </div>
+        <div class="action-row">
+            <a class="button secondary" href="{% url 'parking:dashboard' %}">بازگشت به داشبورد</a>
+        </div>
+    </section>
+
+    <section class="help-detail-layout" id="help-content">
+        <article class="panel help-detail-panel">
+            <div class="panel-header">
+                <h2>پرسش‌های رایج</h2>
+                <span class="status-pill">راهنمای سریع</span>
+            </div>
+
+            <div class="faq-list">
+                {% for faq in faqs %}
+                    <details class="faq-item" {% if forloop.first %}open{% endif %}>
+                        <summary>{{ faq.question }}</summary>
+                        <p>{{ faq.answer }}</p>
+                    </details>
+                {% endfor %}
+            </div>
+
+        </article>
+
+        <aside class="help-side-stack">
+            <section class="panel help-side-panel">
+                <div class="panel-header">
+                    <h2>بخش‌های دیگر</h2>
+                </div>
+
+                <div class="help-section-links help-section-links--compact">
+                    {% for section in help_sections %}
+                        <a href="{% url 'parking:help_section' section.slug %}#help-content">
+                            <span>{{ section.eyebrow }}</span>
+                            <strong>{{ section.title }}</strong>
+                        </a>
+                    {% endfor %}
+                </div>
+            </section>
+        </aside>
+    </section>
+
+    {% include 'parking/partials/help_contact.html' %}
+{% endblock %}

@@ -64,6 +64,17 @@
                         {% endif %}
                     </div>
                 </div>
+
+                <div class="field-block stable-field field-wide">
+                    {{ form.address.label_tag }}
+                    {{ form.address }}
+                    <div class="field-feedback">
+                        {{ form.address.errors }}
+                        {% if not form.address.errors %}
+                            <span class="helptext">آدرس کامل پارکینگ یا مجموعه.</span>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
 
             <div class="action-row">
