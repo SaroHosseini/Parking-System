@@ -102,6 +102,11 @@
                             <span>پارکینگ</span>
                             <strong>{{ current_parking_lot.name }}</strong>
                         </div>
+                    {% elif request.user.customer_profile.role == 'owner' %}
+                        <div class="current-parking-chip current-parking-chip--empty">
+                            <span>پارکینگ فعلی</span>
+                            <strong>پارکینگی ثبت نشده</strong>
+                        </div>
                     {% endif %}
                 </div>
 

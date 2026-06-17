@@ -714,11 +714,6 @@ def home(request):
     if request.user.is_authenticated and get_user_customer(request.user):
         return redirect('parking:dashboard')
 
-    request_id = request.session.get('customer_request_id')
-
-    if request_id and Customer.objects.filter(id=request_id).exists():
-        return redirect('parking:request_status')
-
     today_entries = random.randint(200, 1000)
     successful_payments = today_entries - random.randint(20, 50)
 
