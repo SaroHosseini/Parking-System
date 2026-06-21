@@ -849,7 +849,7 @@ class ParkingSessionEntryForm(forms.Form):
         empty_label='انتخاب جایگاه آزاد',
         widget=forms.HiddenInput,
         error_messages={
-            'invalid_choice': 'جایگاه انتخاب‌شده معتبر نیست یا با نوع وسیله انتخاب‌شده هماهنگ نیست.'
+            'invalid_choice': 'جایگاه انتخاب‌شده معتبر نیست.'
         }
     )
     def __init__(self, *args, **kwargs):
