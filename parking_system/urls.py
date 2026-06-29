@@ -9,6 +9,13 @@ urlpatterns = [
     path('admin/', RedirectView.as_view(url='/', permanent=False)),
     path(settings.ADMIN_URL, admin.site.urls),
     path('', include('parking.urls')),
+    path(
+    'favicon.ico',
+    RedirectView.as_view(
+        url='/static/parking/img/parkino-logo/favicon.ico',
+        permanent=True
+    )
+),
 ]
 
 handler400 = 'parking.views.custom_bad_request'
